@@ -1,66 +1,15 @@
-# Projeto LumiEduca
+# Projeto LumiEduca (Web)
 
-## 📌 Sobre o Projeto
-O **LumiEduca** é um projeto acadêmico em desenvolvimento, criado com o objetivo de construir uma solução digital voltada para a área da educação. Este repositório atualmente representa o **MVP (Minimum Viable Product)** do portal LumiEduca, servindo como base inicial para validar ideias, funcionalidades e a experiência do usuário.
+Esse repositório foi criado a parte para fazer um MVP do portal LumiEduca, ainda estamos decidindo se faremos um portal web ou uma aplicação mobile. A ideia inicial seria fazer os dois mas decidimos focar as atenções em somente uma frente primeiro. 
 
-A proposta é desenvolver uma versão **web** e uma **mobile**, porém os esforços serão concentrados primeiro no portal web, visando maior foco e organização no desenvolvimento.
+O projeto será criado usando React. 
 
----
+Equipe:
 
-## 🎯 Objetivo do MVP
-O projeto tem como finalidade:
-
-- Validar a proposta da plataforma;
-- Estruturar a base do sistema;
-- Desenvolver funcionalidades essenciais;
-- Criar uma interface moderna e intuitiva;
-- Coletar feedback para futuras versões;
-- Preparar expansão para mobile futuramente.
-
----
-
-## 💡 Visão do Produto
-O LumiEduca busca unir **tecnologia + educação**, oferecendo uma plataforma acessível, organizada e eficiente para melhorar a experiência dos usuários no ambiente educacional.
-
----
-
-## 🛠️ Tecnologias Utilizadas
-
-### Front-end
-- React
-- JavaScript
-- HTML5
-- CSS3
-- Vite
-
-### Ferramentas
-- Git
-- GitHub
-- npm
-
----
-
-## 📅 Status do Projeto
-
-🚧 Em desenvolvimento
-
----
-
-## 👥 Equipe
-
-### Liderança do Projeto
-- **Bryan Duarte de Araujo Pereira** 
-
-### Desenvolvedores
-- Adriel dos Santos Azevedo
-- Bernardo Teixeira Oliveira
-- Emmanuel Nazareth Bravo da Costa
-- João Lucas Bittencourt Rocha
-- João Paulo Amarilha Coelho
-- José Carlos Silva Pimentel
-
----
-
-## ✨ Observação
-
-Este README é uma versão inicial e será atualizado conforme o avanço do projeto.
+Adriel dos Santos Azevedo <br>
+Bernardo Teixeira Oliveira <br>
+Bryan Duarte de Araujo Pereira <br>
+Emmanuel Nazareth Bravo da Costa <br>
+João Lucas Binttencourt Rocha <br>
+João Paulo Amarilha Coelho <br>
+José Carlos Silva Pimentel <br>
