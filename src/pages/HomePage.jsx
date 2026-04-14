@@ -6,7 +6,7 @@ export default function HomePage() {
   const [pendentes, setPendentes] = useState(0);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
-  // DECLARAÇÃO DA VARIÁVEL QUE ESTAVA FALTANDO:
+  // DECLARAÇÃO DA VARIÁVEL 
   const userType = localStorage.getItem('userType');
 
   useEffect(() => {

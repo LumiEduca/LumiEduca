@@ -9,7 +9,6 @@ export default function LoginPage() {
   const handleLogin = (e) => {
     e.preventDefault();
     
-    // Senhas vindas do .env
     const SENHA_PROF = process.env.REACT_APP_SENHA_PROFESSOR;
     const SENHA_ESTUDANTE = process.env.REACT_APP_SENHA_ESTUDANTE;
 

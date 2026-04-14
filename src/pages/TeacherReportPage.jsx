@@ -16,7 +16,6 @@ export default function TeacherReportPage() {
     {historico.length === 0 ? (
       <p>Nenhum registro encontrado.</p>
     ) : (
-      /* O segredo está nesta DIV envolta da tabela */
       <div style={tableWrapperStyle}>
         <table style={tableStyle}>
           <thead>

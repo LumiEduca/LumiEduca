@@ -5,7 +5,6 @@ export default function VictoryPage() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Recebe os pontos ganhos APENAS nesta trilha (enviados via navigate na Questao.jsx)
   const ganhosTrilha = location.state?.ganhos || 0;
 
   return (

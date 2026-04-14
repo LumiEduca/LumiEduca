@@ -12,7 +12,6 @@ export default function QuestionPage({ setPontos, concluidas, setConcluidas }) {
   const [escolha, setEscolha] = useState(null);
   const [errouAlguma, setErrouAlguma] = useState(false);
   
-  // SOLUÇÃO PROBLEMA 1: Estado para rastrear pontos APENAS desta trilha
   const [ganhosSessao, setGanhosSessao] = useState(0);
 
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -53,7 +52,6 @@ export default function QuestionPage({ setPontos, concluidas, setConcluidas }) {
         alert("Ops! Você errou algumas. Tente acertar todas para ganhar a medalha!");
         navigate(`/trilha/${materia}`);
       } else {
-        // SOLUÇÃO PROBLEMA 1: Passamos os ganhos da sessão via state do React Router
         navigate('/vitoria', { state: { ganhos: ganhosSessao } });
       }
     }
@@ -126,7 +124,7 @@ export default function QuestionPage({ setPontos, concluidas, setConcluidas }) {
   );
 }
 
-// Estilos mantidos conforme o original...
+// Estilos 
 const cardStyle = { backgroundColor: 'white', margin: '30px auto', textAlign: 'center', borderRadius: '25px', boxShadow: '0 8px 25px rgba(0,0,0,0.06)', width: '92%', maxWidth: '500px', padding: '5%', boxSizing: 'border-box' };
 const perguntaStyle = { marginBottom: '30px', color: '#333', fontWeight: '900', lineHeight: '1.2' };
 const gridStyle = { display: 'grid', gap: '12px', width: '100%' };

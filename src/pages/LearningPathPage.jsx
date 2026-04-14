@@ -71,7 +71,6 @@ export default function LearningPathPage() {
                 ...circuloStyle, 
                 backgroundColor: fase.path ? dados.cor : '#ccc',
                 cursor: fase.path ? 'pointer' : 'not-allowed',
-                // Dinâmico: 25% da largura da tela, mas entre 80px e 120px
                 width: isMobile ? 'min(25vw, 110px)' : '80px',
                 height: isMobile ? 'min(25vw, 110px)' : '80px',
                 fontSize: isMobile ? '2rem' : '1.5rem'
@@ -103,7 +102,7 @@ const containerStyle = {
   minHeight: '100vh',
   backgroundColor: '#fff',
   width: '100%',
-  padding: '5% 5% 10% 5%', // Padding proporcional
+  padding: '5% 5% 10% 5%', 
   boxSizing: 'border-box'
 };
 
@@ -135,7 +134,7 @@ const wrapperFaseStyle = {
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'center',
-  marginBottom: '15%', // Espaçamento entre fases baseado na altura
+  marginBottom: '15%', 
   width: '100%',
   position: 'relative'
 };
