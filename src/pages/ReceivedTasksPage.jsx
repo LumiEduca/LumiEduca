@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-export default function TarefasRecebidas({ setPontos }) {
+export default function ReceivedTasksPage({ setPontos }) {
   const navigate = useNavigate();
   const [tarefas, setTarefas] = useState([]);
   const userType = localStorage.getItem('userType');

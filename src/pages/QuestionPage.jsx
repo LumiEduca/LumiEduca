@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { bancoDeQuestoes } from '../data/questoes';
 
-export default function Questao({ setPontos, concluidas, setConcluidas }) {
+export default function QuestionPage({ setPontos, concluidas, setConcluidas }) {
   const { materia } = useParams();
   const navigate = useNavigate();
   const questoes = bancoDeQuestoes[materia] || [];

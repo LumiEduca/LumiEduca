@@ -1,14 +1,14 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 
-import Home from '../pages/Home';
-import Trilha from '../pages/Trilha';
-import Questao from '../pages/Questao';
-import TelaVitoria from '../pages/TelaVitoria';
-import Login from '../pages/Login';
-import CriarTarefa from '../pages/CriarTarefa';
-import TarefasRecebidas from '../pages/TarefasRecebidas';
-import RelatorioProfessor from '../pages/RelatorioProfessor';
+import HomePage from '../pages/HomePage';
+import LearningPathPage from '../pages/LearningPathPage';
+import QuestionPage from '../pages/QuestionPage';
+import VictoryPage from '../pages/VictoryPage';
+import LoginPage from '../pages/LoginPage';
+import CreateTaskPage from '../pages/CreateTaskPage';
+import ReceivedTasksPage from '../pages/ReceivedTasksPage';
+import TeacherReportPage from '../pages/TeacherReportPage';
 
 export default function AppRoutes({
   userType,
@@ -18,36 +18,36 @@ export default function AppRoutes({
 }) {
   return (
     <Routes>
-      <Route path="/" element={userType ? <Home /> : <Navigate to="/login" />} />
-      <Route path="/login" element={<Login />} />
+      <Route path="/" element={userType ? <HomePage /> : <Navigate to="/login" />} />
+      <Route path="/login" element={<LoginPage />} />
 
       <Route
         path="/criar-tarefa"
-        element={userType === 'professor' ? <CriarTarefa /> : <Navigate to="/" />}
+        element={userType === 'professor' ? <CreateTaskPage /> : <Navigate to="/" />}
       />
 
       <Route
         path="/relatorio"
-        element={userType === 'professor' ? <RelatorioProfessor /> : <Navigate to="/" />}
+        element={userType === 'professor' ? <TeacherReportPage /> : <Navigate to="/" />}
       />
 
       <Route
         path="/tarefas-recebidas"
         element={
-          userType ? <TarefasRecebidas setPontos={setPontos} /> : <Navigate to="/login" />
+          userType ? <ReceivedTasksPage setPontos={setPontos} /> : <Navigate to="/login" />
         }
       />
 
       <Route
         path="/trilha/:materia"
-        element={userType ? <Trilha /> : <Navigate to="/login" />}
+        element={userType ? <LearningPathPage /> : <Navigate to="/login" />}
       />
 
       <Route
         path="/exercicio/:materia"
         element={
           userType ? (
-            <Questao
+            <QuestionPage
               setPontos={setPontos}
               concluidas={concluidas}
               setConcluidas={setConcluidas}
@@ -60,7 +60,7 @@ export default function AppRoutes({
 
       <Route
         path="/vitoria"
-        element={userType ? <TelaVitoria /> : <Navigate to="/login" />}
+        element={userType ? <VictoryPage /> : <Navigate to="/login" />}
       />
     </Routes>
   );

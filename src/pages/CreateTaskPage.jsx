@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-export default function CriarTarefa() {
+export default function CreateTaskPage() {
   const [pergunta, setPergunta] = useState('');
   const [opcoes, setOpcoes] = useState(['', '', '', '']); // 4 alternativas
   const [correta, setCorreta] = useState(0); // Índice da resposta certa

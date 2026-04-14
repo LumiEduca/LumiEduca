@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
-export default function TelaVitoria() {
+export default function VictoryPage() {
   const navigate = useNavigate();
   const location = useLocation();
 

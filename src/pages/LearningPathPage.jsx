@@ -20,7 +20,7 @@ const DADOS_TRILHAS = {
   }
 };
 
-export default function Trilha() {
+export default function LearningPathPage() {
   const { materia } = useParams();
   const navigate = useNavigate();
   const dados = DADOS_TRILHAS[materia];

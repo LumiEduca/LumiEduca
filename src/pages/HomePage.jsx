@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-export default function Home() {
+export default function HomePage() {
   const navigate = useNavigate();
   const [pendentes, setPendentes] = useState(0);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-export default function RelatorioProfessor() {
+export default function TeacherReportPage() {
   const navigate = useNavigate();
   const [historico, setHistorico] = useState([]);
 
