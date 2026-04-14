@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import logoLumi from '../assets/Lumi.png';
+import logoLumi from '../assets/images/Lumi.png';
 
 export default function Header({ pontos }) {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
