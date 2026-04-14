@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import logoLumi from '../assets/images/Lumi.png';
+import logoLumi from '../assets/images/lumi-logo.png';
 
 export default function Header({ pontos }) {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
@@ -48,7 +48,7 @@ export default function Header({ pontos }) {
           <img 
             src={logoLumi} 
             alt="Lumi" 
-            style={{ height: isMobile ? '28px' : '40px', width: 'auto' }} 
+            style={{ height: isMobile ? '36px' : '52px', width: 'auto' }} 
           />
           <h2 style={{ ...tituloStyle, fontSize: isMobile ? '1rem' : '1.5rem' }}>
             LumiEduca
