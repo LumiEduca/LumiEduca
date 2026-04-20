@@ -1,132 +1,172 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import '../styles/question.css';
 import { bancoDeQuestoes } from '../data/questoes';
 
 export default function QuestionPage({ setPontos, concluidas, setConcluidas }) {
   const { materia } = useParams();
   const navigate = useNavigate();
+
   const questoes = bancoDeQuestoes[materia] || [];
 
   const [indice, setIndice] = useState(0);
-  const [respondido, setRespondido] = useState(false);
-  const [escolha, setEscolha] = useState(null);
-  const [errouAlguma, setErrouAlguma] = useState(false);
-  
-  const [ganhosSessao, setGanhosSessao] = useState(0);
-
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-
-  useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 768);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  const [respostasSelecionadas, setRespostasSelecionadas] = useState({});
+  const [erroMensagem, setErroMensagem] = useState('');
 
   const questaoAtual = questoes[indice];
-  const idUnico = `${materia}-${questaoAtual?.id}`;
 
-  const conferir = (valor) => {
-    if (respondido) return;
-    setEscolha(valor);
-    setRespondido(true);
-
-    if (valor === questaoAtual.correta) {
-      if (!concluidas.includes(idUnico)) {
-        setPontos(prev => prev + 10);
-        setConcluidas(prev => [...prev, idUnico]);
-        // Incrementa o que foi ganho nesta rodada específica
-        setGanhosSessao(prev => prev + 10);
-      }
-    } else {
-      setErrouAlguma(true);
-    }
-  };
-
-  const proximo = () => {
-    if (indice < questoes.length - 1) {
-      setIndice(indice + 1);
-      setRespondido(false);
-      setEscolha(null);
-    } else {
-      if (errouAlguma) {
-        alert("Ops! Você errou algumas. Tente acertar todas para ganhar a medalha!");
-        navigate(`/trilha/${materia}`);
-      } else {
-        navigate('/vitoria', { state: { ganhos: ganhosSessao } });
-      }
-    }
-  };
+  const progressoTexto = useMemo(() => {
+    return `Questão ${indice + 1} de ${questoes.length}`;
+  }, [indice, questoes.length]);
 
   if (!questaoAtual) return null;
 
+  const respostaSelecionada = respostasSelecionadas[questaoAtual.id] ?? null;
+  const ultimaQuestao = indice === questoes.length - 1;
+
+  const handleSelecionarOpcao = (opcao) => {
+    setRespostasSelecionadas((prev) => ({
+      ...prev,
+      [questaoAtual.id]: opcao
+    }));
+    setErroMensagem('');
+  };
+
+  const handleVoltar = () => {
+    navigate(`/trilha/${materia}`);
+  };
+
+  const finalizarQuestionario = () => {
+    let ganhouNaSessao = 0;
+    let errouAlguma = false;
+    const novasConcluidas = [...concluidas];
+
+    const resumoQuestoes = questoes.map((questao) => {
+      const respostaUsuario = respostasSelecionadas[questao.id];
+      const acertou = respostaUsuario === questao.correta;
+      const idUnico = `${materia}-${questao.id}`;
+
+      if (acertou) {
+        if (!concluidas.includes(idUnico)) {
+          ganhouNaSessao += 10;
+          novasConcluidas.push(idUnico);
+        }
+      } else {
+        errouAlguma = true;
+      }
+
+      return {
+        id: questao.id,
+        pergunta: questao.pergunta,
+        respostaUsuario,
+        respostaCorreta: questao.correta,
+        acertou,
+        explicacao: acertou
+          ? (questao.explicacaoCorreta || 'Resposta correta!')
+          : (questao.explicacaoErrada || `A resposta correta era ${questao.correta}.`)
+      };
+    });
+
+    if (ganhouNaSessao > 0) {
+      setPontos((prev) => prev + ganhouNaSessao);
+    }
+
+    setConcluidas([...new Set(novasConcluidas)]);
+
+    if (materia === 'matematica') {
+      const progressoKey = 'lumi_progresso_trilha_matematica';
+      const progressoAtual = JSON.parse(localStorage.getItem(progressoKey) || '{}');
+
+      if (!errouAlguma) {
+        progressoAtual.fase_1 = true;
+        localStorage.setItem(progressoKey, JSON.stringify(progressoAtual));
+      }
+    }
+
+    navigate('/vitoria', {
+      state: {
+        ganhos: ganhouNaSessao,
+        errouAlguma,
+        materia,
+        resumoQuestoes
+      }
+    });
+  };
+
+  const handleAvancar = () => {
+    if (respostaSelecionada === null || respostaSelecionada === undefined) {
+      setErroMensagem('Selecione uma alternativa antes de continuar.');
+      return;
+    }
+
+    if (!ultimaQuestao) {
+      setIndice((prev) => prev + 1);
+      setErroMensagem('');
+      return;
+    }
+
+    finalizarQuestionario();
+  };
+
   return (
-    <div style={cardStyle}>
-      <p style={{ color: '#888', fontWeight: 'bold', fontSize: '0.9rem' }}>
-        Questão {indice + 1} de {questoes.length}
-      </p>
-
-      <h2 style={{ 
-        ...perguntaStyle,
-        fontSize: isMobile ? '1.4rem' : '1.8rem' 
-      }}>
-        {questaoAtual.pergunta}
-      </h2>
-
-      <div style={{ 
-        ...gridStyle, 
-        gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr' 
-      }}>
-        {questaoAtual.opcoes.map((op) => {
-          const isCorreta = op === questaoAtual.correta;
-          const isEscolhida = op === escolha;
-          
-          let bgColor = 'white';
-          let textColor = 'black';
-
-          if (respondido) {
-            if (isCorreta) {
-              bgColor = '#2ecc71';
-              textColor = 'white';
-            } else if (isEscolhida) {
-              bgColor = '#e74c3c';
-              textColor = 'white';
-            }
-          }
-
-          return (
-            <button 
-              key={op} 
-              style={{ 
-                ...btnRespostaStyle,
-                backgroundColor: bgColor,
-                color: textColor,
-                border: respondido ? 'none' : '2px solid #e5e5e5',
-                boxShadow: !respondido ? '0 5px 0 #e5e5e5' : 'none',
-                padding: isMobile ? '22px 15px' : '20px'
-              }}
-              onClick={() => conferir(op)}
-            >
-              {op}
-            </button>
-          );
-        })}
-      </div>
-
-      {respondido && (
-        <button 
-          onClick={proximo} 
-          style={btnProximoStyle}
+    <div className="question-page page-wrapper">
+      <main className="question-page-content">
+        <button
+          type="button"
+          className="question-back-button"
+          onClick={handleVoltar}
         >
-          {indice < questoes.length - 1 ? "PRÓXIMA PERGUNTA ➔" : "VER MEUS PONTOS 🏆"}
+          ← Voltar para a trilha
         </button>
-      )}
+
+        <section className="question-card">
+          <div className="question-top">
+            <span className="question-badge">Fase de {materia}</span>
+            <span className="question-progress">{progressoTexto}</span>
+          </div>
+
+          <h1 className="question-title">{questaoAtual.pergunta}</h1>
+
+          <p className="question-instruction">
+            Selecione a alternativa que você acredita estar correta e avance para continuar.
+          </p>
+
+          <div className="question-options-grid">
+            {questaoAtual.opcoes.map((opcao) => {
+              const isSelected = respostaSelecionada === opcao;
+
+              return (
+                <button
+                  key={opcao}
+                  type="button"
+                  className={`question-option ${isSelected ? 'selected' : ''}`}
+                  onClick={() => handleSelecionarOpcao(opcao)}
+                >
+                  {opcao}
+                </button>
+              );
+            })}
+          </div>
+
+          {erroMensagem && (
+            <p className="question-error-message">{erroMensagem}</p>
+          )}
+
+          <div className="question-actions">
+            <button
+              type="button"
+              className={`question-next-button ${
+                respostaSelecionada === null || respostaSelecionada === undefined
+                  ? 'disabled'
+                  : ''
+              }`}
+              onClick={handleAvancar}
+            >
+              {ultimaQuestao ? 'Finalizar fase 🏁' : 'Próxima pergunta ➜'}
+            </button>
+          </div>
+        </section>
+      </main>
     </div>
   );
 }
-
-// Estilos 
-const cardStyle = { backgroundColor: 'white', margin: '30px auto', textAlign: 'center', borderRadius: '25px', boxShadow: '0 8px 25px rgba(0,0,0,0.06)', width: '92%', maxWidth: '500px', padding: '5%', boxSizing: 'border-box' };
-const perguntaStyle = { marginBottom: '30px', color: '#333', fontWeight: '900', lineHeight: '1.2' };
-const gridStyle = { display: 'grid', gap: '12px', width: '100%' };
-const btnRespostaStyle = { borderRadius: '18px', fontWeight: 'bold', cursor: 'pointer', transition: 'transform 0.1s ease', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem' };
-const btnProximoStyle = { marginTop: '30px', width: '100%', backgroundColor: '#FF8C00', color: 'white', border: 'none', borderRadius: '18px', fontWeight: '900', cursor: 'pointer', padding: '18px', fontSize: '1.1rem', boxShadow: '0 6px 0 #CC7000' };

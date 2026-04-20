@@ -222,6 +222,10 @@
   cursor: not-allowed;
 }
 
+.path-node:disabled {
+  cursor: not-allowed;
+}
+
 .path-node-number {
   font-size: 2rem;
   font-weight: 900;

@@ -22,7 +22,7 @@ const DADOS_TRILHAS = {
     cor: '#3498db',
     corSecundaria: '#EAF4FB',
     descricao: 'Siga pelas fases da leitura e fortaleça suas habilidades.',
-    mascoteTexto: 'Estou ansioso para aprender com você!',
+    mascoteTexto: 'Vamos explorar as próximas palavras?',
     fases: [
       { id: 1, nome: 'Vogais', path: null },
       { id: 2, nome: 'Sílabas', path: null },
@@ -156,7 +156,10 @@ export default function LearningPathPage() {
           <div className="path-list modern-path-list">
             {fasesComStatus.map((fase, index) => {
               const sideClass = index % 2 === 0 ? 'left' : 'right';
-              const isClickable = fase.status === 'available' && Boolean(fase.path);
+
+              const isClickable =
+                (fase.status === 'available' || fase.status === 'completed') &&
+                Boolean(fase.path);
 
               return (
                 <div
