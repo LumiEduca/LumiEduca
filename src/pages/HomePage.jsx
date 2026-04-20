@@ -105,14 +105,14 @@ export default function HomePage() {
                   <span className="trail-subject-icon">🔢</span>
                   <div className="trail-subject-info">
                     <strong>Matemática</strong>
-                    <span>Desafio de soma</span>
+                    <span>Desafios de soma</span>
                   </div>
                 </button>
 
                 <button
                   type="button"
-                  className="trail-subject-btn portuguese-btn disabled"
-                  disabled
+                  className="trail-subject-btn portuguese-btn"
+                  onClick={() => navigate('/trilha/portugues')}
                 >
                   <span className="trail-subject-icon">📚</span>
                   <div className="trail-subject-info">

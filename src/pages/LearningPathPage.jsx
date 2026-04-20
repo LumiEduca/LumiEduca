@@ -1,21 +1,33 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import '../styles/learning-path.css';
+import lumiMascot from '../assets/images/lumi-icon-02.png';
 
 const DADOS_TRILHAS = {
   matematica: {
-    nome: "Matemática",
-    cor: "#FF8C00",
+    nome: 'Matemática',
+    cor: '#FF8C00',
+    corSecundaria: '#FFF3E0',
+    descricao: 'Avance pelas fases e desbloqueie novos desafios matemáticos.',
+    mascoteTexto: 'Vamos resolver a próxima fase?',
     fases: [
-      { id: 1, nome: "Soma básica", path: "/exercicio/matematica" },
-      { id: 2, nome: "Subtração", path: null },
+      { id: 1, nome: 'Soma básica', path: '/exercicio/matematica' },
+      { id: 2, nome: 'Subtração', path: '/exercicio/matematica-fase-2' },
+      { id: 3, nome: 'Multiplicação', path: null },
+      { id: 4, nome: 'Divisão', path: null }
     ]
   },
   portugues: {
-    nome: "Português",
-    cor: "#3498db",
+    nome: 'Português',
+    cor: '#3498db',
+    corSecundaria: '#EAF4FB',
+    descricao: 'Siga pelas fases da leitura e fortaleça suas habilidades.',
+    mascoteTexto: 'Estou ansioso para aprender com você!',
     fases: [
-      { id: 1, nome: "Vogais", path: null },
-      { id: 2, nome: "Sílabas", path: null },
+      { id: 1, nome: 'Vogais', path: null },
+      { id: 2, nome: 'Sílabas', path: null },
+      { id: 3, nome: 'Palavras', path: null },
+      { id: 4, nome: 'Leitura curta', path: null }
     ]
   }
 };
@@ -25,136 +37,164 @@ export default function LearningPathPage() {
   const navigate = useNavigate();
   const dados = DADOS_TRILHAS[materia];
 
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-
-  useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 768);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
   if (!dados) {
     return (
-      <div style={{ padding: '20px', textAlign: 'center' }}>
+      <div className="learning-path-not-found">
         <h2>Trilha não encontrada!</h2>
-        <button onClick={() => navigate('/')}>Voltar ao Menu</button>
+        <button
+          type="button"
+          className="path-back-button"
+          onClick={() => navigate('/')}
+        >
+          ← Voltar
+        </button>
       </div>
     );
   }
 
-  return (
-    <div style={containerStyle}>
-      {/* Botão Voltar */}
-      <button 
-        onClick={() => navigate('/')} 
-        style={{ ...btnVoltarStyle, fontSize: isMobile ? '1.2rem' : '1rem' }}
-      >
-        ← Menu Inicial
-      </button>
-      
-      <h1 style={{ 
-        ...tituloStyle, 
-        color: dados.cor,
-        fontSize: isMobile ? '1.8rem' : '2.5rem'
-      }}>
-        Trilha de {dados.nome}
-      </h1>
-      
-      <div style={containerTrilhaStyle}>
-        {dados.fases.map((fase) => (
-          <div key={fase.id} style={wrapperFaseStyle}>
-            
-            <button 
-              onClick={() => fase.path && navigate(fase.path)}
-              disabled={!fase.path}
-              style={{ 
-                ...circuloStyle, 
-                backgroundColor: fase.path ? dados.cor : '#ccc',
-                cursor: fase.path ? 'pointer' : 'not-allowed',
-                width: isMobile ? 'min(25vw, 110px)' : '80px',
-                height: isMobile ? 'min(25vw, 110px)' : '80px',
-                fontSize: isMobile ? '2rem' : '1.5rem'
-              }}
-            >
-              {fase.id}
-            </button>
+  const progressoKey = `lumi_progresso_trilha_${materia}`;
+  const progressoSalvo = JSON.parse(localStorage.getItem(progressoKey) || '{}');
 
-            <p style={{ 
-              ...nomeFaseStyle, 
-              fontSize: isMobile ? '1.3rem' : '1.1rem' 
-            }}>
-              {fase.nome}
-            </p>
-            
+  const fasesComStatus = dados.fases.map((fase) => {
+    const concluida = !!progressoSalvo[`fase_${fase.id}`];
+
+    if (concluida) {
+      return { ...fase, status: 'completed' };
+    }
+
+    if (fase.id === 1) {
+      return {
+        ...fase,
+        status: fase.path ? 'available' : 'locked'
+      };
+    }
+
+    const faseAnteriorConcluida = !!progressoSalvo[`fase_${fase.id - 1}`];
+
+    if (faseAnteriorConcluida && fase.path) {
+      return { ...fase, status: 'available' };
+    }
+
+    return { ...fase, status: 'locked' };
+  });
+
+  const getNodeClassName = (status) => {
+    if (status === 'completed') return 'path-node completed';
+    if (status === 'available') return 'path-node available';
+    return 'path-node locked';
+  };
+
+  return (
+    <div className="learning-path-page page-wrapper">
+      <main className="learning-path-content">
+        <div className="learning-path-header">
+          <button
+            type="button"
+            className="path-back-button"
+            onClick={() => navigate('/')}
+          >
+            ← Voltar
+          </button>
+
+          <div
+            className="learning-path-hero"
+            style={{
+              '--trail-color': dados.cor,
+              '--trail-soft-color': dados.corSecundaria
+            }}
+          >
+            <span className="trail-badge">✨ Trilha de fases</span>
+
+            <h1 className="learning-path-title">Trilha de {dados.nome}</h1>
+
+            <p className="learning-path-subtitle">{dados.descricao}</p>
           </div>
-        ))}
-      </div>
+        </div>
+
+        <section
+          className="path-board modern-board"
+          style={{
+            '--trail-color': dados.cor,
+            '--trail-soft-color': dados.corSecundaria
+          }}
+        >
+          <svg
+            className="path-dashed-lines"
+            viewBox="0 0 1000 700"
+            preserveAspectRatio="none"
+            aria-hidden="true"
+          >
+            {/* 1 -> 2 */}
+            <path d="M235 105 C 380 120, 620 165, 760 185" />
+
+            {/* 2 -> 3 */}
+            <path d="M735 255 C 620 315, 430 305, 280 248" />
+
+            {/* entrada em 3 */}
+            <path d="M280 248 C 230 268, 205 300, 198 332" />
+
+            {/* 3 -> curva inferior */}
+            <path d="M198 332 C 198 420, 290 500, 405 525" />
+
+            {/* curva inferior */}
+            <path d="M405 525 C 560 535, 660 500, 700 486" />
+
+            {/* final reto até a fase 4 */}
+            <path d="M700 486 L 792 486" />
+          </svg>
+
+          <div className="path-mascot-placeholder">
+            <div className="path-mascot-bubble">{dados.mascoteTexto}</div>
+
+            <img
+              src={lumiMascot}
+              alt="Mascote Lumi guiando a trilha"
+              className="path-mascot-image"
+            />
+          </div>
+
+          <div className="path-list modern-path-list">
+            {fasesComStatus.map((fase, index) => {
+              const sideClass = index % 2 === 0 ? 'left' : 'right';
+              const isClickable = fase.status === 'available' && Boolean(fase.path);
+
+              return (
+                <div
+                  key={fase.id}
+                  className={`path-step ${sideClass} modern-step`}
+                >
+                  <div className="path-step-inner modern-step-inner">
+                    <button
+                      type="button"
+                      className={getNodeClassName(fase.status)}
+                      onClick={() => isClickable && navigate(fase.path)}
+                      disabled={!isClickable}
+                      aria-label={`Fase ${fase.id}: ${fase.nome}`}
+                    >
+                      <span className="path-node-number">{fase.id}</span>
+                    </button>
+
+                    <div className="path-step-info modern-step-info">
+                      <strong>{fase.nome}</strong>
+                      <span>
+                        {fase.status === 'available' && 'Disponível agora'}
+                        {fase.status === 'completed' && 'Concluída'}
+                        {fase.status === 'locked' && 'Bloqueada'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      </main>
+
+      <footer className="app-footer learning-path-footer">
+        <div className="app-footer-content learning-path-footer-content">
+          LumiEduca © 2026 • Aprender com tecnologia, diversão e propósito.
+        </div>
+      </footer>
     </div>
   );
 }
-
-// --- ESTILOS RESPONSIVOS ---
-
-const containerStyle = {
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  minHeight: '100vh',
-  backgroundColor: '#fff',
-  width: '100%',
-  padding: '5% 5% 10% 5%', 
-  boxSizing: 'border-box'
-};
-
-const btnVoltarStyle = {
-  alignSelf: 'flex-start',
-  background: 'none',
-  border: 'none',
-  color: '#888',
-  fontWeight: 'bold',
-  cursor: 'pointer',
-  marginBottom: '20px'
-};
-
-const tituloStyle = {
-  fontWeight: '900',
-  marginBottom: '40px',
-  textAlign: 'center',
-  width: '90%'
-};
-
-const containerTrilhaStyle = {
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  width: '100%'
-};
-
-const wrapperFaseStyle = {
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  marginBottom: '15%', 
-  width: '100%',
-  position: 'relative'
-};
-
-const circuloStyle = {
-  borderRadius: '50%',
-  border: 'none',
-  color: 'white',
-  fontWeight: 'bold',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  boxShadow: '0 6px 0 #bbb', // Sombra 3D sólida
-  transition: 'transform 0.1s'
-};
-
-const nomeFaseStyle = {
-  fontWeight: 'bold',
-  color: '#333',
-  textAlign: 'center',
-  marginTop: '15px',
-  width: '80%'
-};
