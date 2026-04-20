@@ -1,0 +1,353 @@
+.student-home {
+  background:
+    radial-gradient(circle at top left, rgba(255, 140, 0, 0.1), transparent 24%),
+    radial-gradient(circle at bottom right, rgba(52, 152, 219, 0.12), transparent 28%),
+    #f5f7fb;
+  min-height: 100vh;
+}
+
+.student-home-content {
+  width: 100%;
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 2.4rem 1.4rem 3.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.pending-alert {
+  width: 100%;
+  max-width: 520px;
+  align-self: center;
+  background: #fff8e1;
+  border: 1px solid #ffe082;
+  border-radius: 20px;
+  padding: 1rem 1rem;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.pending-alert-text {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #6b4f00;
+}
+
+.pending-alert-text p {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.pending-alert-icon {
+  font-size: 1.2rem;
+}
+
+.pending-alert-button {
+  white-space: nowrap;
+}
+
+.student-hero {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  align-items: center;
+  gap: 2rem;
+}
+
+.student-hero-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.student-hero-badge {
+  display: inline-flex;
+  align-self: flex-start;
+  background: #fff1dc;
+  color: #e67700;
+  border-radius: 999px;
+  padding: 0.7rem 1rem;
+  font-weight: 700;
+  box-shadow: 0 6px 14px rgba(255, 140, 0, 0.1);
+}
+
+.student-title {
+  margin: 0;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(2.5rem, 5vw, 4.4rem);
+  line-height: 0.98;
+  letter-spacing: -0.03em;
+  color: #ff8c00;
+}
+
+.student-subtitle {
+  margin: 0;
+  font-size: 1.45rem;
+  font-weight: 700;
+  color: #1f2f4d;
+}
+
+.student-description {
+  margin: 0;
+  max-width: 620px;
+  font-size: 1.08rem;
+  line-height: 1.75;
+  color: #5d6b80;
+}
+
+.student-hero-mascot {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.student-mascot-image {
+  width: min(100%, 360px);
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 12px 20px rgba(0, 0, 0, 0.1));
+}
+
+.student-trails-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.trail-card {
+  background: rgba(255, 255, 255, 0.97);
+  border-radius: 28px;
+  border: 1px solid rgba(255, 140, 0, 0.12);
+  box-shadow: 0 18px 38px rgba(31, 41, 55, 0.08);
+  overflow: hidden;
+}
+
+.trail-card-primary {
+  border-top: 6px solid #ff8c00;
+}
+
+.trail-card-secondary {
+  border-top: 6px solid #3498db;
+}
+
+.trail-card-content {
+  padding: 1.8rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.trail-tag {
+  align-self: flex-start;
+  padding: 0.45rem 0.8rem;
+  border-radius: 999px;
+  background: #fff3e0;
+  color: #e67700;
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.secondary-tag {
+  background: #eaf4fb;
+  color: #2c80b9;
+}
+
+.trail-title {
+  margin: 0;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 2rem;
+  line-height: 1.1;
+  color: #1f2f4d;
+}
+
+.trail-text {
+  margin: 0;
+  color: #66738a;
+  line-height: 1.75;
+  font-size: 1rem;
+}
+
+.trail-actions-grid {
+  display: grid;
+  gap: 1rem;
+  margin-top: 0.4rem;
+}
+
+.trail-subject-btn {
+  width: 100%;
+  border: none;
+  border-radius: 22px;
+  padding: 1rem 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.trail-subject-btn:hover:not(.disabled) {
+  transform: translateY(-2px);
+}
+
+.math-btn {
+  background: #ff8c00;
+  color: white;
+  box-shadow: 0 10px 20px rgba(255, 140, 0, 0.2);
+}
+
+.portuguese-btn {
+  background: #3498db;
+  color: white;
+  box-shadow: 0 10px 20px rgba(52, 152, 219, 0.2);
+}
+
+.trail-subject-btn.disabled {
+  opacity: 0.78;
+  cursor: not-allowed;
+}
+
+.trail-subject-icon {
+  font-size: 1.4rem;
+}
+
+.trail-subject-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.trail-subject-info strong {
+  font-size: 1.05rem;
+}
+
+.trail-subject-info span {
+  font-size: 0.9rem;
+  opacity: 0.95;
+}
+
+.professor-trail-button {
+  align-self: flex-start;
+  min-width: 160px;
+}
+
+.custom-trail-panel {
+  margin-top: 0.5rem;
+  padding: 1rem;
+  border-radius: 20px;
+  background: #f8fbff;
+  border: 1px dashed #b9d8ef;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.custom-trail-label {
+  font-weight: 700;
+  color: #1f2f4d;
+}
+
+.custom-trail-submit {
+  width: 100%;
+}
+
+.custom-trail-note {
+  margin: 0;
+  font-size: 0.92rem;
+  color: #6c7a91;
+  line-height: 1.6;
+}
+
+.student-footer {
+  background: #ff8c00;
+  border-top: 2px solid #e67700;
+}
+
+.student-footer-content {
+  color: white;
+  font-weight: 600;
+}
+
+@media (max-width: 1024px) {
+  .student-hero {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+
+  .student-hero-text {
+    align-items: center;
+  }
+
+  .student-hero-badge {
+    align-self: center;
+  }
+
+  .student-description {
+    max-width: 100%;
+  }
+
+  .student-trails-section {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .student-home-content {
+    padding: 1.6rem 1rem 2.6rem;
+  }
+
+  .pending-alert {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .pending-alert-button {
+    width: 100%;
+  }
+
+  .student-subtitle {
+    font-size: 1.2rem;
+  }
+
+  .student-description {
+    font-size: 1rem;
+  }
+
+  .trail-card-content {
+    padding: 1.2rem;
+  }
+
+  .trail-title {
+    font-size: 1.7rem;
+  }
+}
+
+@media (max-width: 560px) {
+  .student-title {
+    font-size: 2.6rem;
+  }
+
+  .student-subtitle {
+    font-size: 1.05rem;
+  }
+
+  .student-mascot-image {
+    width: min(100%, 260px);
+  }
+
+  .trail-subject-btn {
+    padding: 0.95rem 1rem;
+  }
+
+  .trail-subject-info strong {
+    font-size: 1rem;
+  }
+
+  .trail-subject-info span {
+    font-size: 0.85rem;
+  }
+}
