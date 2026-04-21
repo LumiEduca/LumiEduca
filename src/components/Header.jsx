@@ -31,9 +31,10 @@ export default function Header({ pontos = 0 }) {
   };
 
   const handleLogout = () => {
+    setMostrarModal(false);
     localStorage.removeItem('userType');
     localStorage.removeItem('userName');
-    navigate('/login');
+    window.location.href = '/login';
   };
 
   const handleInstall = async () => {
