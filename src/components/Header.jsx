@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import '../styles/header.css';
 import logoLumi from '../assets/images/lumi-logo.png';
 
 export default function Header({ pontos = 0 }) {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [mostrarModal, setMostrarModal] = useState(false);
@@ -43,7 +44,6 @@ export default function Header({ pontos = 0 }) {
 
     try {
       deferredPrompt.prompt();
-
       const { outcome } = await deferredPrompt.userChoice;
 
       if (outcome === 'accepted') {
@@ -55,17 +55,14 @@ export default function Header({ pontos = 0 }) {
     }
   };
 
+  const isActive = (path) => location.pathname === path;
+
   return (
     <>
       <header className="app-header">
         <div className="app-header-container">
-          {/* Logo */}
           <button className="header-brand" onClick={handleGoHome}>
-            <img
-              src={logoLumi}
-              alt="LumiEduca"
-              className="header-logo"
-            />
+            <img src={logoLumi} alt="LumiEduca" className="header-logo" />
 
             <span className="header-brand-text">
               <span className="brand-lumi">Lumi</span>
@@ -73,22 +70,33 @@ export default function Header({ pontos = 0 }) {
             </span>
           </button>
 
-          {/* Ações */}
           <div className="header-actions">
-            <div className="header-score">
-              <span className="score-icon">
-                {isProfessor ? '🌟∞' : '🌟'}
-              </span>
+            {isProfessor && (
+              <nav className="header-professor-nav">
+                <button
+                  type="button"
+                  className={`header-nav-chip ${isActive('/tarefas-recebidas') ? 'active' : ''}`}
+                  onClick={() => navigate('/tarefas-recebidas')}
+                >
+                  🗂️ Gestão de tarefas
+                </button>
 
-              <span className="score-value">
-                {isProfessor ? 'Gestão' : pontos}
-              </span>
+                <button
+                  type="button"
+                  className={`header-nav-chip ${isActive('/relatorio-professor') ? 'active' : ''}`}
+                  onClick={() => navigate('/relatorio-professor')}
+                >
+                  📊 Relatório
+                </button>
+              </nav>
+            )}
+
+            <div className="header-score">
+              <span className="score-icon">{isProfessor ? '🌟∞' : '🌟'}</span>
+              <span className="score-value">{isProfessor ? 'Gestão' : pontos}</span>
             </div>
 
-            <button
-              className="header-btn install-btn"
-              onClick={handleInstall}
-            >
+            <button className="header-btn install-btn" onClick={handleInstall}>
               Instalar
             </button>
 
@@ -102,17 +110,13 @@ export default function Header({ pontos = 0 }) {
         </div>
       </header>
 
-      {/* Modal sair */}
       {mostrarModal && (
         <div className="logout-overlay">
           <div className="logout-modal">
             <h3>Deseja realmente sair? 🦊</h3>
 
             <div className="logout-actions">
-              <button
-                className="confirm-btn"
-                onClick={handleLogout}
-              >
+              <button className="confirm-btn" onClick={handleLogout}>
                 Sim, sair
               </button>
 
