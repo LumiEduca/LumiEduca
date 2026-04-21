@@ -88,21 +88,29 @@
 
 .question-options-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
+  grid-template-columns: 1fr 1fr; /* Duas colunas iguais */
+  gap: 12px; /* Espaçamento entre botões */
+  width: 100%;
 }
 
 .question-option {
+  padding: 12px 8px;
   min-height: 96px;
   border-radius: 22px;
   border: 2px solid #e3e8f0;
   background: #ffffff;
   color: #1f2f4d;
   font-size: 1.5rem;
+  word-break: break-word;
   font-weight: 900;
   cursor: pointer;
   transition: 0.2s ease;
   box-shadow: 0 8px 0 #e9edf3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  line-height: 1.2;
 }
 
 .question-option:hover {
