@@ -1,0 +1,79 @@
+:root {
+  /* Cores principais */
+  --color-primary: #ff8c00;
+  --color-primary-dark: #e67700;
+  --color-primary-soft: #fff3e0;
+
+  --color-secondary: #3498db;
+  --color-secondary-dark: #2c80b9;
+  --color-secondary-soft: #eaf4fb;
+
+  --color-success: #27ae60;
+  --color-success-soft: #eafaf1;
+
+  --color-danger: #e74c3c;
+  --color-danger-dark: #c0392b;
+
+  --color-warning: #f4c542;
+
+  --color-white: #ffffff;
+  --color-background: #f5f7fb;
+  --color-surface: #ffffff;
+  --color-surface-alt: #f8fafc;
+
+  --color-text: #1f2937;
+  --color-text-light: #6b7280;
+  --color-text-muted: #9ca3af;
+
+  --color-border: #e5e7eb;
+  --color-border-strong: #d1d5db;
+
+  /* Tipografia */
+  --font-family-base: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  --font-family-title: Georgia, 'Times New Roman', serif;
+
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-md: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.5rem;
+  --font-size-2xl: 2.25rem;
+  --font-size-3xl: 3rem;
+
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  --line-height-base: 1.5;
+  --line-height-title: 1.2;
+
+  /* Espaçamento */
+  --space-2xs: 0.25rem;
+  --space-xs: 0.5rem;
+  --space-sm: 0.75rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+  --space-2xl: 3rem;
+  --space-3xl: 4rem;
+
+  /* Bordas e sombras */
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --radius-pill: 999px;
+
+  --shadow-sm: 0 4px 10px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 10px 24px rgba(0, 0, 0, 0.12);
+  --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.16);
+
+  /* Transições */
+  --transition-fast: 0.2s ease;
+  --transition-default: 0.3s ease;
+
+  /* Layout */
+  --container-width: 1200px;
+  --header-height: 84px;
+}
