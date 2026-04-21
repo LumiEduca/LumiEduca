@@ -1,11 +1,14 @@
 import React, { useMemo, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams , useLocation } from 'react-router-dom';
 import '../styles/question.css';
 import { bancoDeQuestoes } from '../data/questoes';
 
 export default function QuestionPage({ setPontos, concluidas, setConcluidas }) {
   const { materia } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const faseId = location.state?.faseId || 1;
 
   const questoes = bancoDeQuestoes[materia] || [];
 
@@ -39,6 +42,7 @@ export default function QuestionPage({ setPontos, concluidas, setConcluidas }) {
   const finalizarQuestionario = () => {
     let ganhouNaSessao = 0;
     let errouAlguma = false;
+    let totalErros = 0;
     const novasConcluidas = [...concluidas];
 
     const resumoQuestoes = questoes.map((questao) => {
@@ -53,6 +57,7 @@ export default function QuestionPage({ setPontos, concluidas, setConcluidas }) {
         }
       } else {
         errouAlguma = true;
+        totalErros += 1;
       }
 
       return {
@@ -67,21 +72,23 @@ export default function QuestionPage({ setPontos, concluidas, setConcluidas }) {
       };
     });
 
+    if (totalErros >= 2) {
+      alert(`Ops! Você cometeu ${totalErros} erros. Vamos tentar novamente? 🦊`);
+      navigate(`/trilha/${materia}`);
+      return;
+    }
+
     if (ganhouNaSessao > 0) {
       setPontos((prev) => prev + ganhouNaSessao);
     }
 
     setConcluidas([...new Set(novasConcluidas)]);
 
-    if (materia === 'matematica') {
-      const progressoKey = 'lumi_progresso_trilha_matematica';
-      const progressoAtual = JSON.parse(localStorage.getItem(progressoKey) || '{}');
+    const progressoKey = `lumi_progresso_trilha_${materia}`;
+    const progressoAtual = JSON.parse(localStorage.getItem(progressoKey) || '{}');
 
-      if (!errouAlguma) {
-        progressoAtual.fase_1 = true;
-        localStorage.setItem(progressoKey, JSON.stringify(progressoAtual));
-      }
-    }
+    progressoAtual[`fase_${faseId}`] = true; 
+    localStorage.setItem(progressoKey, JSON.stringify(progressoAtual));
 
     navigate('/vitoria', {
       state: {

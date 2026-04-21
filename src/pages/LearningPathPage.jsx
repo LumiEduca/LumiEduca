@@ -170,7 +170,7 @@ export default function LearningPathPage() {
                     <button
                       type="button"
                       className={getNodeClassName(fase.status)}
-                      onClick={() => isClickable && navigate(fase.path)}
+                      onClick={() => isClickable && navigate(fase.path, { state: { faseId: fase.id } })}
                       disabled={!isClickable}
                       aria-label={`Fase ${fase.id}: ${fase.nome}`}
                     >

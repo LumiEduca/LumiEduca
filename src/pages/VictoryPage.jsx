@@ -9,6 +9,16 @@ export default function VictoryPage() {
   const ganhosTrilha = location.state?.ganhos || 0;
   const errouAlguma = location.state?.errouAlguma || false;
   const resumoQuestoes = location.state?.resumoQuestoes || [];
+  const materia = location.state?.materia;
+
+  const handleContinuar = () => {
+    // Se tiver a matéria, volta para a trilha dela, senão, vai para home
+    if (materia) {
+      navigate(`/trilha/${materia}`);
+    } else {
+      navigate('/');
+    }
+  };
 
   return (
     <div className="victory-page page-wrapper">
@@ -70,7 +80,7 @@ export default function VictoryPage() {
           <button
             type="button"
             className="victory-button"
-            onClick={() => navigate('/')}
+            onClick={handleContinuar}
           >
             Continuar explorando
           </button>
