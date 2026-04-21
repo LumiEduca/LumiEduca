@@ -76,6 +76,11 @@ export default function VictoryPage() {
           </button>
         </section>
       </main>
+      <footer className="app-footer student-footer">
+        <div className="app-footer-content student-footer-content">
+          LumiEduca © 2026 • Aprender com tecnologia, diversão e propósito.
+          </div>
+      </footer>
     </div>
   );
 }

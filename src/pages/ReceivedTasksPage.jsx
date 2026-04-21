@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import '../styles/professor-pages.css';
 
 export default function ReceivedTasksPage({ setPontos }) {
   const navigate = useNavigate();
@@ -33,9 +34,7 @@ export default function ReceivedTasksPage({ setPontos }) {
   }, [isProfessor, nomeUsuario]);
 
   const resumo = useMemo(() => {
-    return {
-      total: tarefas.length
-    };
+    return { total: tarefas.length };
   }, [tarefas]);
 
   const finalizarTarefa = (tarefa) => {
@@ -91,30 +90,37 @@ export default function ReceivedTasksPage({ setPontos }) {
 
   if (tarefaAtiva) {
     return (
-      <div style={pageBgStyle}>
-        <div style={contentWrapStyle}>
-          <button onClick={() => setTarefaAtiva(null)} style={backButtonStyle}>
+      <div className="professor-page">
+        <main className="professor-page-content">
+          <button
+            type="button"
+            className="professor-back-button"
+            onClick={() => setTarefaAtiva(null)}
+          >
             ← Voltar para a lista
           </button>
 
-          <div style={questionCardStyle}>
-            <div style={badgeStyle}>{isProfessor ? 'Revisão do professor' : 'Desafio ativo'}</div>
+          <section className="professor-card orange-top professor-question-card">
+            <span className="professor-badge orange">
+              {isProfessor ? 'Revisão do professor' : 'Desafio ativo'}
+            </span>
 
-            <h1 style={questionTitleStyle}>{tarefaAtiva.pergunta}</h1>
+            <h1 className="professor-title">{tarefaAtiva.pergunta}</h1>
 
-            <p style={questionTextStyle}>
+            <p className="professor-text">
               {isProfessor
                 ? 'Revise a atividade como ela aparece para os alunos.'
                 : 'Escolha a alternativa correta e envie sua resposta.'}
             </p>
 
-            <div style={{ display: 'grid', gap: '12px', marginTop: '20px' }}>
+            <div className="professor-options-grid">
               {tarefaAtiva.opcoes.map((op, idx) => (
                 <button
                   key={idx}
+                  type="button"
+                  className="professor-option-btn"
                   onClick={() => !respondido && (setEscolha(idx), setRespondido(true))}
                   style={{
-                    ...optionButtonStyle,
                     backgroundColor: respondido
                       ? idx === tarefaAtiva.respostaCorreta
                         ? '#2ecc71'
@@ -129,8 +135,7 @@ export default function ReceivedTasksPage({ setPontos }) {
                       (idx === tarefaAtiva.respostaCorreta || idx === escolha)
                         ? 'white'
                         : '#1f2f4d',
-                    borderColor:
-                      escolha === idx && !respondido ? '#ff8c00' : '#e5ecf3',
+                    borderColor: escolha === idx && !respondido ? '#ff8c00' : '#e5ecf3',
                   }}
                 >
                   {op}
@@ -139,81 +144,119 @@ export default function ReceivedTasksPage({ setPontos }) {
             </div>
 
             {respondido && (
-              <button onClick={() => finalizarTarefa(tarefaAtiva)} style={confirmButtonStyle}>
-                {isProfessor ? 'Fechar revisão' : 'Concluir desafio'}
-              </button>
+              <div className="professor-action-row">
+                <button
+                  type="button"
+                  className="professor-btn green"
+                  onClick={() => finalizarTarefa(tarefaAtiva)}
+                >
+                  {isProfessor ? 'Fechar revisão' : 'Concluir desafio'}
+                </button>
+              </div>
             )}
+          </section>
+        </main>
+
+        <footer className="app-footer student-footer">
+          <div className="app-footer-content student-footer-content">
+            LumiEduca © 2026 • Aprender com tecnologia, diversão e propósito.
           </div>
-        </div>
+        </footer>
       </div>
     );
   }
 
   return (
-    <div style={pageBgStyle}>
-      <div style={contentWrapStyle}>
-        <div style={heroCardStyle}>
-          <div style={heroBadgeStyle}>
-            {isProfessor ? '🗂️ Painel de organização' : '🎓 Atividades personalizadas'}
-          </div>
+    <div className="professor-page">
+      <main className="professor-page-content">
+        <button
+          type="button"
+          className="professor-back-button"
+          onClick={() => navigate('/')}
+        >
+          ← Voltar ao menu
+        </button>
 
-          <h1 style={heroTitleStyle}>
+        <section className="professor-card blue-top">
+          <span className="professor-badge">
+            {isProfessor ? '🗂️ Painel de organização' : '🎓 Atividades personalizadas'}
+          </span>
+
+          <h1 className="professor-title">
             {isProfessor ? 'Gestão de desafios' : 'Desafios do professor'}
           </h1>
 
-          <p style={heroTextStyle}>
+          <p className="professor-text">
             {isProfessor
               ? 'Crie, revise e organize atividades personalizadas para os alunos.'
               : 'Resolva as atividades enviadas pelo professor e acompanhe seu progresso.'}
           </p>
 
-          <div style={summaryCardStyle}>
-            <span style={summaryLabelStyle}>
-              {isProfessor ? 'Desafios cadastrados' : 'Desafios pendentes'}
-            </span>
-            <strong style={summaryValueStyle}>{resumo.total}</strong>
+          <div className="professor-summary-grid">
+            <div className="professor-summary-item">
+              <span className="professor-summary-label">
+                {isProfessor ? 'Desafios cadastrados' : 'Desafios pendentes'}
+              </span>
+              <strong className="professor-summary-value">{resumo.total}</strong>
+            </div>
           </div>
 
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginTop: '18px' }}>
+          <div className="professor-action-row">
             {isProfessor && (
-              <button onClick={() => navigate('/criar-tarefa')} style={primaryButtonStyle}>
+              <button
+                type="button"
+                className="professor-btn primary"
+                onClick={() => navigate('/criar-tarefa')}
+              >
                 + Criar novo desafio
               </button>
             )}
 
-            <button onClick={() => navigate('/')} style={secondaryButtonStyle}>
+            <button
+              type="button"
+              className="professor-btn secondary"
+              onClick={() => navigate('/')}
+            >
               Voltar ao menu
             </button>
           </div>
-        </div>
+        </section>
 
-        <div style={listWrapStyle}>
+        <div className="professor-list">
           {tarefas.length === 0 ? (
-            <div style={emptyCardStyle}>
+            <div className="professor-empty">
               {isProfessor
                 ? 'Nenhuma tarefa criada ainda.'
                 : 'Nenhum desafio pendente no momento.'}
             </div>
           ) : (
             tarefas.map((t) => (
-              <div key={t.id} style={taskCardStyle}>
+              <div key={t.id} className="professor-task-card">
                 <div style={{ flex: 1 }}>
-                  <strong style={taskQuestionStyle}>{t.pergunta}</strong>
-                  <p style={taskMetaStyle}>
+                  <h3 className="professor-task-title">{t.pergunta}</h3>
+                  <p className="professor-task-meta">
                     {isProfessor
                       ? 'Revise ou exclua a atividade cadastrada.'
                       : 'Abra o desafio e responda quando estiver pronto.'}
                   </p>
                 </div>
 
-                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                <div className="professor-action-row" style={{ marginTop: 0 }}>
                   {isProfessor && (
-                    <button onClick={() => excluirTarefa(t.id)} style={dangerOutlineButtonStyle}>
+                    <button
+                      type="button"
+                      className="professor-btn outline-danger"
+                      onClick={() => excluirTarefa(t.id)}
+                    >
                       Excluir
                     </button>
                   )}
 
-                  <button onClick={() => setTarefaAtiva(t)} style={primaryButtonStyle}>
+                  <button
+                    type="button"
+                    className="professor-btn orange"
+                    onClick={() => setTarefaAtiva(t)}
+                  >
                     {isProfessor ? 'Revisar' : 'Jogar'}
                   </button>
                 </div>
@@ -221,220 +264,13 @@ export default function ReceivedTasksPage({ setPontos }) {
             ))
           )}
         </div>
-      </div>
+      </main>
+
+      <footer className="app-footer student-footer">
+        <div className="app-footer-content student-footer-content">
+          LumiEduca © 2026 • Aprender com tecnologia, diversão e propósito.
+        </div>
+      </footer>
     </div>
   );
 }
-
-const pageBgStyle = {
-  minHeight: '100vh',
-  background:
-    'radial-gradient(circle at top left, rgba(255,140,0,0.10), transparent 24%), radial-gradient(circle at bottom right, rgba(52,152,219,0.12), transparent 28%), #f5f7fb',
-  padding: '32px 16px',
-};
-
-const contentWrapStyle = {
-  maxWidth: '1180px',
-  margin: '0 auto',
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '20px',
-};
-
-const heroCardStyle = {
-  background: 'rgba(255,255,255,0.97)',
-  borderRadius: '30px',
-  padding: '28px',
-  boxShadow: '0 18px 38px rgba(31,41,55,0.08)',
-  borderTop: '6px solid #3498db',
-};
-
-const heroBadgeStyle = {
-  display: 'inline-flex',
-  padding: '8px 14px',
-  borderRadius: '999px',
-  background: '#eaf4fb',
-  color: '#2c80b9',
-  fontWeight: 800,
-  fontSize: '0.9rem',
-  marginBottom: '16px',
-};
-
-const heroTitleStyle = {
-  margin: '0 0 12px',
-  color: '#1f2f4d',
-  fontSize: 'clamp(2rem, 4vw, 3rem)',
-  lineHeight: 1.05,
-};
-
-const heroTextStyle = {
-  margin: '0',
-  color: '#66738a',
-  lineHeight: 1.7,
-  fontSize: '1rem',
-};
-
-const summaryCardStyle = {
-  marginTop: '18px',
-  background: 'white',
-  borderRadius: '24px',
-  padding: '18px',
-  boxShadow: '0 10px 24px rgba(31,41,55,0.06)',
-  maxWidth: '240px',
-};
-
-const summaryLabelStyle = {
-  display: 'inline-flex',
-  padding: '6px 10px',
-  borderRadius: '999px',
-  background: '#f4f8fb',
-  color: '#2c80b9',
-  fontWeight: 800,
-  fontSize: '0.84rem',
-};
-
-const summaryValueStyle = {
-  display: 'block',
-  marginTop: '14px',
-  fontSize: '2.8rem',
-  lineHeight: 1,
-  color: '#1f2f4d',
-};
-
-const listWrapStyle = {
-  display: 'grid',
-  gap: '14px',
-};
-
-const emptyCardStyle = {
-  background: 'rgba(255,255,255,0.97)',
-  borderRadius: '24px',
-  padding: '28px',
-  color: '#66738a',
-  boxShadow: '0 10px 24px rgba(31,41,55,0.06)',
-  textAlign: 'center',
-};
-
-const taskCardStyle = {
-  background: 'rgba(255,255,255,0.97)',
-  borderRadius: '24px',
-  padding: '20px',
-  boxShadow: '0 10px 24px rgba(31,41,55,0.06)',
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  gap: '16px',
-  flexWrap: 'wrap',
-};
-
-const taskQuestionStyle = {
-  display: 'block',
-  color: '#1f2f4d',
-  fontSize: '1.05rem',
-  marginBottom: '6px',
-};
-
-const taskMetaStyle = {
-  margin: 0,
-  color: '#66738a',
-  lineHeight: 1.6,
-};
-
-const questionCardStyle = {
-  background: 'rgba(255,255,255,0.97)',
-  borderRadius: '30px',
-  padding: '28px',
-  boxShadow: '0 18px 38px rgba(31,41,55,0.08)',
-  borderTop: '6px solid #ff8c00',
-  maxWidth: '720px',
-  margin: '0 auto',
-  width: '100%',
-};
-
-const badgeStyle = {
-  display: 'inline-flex',
-  padding: '8px 14px',
-  borderRadius: '999px',
-  background: '#fff3e0',
-  color: '#ff8c00',
-  fontWeight: 800,
-  fontSize: '0.9rem',
-  marginBottom: '16px',
-};
-
-const questionTitleStyle = {
-  margin: '0 0 12px',
-  color: '#1f2f4d',
-  fontSize: 'clamp(1.8rem, 4vw, 2.6rem)',
-  lineHeight: 1.1,
-};
-
-const questionTextStyle = {
-  margin: 0,
-  color: '#66738a',
-  lineHeight: 1.7,
-};
-
-const optionButtonStyle = {
-  padding: '14px',
-  borderRadius: '16px',
-  fontWeight: 800,
-  border: '2px solid #e5ecf3',
-  cursor: 'pointer',
-  background: 'white',
-};
-
-const backButtonStyle = {
-  alignSelf: 'flex-start',
-  border: 'none',
-  background: '#ffffff',
-  color: '#1f2f4d',
-  padding: '0.9rem 1.2rem',
-  borderRadius: '16px',
-  fontWeight: 800,
-  cursor: 'pointer',
-  boxShadow: '0 10px 20px rgba(31, 41, 55, 0.08)',
-};
-
-const confirmButtonStyle = {
-  marginTop: '20px',
-  border: 'none',
-  borderRadius: '16px',
-  padding: '14px 22px',
-  background: '#2ecc71',
-  color: 'white',
-  fontWeight: 900,
-  cursor: 'pointer',
-  boxShadow: '0 6px 0 #27ae60',
-};
-
-const primaryButtonStyle = {
-  border: 'none',
-  borderRadius: '16px',
-  padding: '14px 22px',
-  background: '#3498db',
-  color: 'white',
-  fontWeight: 900,
-  cursor: 'pointer',
-  boxShadow: '0 6px 0 #2980b9',
-};
-
-const secondaryButtonStyle = {
-  border: 'none',
-  borderRadius: '16px',
-  padding: '14px 22px',
-  background: '#eef2f7',
-  color: '#1f2f4d',
-  fontWeight: 800,
-  cursor: 'pointer',
-};
-
-const dangerOutlineButtonStyle = {
-  border: '2px solid #ff4d4d',
-  borderRadius: '16px',
-  padding: '12px 18px',
-  background: 'white',
-  color: '#ff4d4d',
-  fontWeight: 800,
-  cursor: 'pointer',
-};
