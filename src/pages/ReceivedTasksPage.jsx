@@ -1,26 +1,26 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import '../styles/professor-pages.css';
 
 export default function ReceivedTasksPage({ setPontos }) {
   const navigate = useNavigate();
   const [tarefas, setTarefas] = useState([]);
-  const userType = localStorage.getItem('userType');
-  const nomeUsuario = localStorage.getItem('userName') || 'visitante';
-
   const [tarefaAtiva, setTarefaAtiva] = useState(null);
   const [respondido, setRespondido] = useState(false);
   const [escolha, setEscolha] = useState(null);
 
+  const userType = localStorage.getItem('userType');
+  const nomeUsuario = localStorage.getItem('userName') || 'visitante';
+  const isProfessor = userType === 'professor';
+
   useEffect(() => {
     const carregarDados = () => {
       const todas = JSON.parse(localStorage.getItem('lumi_tarefas') || '[]');
-
-      // Chave de conclusão única por aluno
       const concluidas = JSON.parse(
         localStorage.getItem(`lumi_tarefas_concluidas_${nomeUsuario}`) || '[]'
       );
 
-      if (userType === 'professor') {
+      if (isProfessor) {
         setTarefas(todas);
       } else {
         const pendentes = todas.filter(
@@ -31,18 +31,20 @@ export default function ReceivedTasksPage({ setPontos }) {
     };
 
     carregarDados();
-  }, [userType, nomeUsuario]);
+  }, [isProfessor, nomeUsuario]);
+
+  const resumo = useMemo(() => {
+    return { total: tarefas.length };
+  }, [tarefas]);
 
   const finalizarTarefa = (tarefa) => {
     const indiceEscolhido = Number(escolha);
     const acertou = indiceEscolhido === Number(tarefa.respostaCorreta);
 
-    // 1. Ganho de Pontos (Sincronizado com App.jsx)
-    if (acertou && userType !== 'professor') {
+    if (acertou && !isProfessor) {
       setPontos((prev) => prev + 10);
     }
 
-    // 2. Histórico para o Professor (Global para o relatório)
     const historico = JSON.parse(localStorage.getItem('lumi_historico_tarefas') || '[]');
 
     historico.unshift({
@@ -59,16 +61,13 @@ export default function ReceivedTasksPage({ setPontos }) {
 
     localStorage.setItem('lumi_historico_tarefas', JSON.stringify(historico));
 
-    // 3. Persistência de Conclusão (Única por aluno)
-    if (userType !== 'professor') {
+    if (!isProfessor) {
       const chaveConcluidas = `lumi_tarefas_concluidas_${nomeUsuario}`;
       const feitas = JSON.parse(localStorage.getItem(chaveConcluidas) || '[]');
 
       feitas.push({ idTarefa: tarefa.id });
-
       localStorage.setItem(chaveConcluidas, JSON.stringify(feitas));
 
-      // Remove da lista visual
       setTarefas((prev) => prev.filter((t) => t.id !== tarefa.id));
     }
 
@@ -76,11 +75,7 @@ export default function ReceivedTasksPage({ setPontos }) {
     setRespondido(false);
     setEscolha(null);
 
-    alert(
-      acertou
-        ? 'Incrível! Você ganhou 10 estrelas! 🌟'
-        : 'Resposta enviada! 💪'
-    );
+    alert(acertou ? 'Incrível! Você ganhou 10 estrelas! 🌟' : 'Resposta enviada! 💪');
   };
 
   const excluirTarefa = (id) => {
@@ -93,226 +88,189 @@ export default function ReceivedTasksPage({ setPontos }) {
     }
   };
 
-  // Renderização da Questão Ativa
   if (tarefaAtiva) {
     return (
-      <div style={containerStyle}>
-        <div style={cardQuestaoStyle}>
-          <h2>{tarefaAtiva.pergunta}</h2>
-
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '10px',
-              marginTop: '20px',
-            }}
+      <div className="professor-page">
+        <main className="professor-page-content">
+          <button
+            type="button"
+            className="professor-back-button"
+            onClick={() => setTarefaAtiva(null)}
           >
-            {tarefaAtiva.opcoes.map((op, idx) => (
-              <button
-                key={idx}
-                onClick={() =>
-                  !respondido &&
-                  (setEscolha(idx) || setRespondido(true))
-                }
-                style={{
-                  ...btnOpcaoStyle,
-                  backgroundColor: respondido
-                    ? idx === tarefaAtiva.respostaCorreta
-                      ? '#2ecc71'
-                      : idx === escolha
-                      ? '#e74c3c'
-                      : 'white'
-                    : escolha === idx
-                    ? '#eee'
-                    : 'white',
-                  color:
-                    respondido &&
-                    (idx === tarefaAtiva.respostaCorreta ||
-                      idx === escolha)
-                      ? 'white'
-                      : 'black',
-                }}
-              >
-                {op}
-              </button>
-            ))}
-          </div>
+            ← Voltar para a lista
+          </button>
 
-          {respondido && (
-            <button
-              onClick={() => finalizarTarefa(tarefaAtiva)}
-              style={btnFinalizarStyle}
-            >
-              CONCLUIR DESAFIO
-            </button>
-          )}
-        </div>
+          <section className="professor-card orange-top professor-question-card">
+            <span className="professor-badge orange">
+              {isProfessor ? 'Revisão do professor' : 'Desafio ativo'}
+            </span>
+
+            <h1 className="professor-title">{tarefaAtiva.pergunta}</h1>
+
+            <p className="professor-text">
+              {isProfessor
+                ? 'Revise a atividade como ela aparece para os alunos.'
+                : 'Escolha a alternativa correta e envie sua resposta.'}
+            </p>
+
+            <div className="professor-options-grid">
+              {tarefaAtiva.opcoes.map((op, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  className="professor-option-btn"
+                  onClick={() => !respondido && (setEscolha(idx), setRespondido(true))}
+                  style={{
+                    backgroundColor: respondido
+                      ? idx === tarefaAtiva.respostaCorreta
+                        ? '#2ecc71'
+                        : idx === escolha
+                        ? '#e74c3c'
+                        : 'white'
+                      : escolha === idx
+                      ? '#fff3e0'
+                      : 'white',
+                    color:
+                      respondido &&
+                      (idx === tarefaAtiva.respostaCorreta || idx === escolha)
+                        ? 'white'
+                        : '#1f2f4d',
+                    borderColor: escolha === idx && !respondido ? '#ff8c00' : '#e5ecf3',
+                  }}
+                >
+                  {op}
+                </button>
+              ))}
+            </div>
+
+            {respondido && (
+              <div className="professor-action-row">
+                <button
+                  type="button"
+                  className="professor-btn green"
+                  onClick={() => finalizarTarefa(tarefaAtiva)}
+                >
+                  {isProfessor ? 'Fechar revisão' : 'Concluir desafio'}
+                </button>
+              </div>
+            )}
+          </section>
+        </main>
+
+        <footer className="app-footer student-footer">
+          <div className="app-footer-content student-footer-content">
+            LumiEduca © 2026 • Aprender com tecnologia, diversão e propósito.
+          </div>
+        </footer>
       </div>
     );
   }
 
-  // Renderização da Lista de Tarefas
   return (
-    <div style={containerStyle}>
-      <h1 style={{ color: '#FF8C00' }}>
-        {userType === 'professor'
-          ? 'Gestão de Desafios ⚙️'
-          : 'Desafios do Mestre 🎓'}
-      </h1>
-
-      {/* BOTÃO EXCLUSIVO PARA PROFESSOR CRIAR NOVA TAREFA */}
-      {userType === 'professor' && (
+    <div className="professor-page">
+      <main className="professor-page-content">
         <button
-          onClick={() => navigate('/criar-tarefa')}
-          style={btnNovaTarefaStyle}
+          type="button"
+          className="professor-back-button"
+          onClick={() => navigate('/')}
         >
-          ➕ CRIAR NOVO DESAFIO
+          ← Voltar ao menu
         </button>
-      )}
 
-      <div style={gridTarefasStyle}>
-        {tarefas.length === 0 ? (
-          <p>Nenhuma tarefa criada ainda.</p>
-        ) : (
-          tarefas.map((t) => (
-            <div key={t.id} style={itemTarefaStyle}>
-              <div style={{ flex: 1 }}>
-                <strong style={{ display: 'block' }}>
-                  {t.pergunta.substring(0, 25)}...
-                </strong>
-              </div>
+        <section className="professor-card blue-top">
+          <span className="professor-badge">
+            {isProfessor ? '🗂️ Painel de organização' : '🎓 Atividades personalizadas'}
+          </span>
 
-              <div style={{ display: 'flex', gap: '10px' }}>
-                {userType === 'professor' && (
-                  <button
-                    onClick={() => excluirTarefa(t.id)}
-                    style={btnLixeiraStyle}
-                  >
-                    🗑️
-                  </button>
-                )}
+          <h1 className="professor-title">
+            {isProfessor ? 'Gestão de desafios' : 'Desafios do professor'}
+          </h1>
 
-                <button
-                  onClick={() => setTarefaAtiva(t)}
-                  style={btnJogarStyle}
-                >
-                  {userType === 'professor' ? 'REVISAR' : 'JOGAR'}
-                </button>
-              </div>
+          <p className="professor-text">
+            {isProfessor
+              ? 'Crie, revise e organize atividades personalizadas para os alunos.'
+              : 'Resolva as atividades enviadas pelo professor e acompanhe seu progresso.'}
+          </p>
+
+          <div className="professor-summary-grid">
+            <div className="professor-summary-item">
+              <span className="professor-summary-label">
+                {isProfessor ? 'Desafios cadastrados' : 'Desafios pendentes'}
+              </span>
+              <strong className="professor-summary-value">{resumo.total}</strong>
             </div>
-          ))
-        )}
-      </div>
+          </div>
 
-      <button
-        onClick={() => navigate('/')}
-        style={btnVoltarStyle}
-      >
-        VOLTAR AO MENU
-      </button>
+          <div className="professor-action-row">
+            {isProfessor && (
+              <button
+                type="button"
+                className="professor-btn primary"
+                onClick={() => navigate('/criar-tarefa')}
+              >
+                + Criar novo desafio
+              </button>
+            )}
+
+            <button
+              type="button"
+              className="professor-btn secondary"
+              onClick={() => navigate('/')}
+            >
+              Voltar ao menu
+            </button>
+          </div>
+        </section>
+
+        <div className="professor-list">
+          {tarefas.length === 0 ? (
+            <div className="professor-empty">
+              {isProfessor
+                ? 'Nenhuma tarefa criada ainda.'
+                : 'Nenhum desafio pendente no momento.'}
+            </div>
+          ) : (
+            tarefas.map((t) => (
+              <div key={t.id} className="professor-task-card">
+                <div style={{ flex: 1 }}>
+                  <h3 className="professor-task-title">{t.pergunta}</h3>
+                  <p className="professor-task-meta">
+                    {isProfessor
+                      ? 'Revise ou exclua a atividade cadastrada.'
+                      : 'Abra o desafio e responda quando estiver pronto.'}
+                  </p>
+                </div>
+
+                <div className="professor-action-row" style={{ marginTop: 0 }}>
+                  {isProfessor && (
+                    <button
+                      type="button"
+                      className="professor-btn outline-danger"
+                      onClick={() => excluirTarefa(t.id)}
+                    >
+                      Excluir
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    className="professor-btn orange"
+                    onClick={() => setTarefaAtiva(t)}
+                  >
+                    {isProfessor ? 'Revisar' : 'Jogar'}
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </main>
+
+      <footer className="app-footer student-footer">
+        <div className="app-footer-content student-footer-content">
+          LumiEduca © 2026 • Aprender com tecnologia, diversão e propósito.
+        </div>
+      </footer>
     </div>
   );
 }
-
-// --- ESTILOS ---
-const containerStyle = {
-  padding: '40px 20px',
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  minHeight: '100vh',
-  backgroundColor: '#f5f5f5',
-};
-
-const gridTarefasStyle = {
-  width: '100%',
-  maxWidth: '500px',
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '15px',
-  marginTop: '20px',
-};
-
-const itemTarefaStyle = {
-  backgroundColor: 'white',
-  padding: '15px 20px',
-  borderRadius: '15px',
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  boxShadow: '0 4px 10px rgba(0,0,0,0.05)',
-};
-
-const btnJogarStyle = {
-  backgroundColor: '#FF8C00',
-  color: 'white',
-  border: 'none',
-  padding: '8px 15px',
-  borderRadius: '10px',
-  fontWeight: 'bold',
-  cursor: 'pointer',
-  boxShadow: '0 3px 0 #CC7000',
-};
-
-const btnVoltarStyle = {
-  marginTop: '30px',
-  border: 'none',
-  background: 'none',
-  color: '#888',
-  cursor: 'pointer',
-  fontWeight: 'bold',
-};
-
-const cardQuestaoStyle = {
-  backgroundColor: 'white',
-  padding: '30px',
-  borderRadius: '25px',
-  width: '90%',
-  maxWidth: '400px',
-  textAlign: 'center',
-  boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
-};
-
-const btnOpcaoStyle = {
-  padding: '12px',
-  borderRadius: '10px',
-  fontWeight: 'bold',
-  border: '2px solid #eee',
-  cursor: 'pointer',
-};
-
-const btnFinalizarStyle = {
-  marginTop: '20px',
-  width: '100%',
-  padding: '12px',
-  backgroundColor: '#2ecc71',
-  color: 'white',
-  border: 'none',
-  borderRadius: '10px',
-  fontWeight: 'bold',
-  cursor: 'pointer',
-  boxShadow: '0 4px 0 #27ae60',
-};
-
-const btnNovaTarefaStyle = {
-  backgroundColor: '#3498db',
-  color: 'white',
-  border: 'none',
-  padding: '15px 25px',
-  borderRadius: '15px',
-  fontWeight: 'bold',
-  cursor: 'pointer',
-  marginBottom: '20px',
-  width: '100%',
-  maxWidth: '500px',
-  boxShadow: '0 4px 0 #2980b9',
-};
-
-const btnLixeiraStyle = {
-  backgroundColor: 'transparent',
-  border: '2px solid #ff4d4d',
-  borderRadius: '10px',
-  cursor: 'pointer',
-  padding: '5px 8px',
-};

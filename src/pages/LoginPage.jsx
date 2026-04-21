@@ -1,56 +1,163 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import '../styles/login.css';
+import lumiLogo from '../assets/images/lumi-logo.png';
+import lumiLogin from '../assets/images/lumi-login.png';
 
 export default function LoginPage() {
+  const [selectedProfile, setSelectedProfile] = useState('professor');
   const [usuario, setUsuario] = useState('');
   const [senha, setSenha] = useState('');
-  const navigate = useNavigate();
+  const [errorMessage, setErrorMessage] = useState('');
 
   const handleLogin = (e) => {
     e.preventDefault();
-    
+
     const SENHA_PROF = process.env.REACT_APP_SENHA_PROFESSOR;
     const SENHA_ESTUDANTE = process.env.REACT_APP_SENHA_ESTUDANTE;
 
-    if (usuario === 'professor' && senha === SENHA_PROF) {
-      localStorage.setItem('userType', 'professor');
-      localStorage.setItem('userName', 'Professor');
-      window.location.href = '/';
-    } else if (senha === SENHA_ESTUDANTE && usuario.trim() !== '') {
-      // Aceita estudante, estudante2, ou qualquer nome com a senha correta
-      localStorage.setItem('userType', 'estudante');
-      localStorage.setItem('userName', usuario);
-      window.location.href = '/';
-    } else {
-      alert('Usuário ou senha incorretos!');
+    if (!selectedProfile) {
+      setErrorMessage('Selecione se você é professor ou estudante para continuar.');
+      return;
+    }
+
+    if (selectedProfile === 'professor') {
+      if (usuario.trim().toLowerCase() === 'professor' && senha === SENHA_PROF) {
+        localStorage.setItem('userType', 'professor');
+        localStorage.setItem('userName', 'Professor');
+        window.location.href = '/';
+        return;
+      }
+
+      setErrorMessage('Credenciais de professor inválidas.');
+      return;
+    }
+
+    if (selectedProfile === 'estudante') {
+      if (senha === SENHA_ESTUDANTE && usuario.trim() !== '') {
+        localStorage.setItem('userType', 'estudante');
+        localStorage.setItem('userName', usuario.trim());
+        window.location.href = '/';
+        return;
+      }
+
+      setErrorMessage('Nome de usuário ou senha de estudante inválidos.');
     }
   };
 
   return (
-    <div style={fundoStyle}>
-      <form onSubmit={handleLogin} style={cardStyle}>
-        <h2 style={{ color: '#FF8C00', marginBottom: '20px' }}>Entrar no LumiEduca</h2>
-        <input 
-          type="text" 
-          placeholder="Nome de Usuário" 
-          style={inputStyle}
-          onChange={(e) => setUsuario(e.target.value)}
-          required
-        />
-        <input 
-          type="password" 
-          placeholder="Senha" 
-          style={inputStyle}
-          onChange={(e) => setSenha(e.target.value)}
-          required
-        />
-        <button type="submit" style={btnStyle}>ENTRAR</button>
-      </form>
+    <div className="page-wrapper login-page">
+      <main className="login-main">
+        <section className="login-hero">
+          <div className="login-brand">
+            <img src={lumiLogo} alt="Ícone LumiEduca" className="login-brand-icon" />
+
+            <div className="login-brand-text">
+              <span className="login-brand-lumi">Lumi</span>
+              <span className="login-brand-educa">Educa</span>
+            </div>
+          </div>
+
+          <h1 className="login-title">Bem-vindo ao LumiEduca</h1>
+
+          <p className="login-subtitle">
+            Trilhe seu caminho na educação aprendendo, explorando e se divertindo.
+          </p>
+        </section>
+
+        <section className="login-form-section">
+          <div className="login-card">
+            <div className="login-card-mascot">
+              <img
+                src={lumiLogin}
+                alt="Mascote Lumi apoiado no card"
+                className="login-card-mascot-image"
+              />
+            </div>
+
+            <h2 className="login-card-title">Acesse sua jornada</h2>
+
+            <p className="login-card-text">
+              Escolha seu perfil e entre para continuar experiência no LumiEduca.
+            </p>
+
+            <form onSubmit={handleLogin} className="login-form">
+              <div className="login-profile-selector">
+                <span className="login-label">Selecione seu tipo de perfil:</span>
+
+                <div className="login-profile-options">
+                  <button
+                    type="button"
+                    className={`profile-option ${selectedProfile === 'professor' ? 'active' : ''}`}
+                    onClick={() => {
+                      setSelectedProfile('professor');
+                      setErrorMessage('');
+                    }}
+                  >
+                    Professor
+                  </button>
+
+                  <button
+                    type="button"
+                    className={`profile-option ${selectedProfile === 'estudante' ? 'active' : ''}`}
+                    onClick={() => {
+                      setSelectedProfile('estudante');
+                      setErrorMessage('');
+                    }}
+                  >
+                    Estudante
+                  </button>
+                </div>
+              </div>
+
+              <div className="login-field">
+                <label htmlFor="usuario" className="login-label">
+                  Usuário
+                </label>
+                <input
+                  id="usuario"
+                  type="text"
+                  placeholder="Digite seu nome de usuário"
+                  value={usuario}
+                  onChange={(e) => {
+                    setUsuario(e.target.value);
+                    setErrorMessage('');
+                  }}
+                  required
+                />
+              </div>
+
+              <div className="login-field">
+                <label htmlFor="senha" className="login-label">
+                  Senha
+                </label>
+                <input
+                  id="senha"
+                  type="password"
+                  placeholder="Digite sua senha"
+                  value={senha}
+                  onChange={(e) => {
+                    setSenha(e.target.value);
+                    setErrorMessage('');
+                  }}
+                  required
+                />
+              </div>
+
+              {errorMessage && <p className="login-error">{errorMessage}</p>}
+
+              <button type="submit" className="login-submit">
+                Entrar
+              </button>
+            </form>
+          </div>
+        </section>
+      </main>
+
+      <footer className="login-footer">
+        <div className="login-footer-content">
+          LumiEduca © 2026 • Aprender com tecnologia, diversão e propósito.
+        </div>
+      </footer>
     </div>
   );
 }
-
-const fundoStyle = { display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', backgroundColor: '#f5f5f5' };
-const cardStyle = { backgroundColor: 'white', padding: '40px', borderRadius: '25px', width: '90%', maxWidth: '380px', textAlign: 'center', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' };
-const inputStyle = { width: '100%', padding: '15px', marginBottom: '15px', borderRadius: '12px', border: '2px solid #eee', boxSizing: 'border-box', fontSize: '1rem' };
-const btnStyle = { width: '100%', padding: '15px', backgroundColor: '#FF8C00', color: 'white', border: 'none', borderRadius: '12px', fontWeight: 'bold', cursor: 'pointer', fontSize: '1.1rem', boxShadow: '0 5px 0 #CC7000' };

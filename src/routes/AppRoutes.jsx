@@ -16,52 +16,68 @@ export default function AppRoutes({
   concluidas,
   setConcluidas,
 }) {
+  const isAuthenticated = Boolean(userType);
+  const isProfessor = userType === 'professor';
+
   return (
     <Routes>
-      <Route path="/" element={userType ? <HomePage /> : <Navigate to="/login" />} />
-      <Route path="/login" element={<LoginPage />} />
-
       <Route
-        path="/criar-tarefa"
-        element={userType === 'professor' ? <CreateTaskPage /> : <Navigate to="/" />}
+        path="/"
+        element={isAuthenticated ? <HomePage /> : <Navigate to="/login" replace />}
       />
 
       <Route
-        path="/relatorio"
-        element={userType === 'professor' ? <TeacherReportPage /> : <Navigate to="/" />}
+        path="/login"
+        element={!isAuthenticated ? <LoginPage /> : <Navigate to="/" replace />}
+      />
+
+      <Route
+        path="/criar-tarefa"
+        element={isProfessor ? <CreateTaskPage /> : <Navigate to="/" replace />}
+      />
+
+      <Route
+        path="/relatorio-professor"
+        element={isProfessor ? <TeacherReportPage /> : <Navigate to="/" replace />}
       />
 
       <Route
         path="/tarefas-recebidas"
         element={
-          userType ? <ReceivedTasksPage setPontos={setPontos} /> : <Navigate to="/login" />
+          isAuthenticated ? (
+            <ReceivedTasksPage setPontos={setPontos} />
+          ) : (
+            <Navigate to="/login" replace />
+          )
         }
       />
 
       <Route
         path="/trilha/:materia"
-        element={userType ? <LearningPathPage /> : <Navigate to="/login" />}
+        element={isAuthenticated ? <LearningPathPage /> : <Navigate to="/login" replace />}
       />
 
       <Route
         path="/exercicio/:materia"
         element={
-          userType ? (
+          isAuthenticated ? (
             <QuestionPage
               setPontos={setPontos}
               concluidas={concluidas}
               setConcluidas={setConcluidas}
             />
           ) : (
-            <Navigate to="/login" />
+            <Navigate to="/login" replace />
           )
         }
       />
 
       <Route
         path="/vitoria"
-        element={userType ? <VictoryPage /> : <Navigate to="/login" />}
+        element={isAuthenticated ? <VictoryPage /> : <Navigate to="/login" replace />}
       />
+
+      <Route path="*" element={<Navigate to={isAuthenticated ? '/' : '/login'} replace />} />
     </Routes>
   );
 }
