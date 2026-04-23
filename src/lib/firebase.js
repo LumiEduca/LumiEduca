@@ -12,7 +12,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 
-// 🔥 ESSA FUNÇÃO É O QUE FALTAVA
+// ESSA FUNÇÃO É O QUE FALTAVA
 export async function getMessagingInstance() {
   const supported = await isSupported();
 

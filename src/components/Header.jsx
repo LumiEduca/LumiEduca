@@ -27,6 +27,33 @@ export default function Header({ pontos = 0 }) {
       window.removeEventListener('beforeinstallprompt', handler);
     };
   }, []);
+  useEffect(() => {
+    const handler = (e) => {
+      e.preventDefault();
+      console.log("💡 beforeinstallprompt disparado");
+      setDeferredPrompt(e);
+  };
+
+    window.addEventListener('beforeinstallprompt', handler);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handler);
+    };
+  }, []);
+
+  useEffect(() => {
+    const handler = (e) => {
+      e.preventDefault();
+      console.log("🔥 beforeinstallprompt disparou");
+      setDeferredPrompt(e);
+    };
+
+    window.addEventListener('beforeinstallprompt', handler);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handler);
+    };
+  }, []);
 
   const handleGoHome = () => {
     navigate('/');
@@ -54,7 +81,7 @@ export default function Header({ pontos = 0 }) {
       }
     } catch (error) {
       console.error('Erro ao tentar instalar o app:', error);
-      alert('Não foi possível iniciar a instalação agora.');
+      toast.error('Não foi possível iniciar a instalação');
     }
   };
 

@@ -55,7 +55,7 @@ export default function CreateTaskPage() {
         titulo: pergunta,
       });
 
-      toast.success('Desafio lançado para os alunos 🚀');
+      toast.success('Desafio lançado para os alunos.');
 
       setLoading(false);
       navigate('/tarefas-recebidas');

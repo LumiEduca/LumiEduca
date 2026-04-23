@@ -1,13 +1,3 @@
-import toast from "react-hot-toast";
+import { showError } from "../lib/toast";
 
-export const showSuccess = (msg) => {
-  toast.success(msg);
-};
-
-export const showError = (msg) => {
-  toast.error(msg);
-};
-
-export const showInfo = (msg) => {
-  toast(msg);
-};
+showError("Erro ao salvar");
