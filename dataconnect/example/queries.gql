@@ -1,0 +1,61 @@
+query GetPublicCourses @auth(level: PUBLIC, insecureReason: "This operation is safe to expose to the public") {
+  courses(where: {published: {eq: true}}) {
+    id
+    title
+    description
+    category
+    price
+    imageUrl
+    difficulty
+    duration
+    instructor {
+      displayName
+    }
+  }
+}
+
+query GetMyEnrollments @auth(level: USER, insecureReason: "This operation is safe to expose to all logged in users.") {
+  enrollments(where: {student: {id_expr: "auth.uid"}}) {
+    course {
+      id
+      title
+      imageUrl
+      instructor {
+        displayName
+      }
+    }
+    progress
+    status
+    enrolledAt
+  }
+}
+
+mutation EnrollInCourse($courseId: UUID!) @auth(level: USER) {
+  enrollment_insert(data: {
+    courseId: $courseId,
+    studentId_expr: "auth.uid",
+    enrolledAt_expr: "request.time",
+    progress: 0,
+    status: "in_progress"
+  }) {
+    studentId
+    courseId
+  }
+}
+
+mutation CreateCourse($title: String!, $description: String!, $category: String!, $price: Float!, $published: Boolean!, $duration: Int, $difficulty: String, $imageUrl: String) @auth(expr: "auth.token.role == 'instructor'") {
+  course_insert(data: {
+    title: $title,
+    description: $description,
+    category: $category,
+    price: $price,
+    published: $published,
+    duration: $duration,
+    difficulty: $difficulty,
+    imageUrl: $imageUrl,
+    instructorId_expr: "auth.uid",
+    createdAt_expr: "request.time"
+  }) {
+    id
+  }
+}

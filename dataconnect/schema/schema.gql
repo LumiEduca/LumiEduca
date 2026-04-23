@@ -1,0 +1,66 @@
+type User @table {
+  displayName: String!
+  email: String!
+  role: String!
+  createdAt: Timestamp!
+  photoUrl: String
+  bio: String
+}
+
+type Course @table {
+  instructor: User!
+  title: String!
+  description: String!
+  category: String!
+  price: Float!
+  createdAt: Timestamp!
+  published: Boolean!
+  imageUrl: String
+  duration: Int
+  difficulty: String
+}
+
+type Enrollment @table(key: ["student", "course"]) {
+  student: User!
+  course: Course!
+  enrolledAt: Timestamp!
+  progress: Int!
+  status: String!
+  lastAccessedAt: Timestamp
+}
+
+type Module @table {
+  course: Course!
+  title: String!
+  order: Int!
+  createdAt: Timestamp!
+  description: String
+}
+
+type Lesson @table {
+  module: Module!
+  title: String!
+  type: String!
+  contentUrl: String
+  order: Int!
+  createdAt: Timestamp!
+  description: String
+  textContent: String
+}
+
+type SubscriptionType @table {
+  name: String!
+  price: Float!
+  features: [String]
+  createdAt: Timestamp!
+  description: String
+}
+
+type UserSubscription @table(key: ["user", "subscriptionType"]) {
+  user: User!
+  subscriptionType: SubscriptionType!
+  subscribedAt: Timestamp!
+  expiresAt: Timestamp!
+  status: String!
+  paymentMethod: String
+}

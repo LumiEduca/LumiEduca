@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import toast from "react-hot-toast";
 import '../styles/header.css';
 import logoLumi from '../assets/images/lumi-logo.png';
+import NotificationBell from "./NotificationBell";
 
 export default function Header({ pontos = 0 }) {
   const navigate = useNavigate();
@@ -39,7 +41,7 @@ export default function Header({ pontos = 0 }) {
 
   const handleInstall = async () => {
     if (!deferredPrompt) {
-      alert('A instalação não está disponível neste navegador no momento.');
+      toast.error('A instalação não está disponível')
       return;
     }
 
@@ -56,12 +58,11 @@ export default function Header({ pontos = 0 }) {
     }
   };
 
-  const isActive = (path) => location.pathname === path;
-
   return (
     <>
       <header className="app-header">
         <div className="app-header-container">
+          
           <button className="header-brand" onClick={handleGoHome}>
             <img src={logoLumi} alt="LumiEduca" className="header-logo" />
 
@@ -72,29 +73,17 @@ export default function Header({ pontos = 0 }) {
           </button>
 
           <div className="header-actions">
-            {isProfessor && (
-              <nav className="header-professor-nav">
-                <button
-                  type="button"
-                  className={`header-nav-chip ${isActive('/tarefas-recebidas') ? 'active' : ''}`}
-                  onClick={() => navigate('/tarefas-recebidas')}
-                >
-                  🗂️ Gestão de tarefas
-                </button>
 
-                <button
-                  type="button"
-                  className={`header-nav-chip ${isActive('/relatorio-professor') ? 'active' : ''}`}
-                  onClick={() => navigate('/relatorio-professor')}
-                >
-                  📊 Relatório
-                </button>
-              </nav>
-            )}
+            {/* 🔔 SINO */}
+            <NotificationBell />
 
             <div className="header-score">
-              <span className="score-icon">{isProfessor ? '🌟∞' : '🌟'}</span>
-              <span className="score-value">{isProfessor ? 'Gestão' : pontos}</span>
+              <span className="score-icon">
+                {isProfessor ? '🌟∞' : '🌟'}
+              </span>
+              <span className="score-value">
+                {isProfessor ? 'Gestão' : pontos}
+              </span>
             </div>
 
             <button className="header-btn install-btn" onClick={handleInstall}>
@@ -107,6 +96,7 @@ export default function Header({ pontos = 0 }) {
             >
               Sair
             </button>
+
           </div>
         </div>
       </header>

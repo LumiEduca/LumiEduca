@@ -1,11 +1,17 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
+
+import { notifyNewActivity } from '../features/notifications/events';
+
 import '../styles/professor-pages.css';
 
 export default function CreateTaskPage() {
   const [pergunta, setPergunta] = useState('');
   const [opcoes, setOpcoes] = useState(['', '', '', '']);
   const [correta, setCorreta] = useState(0);
+  const [loading, setLoading] = useState(false);
+
   const navigate = useNavigate();
 
   const handleOpcaoChange = (index, valor) => {
@@ -17,25 +23,43 @@ export default function CreateTaskPage() {
   const salvarTarefa = (e) => {
     e.preventDefault();
 
-    if (opcoes.some((opt) => opt.trim() === '')) {
-      alert('Por favor, preencha todas as alternativas!');
-      return;
-    }
+    if (loading) return;
 
-    const tarefasAtuais = JSON.parse(localStorage.getItem('lumi_tarefas') || '[]');
+    setLoading(true);
 
-    const novaTarefa = {
-      id: Date.now(),
-      pergunta,
-      opcoes,
-      respostaCorreta: correta,
-      tipo: 'multipla_escolha',
-      criadoPor: 'Professor',
-    };
+    setTimeout(() => {
+      if (opcoes.some((opt) => opt.trim() === '')) {
+        toast.error('Preencha todas as alternativas!');
+        setLoading(false);
+        return;
+      }
 
-    localStorage.setItem('lumi_tarefas', JSON.stringify([...tarefasAtuais, novaTarefa]));
-    alert('Desafio de múltipla escolha lançado! 🚀');
-    navigate('/tarefas-recebidas');
+      const tarefasAtuais = JSON.parse(localStorage.getItem('lumi_tarefas') || '[]');
+
+      const novaTarefa = {
+        id: Date.now(),
+        pergunta,
+        opcoes,
+        respostaCorreta: correta,
+        tipo: 'multipla_escolha',
+        criadoPor: 'Professor',
+      };
+
+      localStorage.setItem(
+        'lumi_tarefas',
+        JSON.stringify([...tarefasAtuais, novaTarefa])
+      );
+
+      // 🔔 NOTIFICAÇÃO
+      notifyNewActivity({
+        titulo: pergunta,
+      });
+
+      toast.success('Desafio lançado para os alunos 🚀');
+
+      setLoading(false);
+      navigate('/tarefas-recebidas');
+    }, 800);
   };
 
   return (
@@ -89,7 +113,9 @@ export default function CreateTaskPage() {
                       type="text"
                       placeholder={`Opção ${index + 1}`}
                       value={opcao}
-                      onChange={(e) => handleOpcaoChange(index, e.target.value)}
+                      onChange={(e) =>
+                        handleOpcaoChange(index, e.target.value)
+                      }
                       required
                     />
                   </div>
@@ -98,14 +124,19 @@ export default function CreateTaskPage() {
             </div>
 
             <div className="professor-action-row">
-              <button type="submit" className="professor-btn primary">
-                Lançar para alunos
+              <button
+                type="submit"
+                className="professor-btn primary"
+                disabled={loading}
+              >
+                {loading ? 'Enviando...' : 'Lançar para alunos'}
               </button>
 
               <button
                 type="button"
                 className="professor-btn secondary"
                 onClick={() => navigate('/tarefas-recebidas')}
+                disabled={loading}
               >
                 Cancelar
               </button>
