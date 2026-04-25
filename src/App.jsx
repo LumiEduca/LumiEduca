@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import Header from './components/Header';
 import AppRoutes from './routes/AppRoutes';
+import { Toaster } from "react-hot-toast";
+
+<Toaster />
 
 function App() {
   const userName = localStorage.getItem('userName') || 'visitante';
