@@ -15,11 +15,19 @@ export default function LoginPage() {
     const SENHA_PROF = process.env.REACT_APP_SENHA_PROFESSOR;
     const SENHA_ESTUDANTE = process.env.REACT_APP_SENHA_ESTUDANTE;
 
+    // 🔍 DEBUG (ver no console F12)
+    console.log("DEBUG LOGIN:", {
+      digitado: senha,
+      esperado: SENHA_ESTUDANTE,
+      perfil: selectedProfile
+    });
+
     if (!selectedProfile) {
       setErrorMessage('Selecione se você é professor ou estudante para continuar.');
       return;
     }
 
+    // 👨‍🏫 LOGIN PROFESSOR
     if (selectedProfile === 'professor') {
       if (usuario.trim().toLowerCase() === 'professor' && senha === SENHA_PROF) {
         localStorage.setItem('userType', 'professor');
@@ -32,6 +40,7 @@ export default function LoginPage() {
       return;
     }
 
+    // 👨‍🎓 LOGIN ESTUDANTE
     if (selectedProfile === 'estudante') {
       if (senha === SENHA_ESTUDANTE && usuario.trim() !== '') {
         localStorage.setItem('userType', 'estudante');
