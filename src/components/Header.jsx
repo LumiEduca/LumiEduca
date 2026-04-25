@@ -76,6 +76,14 @@ export default function Header({ pontos = 0 }) {
               <nav className="header-professor-nav">
                 <button
                   type="button"
+                  className={`header-nav-chip ${isActive('/salas-de-aula') ? 'active' : ''}`}
+                  onClick={() => navigate('/salas-de-aula')}
+                >
+                  🏫 Salas
+                </button>
+
+                <button
+                  type="button"
                   className={`header-nav-chip ${isActive('/tarefas-recebidas') ? 'active' : ''}`}
                   onClick={() => navigate('/tarefas-recebidas')}
                 >
@@ -90,6 +98,16 @@ export default function Header({ pontos = 0 }) {
                   📊 Relatório
                 </button>
               </nav>
+            )}
+
+            {!isProfessor && (
+              <button
+                type="button"
+                className={`header-nav-chip ${isActive('/salas-de-aula') ? 'active' : ''}`}
+                onClick={() => navigate('/salas-de-aula')}
+              >
+                🏫 Salas
+              </button>
             )}
 
             <div className="header-score">

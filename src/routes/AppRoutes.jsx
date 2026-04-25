@@ -9,6 +9,7 @@ import LoginPage from '../pages/LoginPage';
 import CreateTaskPage from '../pages/CreateTaskPage';
 import ReceivedTasksPage from '../pages/ReceivedTasksPage';
 import TeacherReportPage from '../pages/TeacherReportPage';
+import ClassroomsPage from '../pages/ClassroomsPage';
 
 export default function AppRoutes({
   userType,
@@ -75,6 +76,11 @@ export default function AppRoutes({
       <Route
         path="/vitoria"
         element={isAuthenticated ? <VictoryPage /> : <Navigate to="/login" replace />}
+      />
+
+      <Route
+        path="/salas-de-aula"
+        element={isAuthenticated ? <ClassroomsPage /> : <Navigate to="/login" replace />}
       />
 
       <Route path="*" element={<Navigate to={isAuthenticated ? '/' : '/login'} replace />} />
