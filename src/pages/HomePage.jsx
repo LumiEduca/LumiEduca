@@ -147,7 +147,7 @@ export default function HomePage() {
                   >
                     <span className="trail-subject-icon">📚</span>
                     <div className="trail-subject-info">
-                      <strong>Português</strong>
+                      <strong>Língua Portuguesa</strong>
                       <span>Explorar trilha</span>
                     </div>
                   </button>

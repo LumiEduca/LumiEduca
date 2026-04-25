@@ -1,0 +1,78 @@
+
+.minigame-container { 
+  display: flex; 
+  flex-direction: column; 
+  align-items: center; 
+  gap: 20px; 
+  width: 100%;
+}
+.equacao-display { 
+    font-size: 2.5rem; 
+    font-weight: bold; 
+    color: #555; 
+    margin-bottom: 20px; 
+}
+
+.slot-vazio { 
+    border-bottom: 4px dashed #FF8C00; 
+    padding: 0 10px; 
+    color: #FF8C00; 
+}
+
+.conectar-pares {
+    display: flex;
+    flex-direction: row;        /* FORÇA o alinhamento horizontal */
+    justify-content: space-around; /* Dá espaço entre as colunas */
+    align-items: flex-start;    /* Alinha ao topo */
+    width: 100%;                /* Usa toda a largura disponível */
+    gap: 30px;                  /* Espaço entre a coluna esquerda e direita */
+    margin-top: 20px;
+}
+
+/* Cada coluna individual */
+.coluna {
+    display: flex;
+    flex-direction: column;     /* Mantém os botões em vertical dentro da coluna */
+    gap: 15px;                  /* Espaço entre os botões */
+    flex: 1;                    /* Faz cada coluna ocupar metade do espaço */
+    max-width: 200px;           /* Limita a largura para não ficar gigante */
+}
+
+.question-options-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    width: 100%; /* Isso força o grid a expandir */
+    margin-top: 20px;
+}
+
+/* Garante que o botão preencha toda a célula do grid */
+.question-option {
+    width: 100%; /* Isso força o botão a esticar */
+    display: block;
+    padding: 20px;
+    border-radius: 15px;
+    border: 2px solid #e0e0e0;
+    background-color: #fff;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 1.2rem;
+    color: #333;
+    transition: all 0.2s;
+}
+
+/* Opcional: Garante que o laranja do seu botão selecionado seja aplicado */
+.question-option.selected {
+    background-color: #FF8C00 !important;
+    color: white !important;
+    border-color: #FF8C00 !important;
+}
+
+.question-option.locked {
+    background-color: #e0e0e0 !important; /* Cinza claro */
+    color: #999 !important;
+    border-color: #ccc !important;
+    cursor: not-allowed !important;
+    opacity: 0.7;
+    transform: none !important; /* Remove efeito de clique */
+}

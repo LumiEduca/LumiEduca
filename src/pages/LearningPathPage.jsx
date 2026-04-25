@@ -3,6 +3,9 @@ import { useParams, useNavigate } from 'react-router-dom';
 import '../styles/learning-path.css';
 import lumiMascot from '../assets/images/lumi-icon-02.png';
 
+
+
+
 const DADOS_TRILHAS = {
   matematica: {
     nome: 'Matemática',
@@ -13,21 +16,21 @@ const DADOS_TRILHAS = {
     fases: [
       { id: 1, nome: 'Soma básica', path: '/exercicio/matematica' },
       { id: 2, nome: 'Subtração', path: '/exercicio/matematica-fase-2' },
-      { id: 3, nome: 'Multiplicação', path: null },
-      { id: 4, nome: 'Divisão', path: null }
+      { id: 3, nome: 'Multiplicação', path: '/exercicio/matematica-fase-3' },
+      { id: 4, nome: 'Divisão', path: '/exercicio/matematica-fase-4' }
     ]
   },
   portugues: {
-    nome: 'Português',
+    nome: 'Língua Portuguesa',
     cor: '#3498db',
     corSecundaria: '#EAF4FB',
-    descricao: 'Siga pelas fases da leitura e fortaleça suas habilidades.',
+    descricao: 'Siga pelas fases da nossa língua e fortaleça suas habilidades.',
     mascoteTexto: 'Vamos explorar as próximas palavras?',
     fases: [
-      { id: 1, nome: 'Vogais', path: null },
-      { id: 2, nome: 'Sílabas', path: null },
-      { id: 3, nome: 'Palavras', path: null },
-      { id: 4, nome: 'Leitura curta', path: null }
+      { id: 1, nome: 'Classes Gramaticais', path: '/exercicio/portugues' },
+      { id: 2, nome: 'Ortografia', path: '/exercicio/portugues' },
+      { id: 3, nome: 'Sinônimos e Antônimos', path: '/exercicio/portugues' },
+      { id: 4, nome: 'Coesão e Conectivos', path: '/exercicio/portugues' }
     ]
   }
 };
@@ -52,8 +55,14 @@ export default function LearningPathPage() {
     );
   }
 
-  const progressoKey = `lumi_progresso_trilha_${materia}`;
+  const materiaBase = materia.split('-')[0]; 
+  const progressoKey = `lumi_progresso_trilha_${materiaBase}`;
   const progressoSalvo = JSON.parse(localStorage.getItem(progressoKey) || '{}');
+
+  const progresso = JSON.parse(localStorage.getItem(`lumi_progresso_trilha_${materiaBase}`) || '{}');
+
+  console.log("Materia Base:", materiaBase);
+  console.log("Objeto de Progresso lido:", progresso);
 
   const fasesComStatus = dados.fases.map((fase) => {
     const concluida = !!progressoSalvo[`fase_${fase.id}`];
@@ -144,13 +153,12 @@ export default function LearningPathPage() {
           </svg>
 
           <div className="path-mascot-placeholder">
-            <div className="path-mascot-bubble">{dados.mascoteTexto}</div>
-
-            <img
-              src={lumiMascot}
-              alt="Mascote Lumi guiando a trilha"
-              className="path-mascot-image"
-            />
+          <div className="path-mascot-bubble">{dados.mascoteTexto}</div>
+          <img
+            src={lumiMascot}
+            alt="Mascote Lumi guiando a trilha"
+            className="path-mascot-image"
+          />
           </div>
 
           <div className="path-list modern-path-list">
