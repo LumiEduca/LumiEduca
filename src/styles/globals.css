@@ -31,7 +31,7 @@ button,
 input,
 textarea,
 select {
-  font: inherit;
+  font-family: var(--font-family-base);
 }
 
 button {
@@ -53,6 +53,19 @@ a {
 ul,
 ol {
   list-style: none;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.section-title,
+.header-brand-text,
+.brand-lumi,
+.brand-educa {
+  font-family: var(--font-family-title);
 }
 
 input,
@@ -93,7 +106,6 @@ textarea:focus {
 }
 
 .section-title {
-  font-family: var(--font-family-title);
   font-size: var(--font-size-2xl);
   line-height: var(--line-height-title);
   color: var(--color-primary);

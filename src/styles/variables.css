@@ -28,9 +28,12 @@
   --color-border: #e5e7eb;
   --color-border-strong: #d1d5db;
 
-  /* Tipografia */
-  --font-family-base: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  --font-family-title: Georgia, 'Times New Roman', serif;
+  /* Tipografia padronizada */
+  --font-title: Arial, Helvetica, sans-serif;
+  --font-body: Arial, Helvetica, sans-serif;
+
+  --font-family-base: var(--font-body);
+  --font-family-title: var(--font-title);
 
   --font-size-xs: 0.75rem;
   --font-size-sm: 0.875rem;
