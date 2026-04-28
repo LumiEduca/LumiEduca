@@ -4,7 +4,6 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import HomePage from '../pages/HomePage';
 import LearningPathPage from '../pages/LearningPathPage';
 import QuestionPage from '../pages/QuestionPage';
-import VictoryPage from '../pages/VictoryPage';
 import LoginPage from '../pages/LoginPage';
 import CreateTaskPage from '../pages/CreateTaskPage';
 import ReceivedTasksPage from '../pages/ReceivedTasksPage';
@@ -55,7 +54,13 @@ export default function AppRoutes({
 
       <Route
         path="/trilha/:materia"
-        element={isAuthenticated ? <LearningPathPage /> : <Navigate to="/login" replace />}
+        element={
+          isAuthenticated ? (
+            <LearningPathPage />
+          ) : (
+            <Navigate to="/login" replace />
+          )
+        }
       />
 
       <Route
@@ -74,16 +79,20 @@ export default function AppRoutes({
       />
 
       <Route
-        path="/vitoria"
-        element={isAuthenticated ? <VictoryPage /> : <Navigate to="/login" replace />}
+        path="/salas-de-aula"
+        element={
+          isAuthenticated ? (
+            <ClassroomsPage />
+          ) : (
+            <Navigate to="/login" replace />
+          )
+        }
       />
 
       <Route
-        path="/salas-de-aula"
-        element={isAuthenticated ? <ClassroomsPage /> : <Navigate to="/login" replace />}
+        path="*"
+        element={<Navigate to={isAuthenticated ? '/' : '/login'} replace />}
       />
-
-      <Route path="*" element={<Navigate to={isAuthenticated ? '/' : '/login'} replace />} />
     </Routes>
   );
 }
