@@ -13,21 +13,20 @@ export default function LoginPage() {
     e.preventDefault();
 
     const SENHA_PROF = process.env.REACT_APP_SENHA_PROFESSOR;
-    const SENHA_ESTUDANTE = process.env.REACT_APP_SENHA_ESTUDANTE;
+    const SENHA_ALUNO = process.env.REACT_APP_SENHA_ESTUDANTE;
 
-    // 🔍 DEBUG (ver no console F12)
-    console.log("DEBUG LOGIN:", {
+    console.log('DEBUG LOGIN:', {
       digitado: senha,
-      esperado: SENHA_ESTUDANTE,
-      perfil: selectedProfile
+      esperado: SENHA_ALUNO,
+      perfil: selectedProfile,
     });
 
     if (!selectedProfile) {
-      setErrorMessage('Selecione se você é professor ou estudante para continuar.');
+      setErrorMessage('Selecione se você é professor ou aluno para continuar.');
       return;
     }
 
-    // 👨‍🏫 LOGIN PROFESSOR
+    // LOGIN PROFESSOR
     if (selectedProfile === 'professor') {
       if (usuario.trim().toLowerCase() === 'professor' && senha === SENHA_PROF) {
         localStorage.setItem('userType', 'professor');
@@ -40,16 +39,16 @@ export default function LoginPage() {
       return;
     }
 
-    // 👨‍🎓 LOGIN ESTUDANTE
-    if (selectedProfile === 'estudante') {
-      if (senha === SENHA_ESTUDANTE && usuario.trim() !== '') {
+    // LOGIN ALUNO
+    if (selectedProfile === 'aluno') {
+      if (senha === SENHA_ALUNO && usuario.trim() !== '') {
         localStorage.setItem('userType', 'estudante');
         localStorage.setItem('userName', usuario.trim());
         window.location.href = '/';
         return;
       }
 
-      setErrorMessage('Nome de usuário ou senha de estudante inválidos.');
+      setErrorMessage('Nome de usuário ou senha de aluno inválidos.');
     }
   };
 
@@ -107,13 +106,13 @@ export default function LoginPage() {
 
                   <button
                     type="button"
-                    className={`profile-option ${selectedProfile === 'estudante' ? 'active' : ''}`}
+                    className={`profile-option ${selectedProfile === 'aluno' ? 'active' : ''}`}
                     onClick={() => {
-                      setSelectedProfile('estudante');
+                      setSelectedProfile('aluno');
                       setErrorMessage('');
                     }}
                   >
-                    Estudante
+                    Aluno
                   </button>
                 </div>
               </div>
@@ -122,6 +121,7 @@ export default function LoginPage() {
                 <label htmlFor="usuario" className="login-label">
                   Usuário
                 </label>
+
                 <input
                   id="usuario"
                   type="text"
@@ -139,6 +139,7 @@ export default function LoginPage() {
                 <label htmlFor="senha" className="login-label">
                   Senha
                 </label>
+
                 <input
                   id="senha"
                   type="password"
