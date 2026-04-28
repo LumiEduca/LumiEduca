@@ -30,7 +30,7 @@ const DADOS_TRILHAS = {
       { id: 1, nome: 'Classes Gramaticais', path: '/exercicio/portugues' },
       { id: 2, nome: 'Ortografia', path: '/exercicio/portugues' },
       { id: 3, nome: 'Sinônimos e Antônimos', path: '/exercicio/portugues' },
-      { id: 4, nome: 'Coesão e Conectivos', path: '/exercicio/portugues' }
+      { id: 4, nome: 'Conectando Frases', path: '/exercicio/portugues' }
     ]
   }
 };

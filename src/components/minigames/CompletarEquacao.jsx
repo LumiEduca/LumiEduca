@@ -4,8 +4,10 @@ export default function CompletarEquacao({ questao, onResponder }) {
   const [selecionado, setSelecionado] = useState(null);
 
   const handleOpcaoClick = (valor) => {
+    if (selecionado !== null) return;
+
     setSelecionado(valor);
-    // Dispara a resposta imediatamente
+
     const acertou = String(valor) === String(questao.correta);
     onResponder(acertou, valor);
   };
@@ -14,22 +16,40 @@ export default function CompletarEquacao({ questao, onResponder }) {
     <div className="minigame-container">
       <div className="equacao-display">
         {questao.partes.map((parte, index) => (
-          <span key={index} className={parte === '?' ? 'slot-vazio' : 'parte-texto'}>
-            {parte === '?' ? (selecionado || '_') : parte}
+          <span
+            key={index}
+            className={parte === '?' ? 'slot-vazio centralizado-slot' : 'parte-texto'}
+          >
+            {parte === '?' ? (selecionado ?? '') : parte}
           </span>
         ))}
       </div>
 
       <div className="question-options-grid">
-        {questao.opcoes.map((op) => (
-          <button
-            key={op}
-            className={`question-option ${selecionado === op ? 'selected' : ''}`}
-            onClick={() => handleOpcaoClick(op)}
-          >
-            {op}
-          </button>
-        ))}
+        {questao.opcoes.map((op) => {
+          const selecionadoAtual = selecionado === op;
+          const acertou = String(op) === String(questao.correta);
+
+          return (
+            <button
+              key={op}
+              type="button"
+              disabled={selecionado !== null}
+              className={`question-option
+                ${selecionadoAtual ? 'selected' : ''}
+                ${
+                  selecionadoAtual
+                    ? acertou
+                      ? 'answer-correct'
+                      : 'answer-wrong'
+                    : ''
+                }`}
+              onClick={() => handleOpcaoClick(op)}
+            >
+              {op}
+            </button>
+          );
+        })}
       </div>
     </div>
   );

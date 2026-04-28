@@ -1,295 +1,297 @@
 export const bancoDeQuestoes = {
   matematica: [
-    // --- FASE 1: SOMA BÁSICA (Números Grandes e Decimais) ---
     {
       id: 'mat-f1-1',
       fase: 1,
       tipo: 'completar-equacao',
-      pergunta: 'O Lumi coletou 2.450 garrafas na semana 1 e 3.875 na semana 2. Qual o total?',
-      partes: ['2450', '+', '3875', '=', '?'],
-      opcoes: [6225, 6325, 6315, 5325],
-      correta: 6325,
-      explicacaoCorreta: 'Incrível! 2.450 + 3.875 resulta em 6.325 garrafas recicladas!',
-      explicacaoErrada: 'Quase! Lembre-se de somar as centenas corretamente: 2450 + 3875 = 6325.'
+      pergunta: 'Lumi encontrou 5 estrelas e depois encontrou mais 5. Quantas estrelas ele tem agora?',
+      partes: ['5', '+', '5', '=', '?'],
+      opcoes: [8, 9, 10, 11],
+      correta: 10,
+      explicacaoCorreta: 'Muito bem! 5 + 5 = 10. O Lumi juntou todas as estrelas!',
+      explicacaoErrada: 'Quase! Para resolver, conte 5 estrelas e depois mais 5. Juntando tudo, temos 10.'
     },
     {
       id: 'mat-f1-2',
       fase: 1,
       tipo: 'multipla-escolha',
-      pergunta: 'João comprou uma cartolina (R$ 15,50), canetas (R$ 9,25) e cola (R$ 4,90). Qual o gasto total?',
-      opcoes: ['R$ 28,65', 'R$ 30,65', 'R$ 29,55', 'R$ 29,65'],
-      correta: 'R$ 29,65',
-      explicacaoCorreta: 'Correto! Somando os decimais alinhando a vírgula: 15,50 + 9,25 + 4,90 = 29,65.'
+      pergunta: 'Lumi tinha 3 lápis e ganhou mais 2. Quantos lápis ele tem agora?',
+      opcoes: [4, 5, 6, 7],
+      correta: 5,
+      explicacaoCorreta: 'Parabéns! 3 + 2 = 5.',
+      explicacaoErrada: 'Conte assim: 3 lápis mais 2 lápis. O total é 5.'
     },
     {
       id: 'mat-f1-3',
       fase: 1,
       tipo: 'multipla-escolha',
-      pergunta: 'As pontuações da equipe foram: 1.240, 980 e 1.550. Qual a soma total?',
-      opcoes: [3770, 3870, 3760, 3670],
-      correta: 3770,
-      explicacaoCorreta: 'Isso! A equipe somou 3.770 pontos no total.'
+      pergunta: 'Ana tinha 4 balas e ganhou mais 3. Quantas balas ela tem agora?',
+      opcoes: [6, 7, 8, 9],
+      correta: 7,
+      explicacaoCorreta: 'Isso! 4 + 3 = 7.',
+      explicacaoErrada: 'Vamos contar: 4 balas mais 3 balas dá 7 balas.'
     },
 
-    // --- FASE 2: SUBTRAÇÃO (Cálculo de Diferença e Troco) ---
     {
       id: 'mat-f2-1',
       fase: 2,
       tipo: 'completar-equacao',
-      pergunta: 'Uma reserva ambiental tinha 1.500 árvores. Após um reflorestamento, restaram apenas 745 para plantar. Quantas já foram plantadas?',
-      partes: ['1500', '-', '?', '=', '745'],
-      opcoes: [755, 765, 855, 745],
-      correta: 755,
-      explicacaoCorreta: 'Certinho! 1.500 - 755 = 745 árvores plantadas!',
-      explicacaoErrada: 'Ops! 1.500 - 745 = 755. Tente subtrair as dezenas com calma.'
+      pergunta: 'Havia 8 balões. 3 voaram. Quantos balões ficaram?',
+      partes: ['8', '-', '3', '=', '?'],
+      opcoes: [4, 5, 6, 7],
+      correta: 5,
+      explicacaoCorreta: 'Muito bem! 8 - 3 = 5.',
+      explicacaoErrada: 'Quase! Comece no 8 e tire 3: 7, 6, 5. Ficaram 5 balões.'
     },
     {
       id: 'mat-f2-2',
       fase: 2,
       tipo: 'multipla-escolha',
-      pergunta: 'Um estádio tem 12.000 lugares. Se 8.750 ingressos foram vendidos, quantos lugares sobraram?',
-      opcoes: [3250, 4250, 3150, 3350],
-      correta: 3250,
-      explicacaoCorreta: 'Exato! 12.000 - 8.750 = 3.250 lugares vazios.'
+      pergunta: 'Ana tinha 4 maçãs e deu 2 para seu amigo. Com quantas maçãs ela ficou?',
+      opcoes: [1, 2, 3, 4],
+      correta: 2,
+      explicacaoCorreta: 'Isso! 4 - 2 = 2. Ana ficou com 2 maçãs.',
+      explicacaoErrada: 'Vamos pensar: Ana tinha 4 maçãs. Se ela deu 2, sobraram 2.'
     },
     {
       id: 'mat-f2-3',
       fase: 2,
       tipo: 'multipla-escolha',
-      pergunta: 'Lumi tinha R$ 50,00 e comprou um livro de R$ 32,40. Quanto ele recebeu de troco?',
-      opcoes: ['R$ 17,60', 'R$ 18,60', 'R$ 17,40', 'R$ 12,60'],
-      correta: 'R$ 17,60',
-      explicacaoCorreta: 'Parabéns! 50,00 - 32,40 = 17,60.'
+      pergunta: 'Lumi tinha 7 biscoitos e comeu 2. Quantos sobraram?',
+      opcoes: [4, 5, 6, 7],
+      correta: 5,
+      explicacaoCorreta: 'Acertou! 7 - 2 = 5.',
+      explicacaoErrada: 'Conte tirando 2 do número 7. O resultado é 5.'
     },
 
-    // --- FASE 3: MULTIPLICAÇÃO (Área e Grupos) ---
     {
       id: 'mat-f3-1',
       fase: 3,
       tipo: 'conectar-pares',
-      pergunta: 'Ligue cada multiplicação ao seu resultado correto!',
-      pares: [ 
-        {id: '12x5', display: '12 x 5'}, 
-        {id: '15x4', display: '15 x 3'}, 
-        {id: '25x3', display: '25 x 3'} 
+      pergunta: 'Ligue cada continha ao resultado correto.',
+      pares: [
+        { id: '2x2', display: '2 x 2' },
+        { id: '3x2', display: '3 x 2' },
+        { id: '4x2', display: '4 x 2' }
       ],
-      alvos: [ 
-        {id: 'res60b', display: '45'}, 
-        {id: 'res60a', display: '60'}, 
-        {id: 'res75', display: '75'} 
+      alvos: [
+        { id: 'res4', display: '4' },
+        { id: 'res6', display: '6' },
+        { id: 'res8', display: '8' }
       ],
-      correta: { 
-        '12x5': 'res60a', 
-        '15x4': 'res60b', 
-        '25x3': 'res75' 
+      correta: {
+        '2x2': 'res4',
+        '3x2': 'res6',
+        '4x2': 'res8'
       },
-      explicacaoCorreta: 'Muito bem! Você dominou a tabuada básica.'
+      explicacaoCorreta: 'Muito bem! Multiplicar por 2 é como formar pares.',
+      explicacaoErrada: 'Vamos revisar: 2 x 2 = 4, 3 x 2 = 6 e 4 x 2 = 8.'
     },
     {
       id: 'mat-f3-2',
       fase: 3,
       tipo: 'multipla-escolha',
-      pergunta: 'Um terreno retangular tem 25 metros de comprimento e 15 metros de largura. Qual a área total?',
-      opcoes: ['375 m²', '350 m²', '400 m²', '325 m²'],
-      correta: '375 m²',
-      explicacaoCorreta: 'Correto! 25 x 15 = 375 metros quadrados.'
+      pergunta: 'Cada caixa tem 2 brinquedos. Se temos 3 caixas, quantos brinquedos existem ao todo?',
+      opcoes: [5, 6, 7, 8],
+      correta: 6,
+      explicacaoCorreta: 'Isso! 2 + 2 + 2 = 6.',
+      explicacaoErrada: 'São 3 caixas com 2 brinquedos cada: 2 + 2 + 2 = 6.'
     },
     {
       id: 'mat-f3-3',
       fase: 3,
       tipo: 'multipla-escolha',
-      pergunta: 'Uma fábrica produz 125 brinquedos por dia. Quantos serão produzidos em 12 dias?',
-      opcoes: [1500, 1250, 1450, 1550],
-      correta: 1500,
-      explicacaoCorreta: 'Isso! 125 x 12 = 1.500 brinquedos.'
+      pergunta: 'Lumi fez 4 grupos com 3 estrelas em cada grupo. Quantas estrelas são ao todo?',
+      opcoes: [10, 11, 12, 13],
+      correta: 12,
+      explicacaoCorreta: 'Perfeito! 4 x 3 = 12.',
+      explicacaoErrada: 'Some 3 quatro vezes: 3 + 3 + 3 + 3 = 12.'
     },
 
-    // --- FASE 4: DIVISÃO (Repartição e Médias) ---
     {
       id: 'mat-f4-1',
       fase: 4,
       tipo: 'completar-equacao',
-      pergunta: 'Temos 450 livros para dividir igualmente em 15 prateleiras. Quantos livros por prateleira?',
-      partes: ['450', '÷', '15', '=', '?'],
-      opcoes: [30, 25, 35, 40],
-      correta: 30,
-      explicacaoCorreta: 'Perfeito! 450 dividido por 15 é igual a 30 livros por prateleira.',
-      explicacaoErrada: 'Pense na conta inversa: 15 vezes quanto dá 450? A resposta é 30.'
+      pergunta: 'Lumi tem 6 balas para dividir igualmente entre 2 amigos. Quantas balas cada um recebe?',
+      partes: ['6', '÷', '2', '=', '?'],
+      opcoes: [2, 3, 4, 5],
+      correta: 3,
+      explicacaoCorreta: 'Isso! 6 dividido para 2 amigos dá 3 balas para cada um.',
+      explicacaoErrada: 'Dividir é repartir igualmente. 6 balas para 2 amigos dá 3 para cada.'
     },
     {
       id: 'mat-f4-2',
       fase: 4,
       tipo: 'multipla-escolha',
-      pergunta: 'Um carro percorreu 240 km em 3 horas. Qual foi a velocidade média por hora?',
-      opcoes: ['80 km/h', '70 km/h', '90 km/h', '60 km/h'],
-      correta: '80 km/h',
-      explicacaoCorreta: 'Exato! 240 ÷ 3 = 80.'
+      pergunta: 'Temos 8 lápis para dividir entre 4 crianças. Quantos lápis cada criança recebe?',
+      opcoes: [1, 2, 3, 4],
+      correta: 2,
+      explicacaoCorreta: 'Muito bem! 8 ÷ 4 = 2.',
+      explicacaoErrada: 'Repartindo 8 lápis entre 4 crianças, cada uma fica com 2.'
     },
     {
       id: 'mat-f4-3',
       fase: 4,
       tipo: 'multipla-escolha',
-      pergunta: 'Uma compra de R$ 1.200,00 foi parcelada em 10 vezes sem juros. Qual o valor de cada parcela?',
-      opcoes: ['R$ 120,00', 'R$ 100,00', 'R$ 12,00', 'R$ 200,00'],
-      correta: 'R$ 120,00',
-      explicacaoCorreta: 'Correto! Basta cortar um zero: 1200 ÷ 10 = 120.'
+      pergunta: 'Lumi tem 12 adesivos e quer colocar 3 em cada página. Quantas páginas ele vai usar?',
+      opcoes: [3, 4, 5, 6],
+      correta: 4,
+      explicacaoCorreta: 'Acertou! 12 ÷ 3 = 4.',
+      explicacaoErrada: 'Pense em grupos de 3: 3, 6, 9, 12. Foram 4 grupos.'
     }
   ],
 
   portugues: [
-    // --- FASE 1: CLASSES GRAMATICAIS ---
     {
       id: 'pt-f1-1',
       fase: 1,
       tipo: 'conectar-pares',
-      pergunta: 'Cada palavra tem sua função! Ligue a palavra à sua classe gramatical correta:',
+      pergunta: 'Ligue cada palavra ao seu tipo correto.',
       pares: [
-        { id: 'correr', display: '🏃 Correr' },
-        { id: 'feliz', display: '😊 Feliz' },
-        { id: 'cachorro', display: '🐶 Cachorro' }
+        { id: 'correr', display: 'Correr' },
+        { id: 'feliz', display: 'Feliz' },
+        { id: 'bola', display: 'Bola' }
       ],
       alvos: [
-        { id: 'adjetivo', display: 'Adjetivo (Qualidade)' },
-        { id: 'substantivo', display: 'Substantivo (Nome)' },
-        { id: 'verbo', display: 'Verbo (Ação)' }
+        { id: 'verbo', display: 'Ação' },
+        { id: 'adjetivo', display: 'Qualidade' },
+        { id: 'substantivo', display: 'Nome' }
       ],
       correta: {
-        'correr': 'verbo',
-        'feliz': 'adjetivo',
-        'cachorro': 'substantivo'
+        correr: 'verbo',
+        feliz: 'adjetivo',
+        bola: 'substantivo'
       },
-      explicacaoCorreta: 'Fantástico! O cachorro (substantivo) ficou feliz (adjetivo) ao correr (verbo)!',
-      explicacaoErrada: 'Quase lá! Lembre-se: Verbos são ações, adjetivos dão qualidades e substantivos são os nomes das coisas.'
+      explicacaoCorreta: 'Muito bem! Correr é ação, feliz é qualidade e bola é nome.',
+      explicacaoErrada: 'Vamos revisar: verbo é ação, adjetivo é qualidade e substantivo é nome.'
     },
     {
       id: 'pt-f1-2',
       fase: 1,
       tipo: 'multipla-escolha',
-      pergunta: 'Leia a frase: "O pequeno pássaro cantou." Qual palavra é o ADJETIVO?',
-      opcoes: ['O', 'pequeno', 'pássaro', 'cantou'],
-      correta: 'pequeno',
-      explicacaoCorreta: 'Isso! "Pequeno" é a característica do pássaro.',
-      explicacaoErrada: 'A resposta é "pequeno", pois é a palavra que descreve como o pássaro é.'
+      pergunta: 'Na frase "O gato bonito dormiu", qual palavra mostra uma qualidade?',
+      opcoes: ['gato', 'bonito', 'dormiu', 'O'],
+      correta: 'bonito',
+      explicacaoCorreta: 'Isso! "Bonito" mostra uma qualidade do gato.',
+      explicacaoErrada: 'A palavra que mostra qualidade é "bonito".'
     },
     {
       id: 'pt-f1-3',
       fase: 1,
       tipo: 'multipla-escolha',
-      pergunta: 'Em qual das frases abaixo a palavra sublinhada é um VERBO?',
-      opcoes: ['A _chuva_ caiu forte.', 'Nós vamos _viajar_ amanhã.', 'O _menino_ está triste.', '_Que_ dia lindo!'],
-      correta: 'Nós vamos _viajar_ amanhã.',
-      explicacaoCorreta: 'Exato! "Viajar" indica uma ação.',
-      explicacaoErrada: 'A resposta é "viajar", pois verbos indicam ações, estados ou fenômenos da natureza.'
+      pergunta: 'Qual palavra é uma ação?',
+      opcoes: ['mesa', 'azul', 'pular', 'casa'],
+      correta: 'pular',
+      explicacaoCorreta: 'Acertou! Pular é uma ação.',
+      explicacaoErrada: 'A resposta é "pular", porque indica uma ação.'
     },
 
-    // --- FASE 2: ORTOGRAFIA ---
     {
       id: 'pt-f2-1',
       fase: 2,
       tipo: 'completar-equacao',
-      pergunta: 'Lumi quer escrever um bilhete, mas esqueceu a regra! Complete a palavra:',
-      partes: ['Aquele pa', '?', 'arinho voou para longe.'],
-      opcoes: ['s', 'ss', 'ç', 'c'],
+      pergunta: 'Complete a palavra corretamente.',
+      partes: ['pa', '?', 'arinho'],
+      opcoes: ['s', 'ss', 'ç', 'x'],
       correta: 'ss',
-      explicacaoCorreta: 'Muito bem! "Passarinho" se escreve com SS porque o som de S está entre duas vogais!',
-      explicacaoErrada: 'Atenção! Entre duas vogais com som forte de S, usamos SS. A resposta é "ss".'
+      explicacaoCorreta: 'Muito bem! Passarinho é escrito com SS.',
+      explicacaoErrada: 'A palavra correta é passarinho, com SS.'
     },
     {
       id: 'pt-f2-2',
       fase: 2,
       tipo: 'multipla-escolha',
-      pergunta: 'Qual é a regra de ouro da ortografia para a letra M?',
-      opcoes: ['Usamos M antes de qualquer consoante.', 'Usamos M apenas no final das palavras.', 'Usamos M antes de P e B.', 'Usamos N antes de P e B.'],
-      correta: 'Usamos M antes de P e B.',
-      explicacaoCorreta: 'Perfeito! É a regra básica: antes de P e B, só o M pode aparecer.',
-      explicacaoErrada: 'A regra correta é: usamos a letra M sempre antes das consoantes P e B.'
+      pergunta: 'Qual palavra está escrita corretamente?',
+      opcoes: ['caza', 'casa', 'cassa', 'kasa'],
+      correta: 'casa',
+      explicacaoCorreta: 'Isso! Casa é escrita com S.',
+      explicacaoErrada: 'A forma correta é "casa".'
     },
     {
       id: 'pt-f2-3',
       fase: 2,
       tipo: 'multipla-escolha',
-      pergunta: 'Qual das palavras abaixo está escrita de forma INCORRETA?',
-      opcoes: ['Exceção', 'Piscina', 'Crescer', 'Excada'],
-      correta: 'Excada',
-      explicacaoCorreta: 'Você tem um olho de águia! O correto é "Escada", com S.',
-      explicacaoErrada: 'A palavra errada é "Excada". O jeito certo de escrever é "Escada".'
+      pergunta: 'Antes de P e B usamos qual letra?',
+      opcoes: ['M', 'N', 'S', 'R'],
+      correta: 'M',
+      explicacaoCorreta: 'Perfeito! Antes de P e B usamos M.',
+      explicacaoErrada: 'A regra é: antes de P e B usamos M.'
     },
 
-    // --- FASE 3: SINÔNIMOS E ANTÔNIMOS ---
     {
       id: 'pt-f3-1',
       fase: 3,
       tipo: 'conectar-pares',
-      pergunta: 'Vamos ligar os OPOSTOS (Antônimos)!',
+      pergunta: 'Ligue cada palavra ao seu oposto.',
       pares: [
-        { id: 'inicio', display: 'Início' },
-        { id: 'corajoso', display: 'Corajoso' },
-        { id: 'rapido', display: 'Rápido' }
+        { id: 'grande', display: 'Grande' },
+        { id: 'feliz', display: 'Feliz' },
+        { id: 'claro', display: 'Claro' }
       ],
       alvos: [
-        { id: 'lento', display: 'Lento' },
-        { id: 'fim', display: 'Fim' },
-        { id: 'medroso', display: 'Medroso' }
+        { id: 'escuro', display: 'Escuro' },
+        { id: 'triste', display: 'Triste' },
+        { id: 'pequeno', display: 'Pequeno' }
       ],
       correta: {
-        'inicio': 'fim',
-        'corajoso': 'medroso',
-        'rapido': 'lento'
+        grande: 'pequeno',
+        feliz: 'triste',
+        claro: 'escuro'
       },
-      explicacaoCorreta: 'Incrível! Você ligou todos os antônimos perfeitamente.'
+      explicacaoCorreta: 'Muito bem! Você ligou todos os opostos.',
+      explicacaoErrada: 'Vamos revisar: grande é o oposto de pequeno, feliz de triste e claro de escuro.'
     },
     {
       id: 'pt-f3-2',
       fase: 3,
       tipo: 'multipla-escolha',
-      pergunta: 'O Lumi estava muito "Alegre" com o jogo. Qual palavra é um SINÔNIMO de Alegre?',
-      opcoes: ['Triste', 'Cansado', 'Contente', 'Zangado'],
-      correta: 'Contente',
-      explicacaoCorreta: 'Isso! Sinônimos são palavras com o mesmo significado.',
-      explicacaoErrada: 'A resposta é "Contente". Sinônimos são palavras diferentes que significam a mesma coisa.'
+      pergunta: 'Qual palavra significa o mesmo que "alegre"?',
+      opcoes: ['feliz', 'triste', 'bravo', 'cansado'],
+      correta: 'feliz',
+      explicacaoCorreta: 'Isso! Alegre e feliz têm significado parecido.',
+      explicacaoErrada: 'A resposta é "feliz", pois tem significado parecido com alegre.'
     },
     {
       id: 'pt-f3-3',
       fase: 3,
       tipo: 'multipla-escolha',
-      pergunta: 'Se algo é "Impossível", qual o seu ANTÔNIMO?',
-      opcoes: ['Difícil', 'Complicado', 'Possível', 'Estranho'],
-      correta: 'Possível',
-      explicacaoCorreta: 'Exato! O prefixo "im-" indica negação, tirando ele, temos o antônimo: Possível.',
-      explicacaoErrada: 'O antônimo (oposto) de Impossível é Possível.'
+      pergunta: 'Qual é o contrário de "quente"?',
+      opcoes: ['morno', 'frio', 'alto', 'baixo'],
+      correta: 'frio',
+      explicacaoCorreta: 'Acertou! O contrário de quente é frio.',
+      explicacaoErrada: 'O contrário de quente é frio.'
     },
 
-    // --- FASE 4: COESÃO E CONECTIVOS ---
     {
       id: 'pt-f4-1',
       fase: 4,
       tipo: 'completar-equacao',
-      pergunta: 'Complete a frase com a palavra que melhor conecta as ideias:',
-      partes: ['Estudamos muito para a prova, ', '?', ' tiramos uma nota ótima!'],
-      opcoes: ['por isso', 'mas', 'porém', 'ou'],
-      correta: 'por isso',
-      explicacaoCorreta: 'Excelente! A palavra "por isso" indica a consequência de ter estudado muito.',
-      explicacaoErrada: 'A resposta correta é "por isso", pois mostra o resultado (consequência) de estudar muito.'
+      pergunta: 'Complete a frase.',
+      partes: ['Eu escovei os dentes ', '?', ' fui dormir.'],
+      opcoes: ['e', 'mas', 'ou', 'porque'],
+      correta: 'e',
+      explicacaoCorreta: 'Muito bem! A palavra "e" liga as duas ações.',
+      explicacaoErrada: 'A melhor resposta é "e": escovei os dentes e fui dormir.'
     },
     {
       id: 'pt-f4-2',
       fase: 4,
       tipo: 'multipla-escolha',
-      pergunta: 'Na frase: "A menina pegou a mochila, pois ELA ia para a escola." A palavra ELA se refere a quem?',
-      opcoes: ['A mochila', 'A escola', 'A menina', 'A professora'],
-      correta: 'A menina',
-      explicacaoCorreta: 'Correto! O pronome "Ela" substitui "A menina" para não repetir a palavra.',
-      explicacaoErrada: 'O pronome "Ela" está substituindo "A menina" na frase.'
+      pergunta: 'Na frase "Maria pegou a mochila. Ela foi para a escola", quem é "Ela"?',
+      opcoes: ['Maria', 'mochila', 'escola', 'professora'],
+      correta: 'Maria',
+      explicacaoCorreta: 'Isso! "Ela" está falando de Maria.',
+      explicacaoErrada: 'A palavra "Ela" se refere à Maria.'
     },
     {
       id: 'pt-f4-3',
       fase: 4,
       tipo: 'multipla-escolha',
-      pergunta: 'A conjunção "MAS" (sem o I) indica o quê?',
-      opcoes: ['Quantidade', 'Oposição / Contrário', 'Adição', 'Tempo'],
-      correta: 'Oposição / Contrário',
-      explicacaoCorreta: 'Muito bem! Exemplo: "Correu muito, MAS chegou atrasado."',
-      explicacaoErrada: 'A palavra "mas" indica uma ideia de oposição ou contrário (ex: queria brincar, mas choveu).'
+      pergunta: 'Qual palavra liga melhor a frase: "Eu queria brincar, ___ começou a chover."',
+      opcoes: ['mas', 'e', 'ou', 'também'],
+      correta: 'mas',
+      explicacaoCorreta: 'Muito bem! "Mas" mostra uma ideia contrária.',
+      explicacaoErrada: 'A resposta é "mas", porque a chuva atrapalhou a vontade de brincar.'
     }
   ]
 };

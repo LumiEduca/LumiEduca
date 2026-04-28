@@ -16,30 +16,39 @@ export default function QuestionPage({ setPontos, concluidas, setConcluidas }) {
 
   const questoesTotais = bancoDeQuestoes[materiaBase] || [];
   const questoes = useMemo(() => {
-    return questoesTotais.filter(q => String(q.fase) === String(faseId));
+    return questoesTotais.filter((q) => String(q.fase) === String(faseId));
   }, [questoesTotais, faseId]);
 
   const [indice, setIndice] = useState(0);
   const [respostasSelecionadas, setRespostasSelecionadas] = useState({});
+  const [respostasCorrigidas, setRespostasCorrigidas] = useState({});
   const [erroMensagem, setErroMensagem] = useState('');
+  const [faseFinalizada, setFaseFinalizada] = useState(false);
+  const [resultadoFinal, setResultadoFinal] = useState(null);
 
   const questaoAtual = questoes[indice];
 
-  // Função para renderizar texto com marcação de sublinhado usando _palavra_
   const renderTextoComSublinhado = (texto) => {
     if (typeof texto !== 'string') return texto;
-    // Regex busca o conteúdo entre sublinhados
+
     const partes = texto.split(/_(.*?)_/);
-    
+
     return partes.map((parte, index) => {
-      // Se o índice for ímpar, é a palavra que estava entre _ _
       if (index % 2 !== 0) {
         return (
-          <span key={index} style={{ textDecoration: 'underline', textDecorationThickness: '2px', fontWeight: 'bold' }}>
+          <span
+            key={index}
+            style={{
+              textDecoration: 'underline',
+              textDecorationThickness: '2px',
+              fontWeight: 'bold',
+            }}
+          >
             {parte}
           </span>
         );
       }
+
       return parte;
     });
   };
@@ -48,28 +57,65 @@ export default function QuestionPage({ setPontos, concluidas, setConcluidas }) {
     return `Questão ${indice + 1} de ${questoes.length}`;
   }, [indice, questoes.length]);
 
-  if (!questaoAtual) {
+  if (!questaoAtual && !faseFinalizada) {
     return (
       <div style={{ padding: '40px', textAlign: 'center' }}>
         <h2>Ops!</h2>
         <p>Não encontramos questões para a Fase {faseId} nesta matéria.</p>
-        <button 
-          onClick={() => navigate(-1)} 
+        <button
+          onClick={() => navigate(-1)}
           type="button"
-          className="question-back-button">Voltar</button>
+          className="question-back-button"
+        >
+          Voltar
+        </button>
       </div>
     );
   }
 
-  const respostaSelecionada = respostasSelecionadas[questaoAtual.id] ?? null;
+  const respostaSelecionada = questaoAtual
+    ? respostasSelecionadas[questaoAtual.id] ?? null
+    : null;
+
+  const correcaoAtual = questaoAtual
+    ? respostasCorrigidas[questaoAtual.id] ?? null
+    : null;
+
   const ultimaQuestao = indice === questoes.length - 1;
 
-  const handleSelecionarOpcao = (opcao) => {
+  const verificarResposta = (questao, respostaUsuario) => {
+    if (questao.tipo === 'conectar-pares') {
+      return JSON.stringify(respostaUsuario) === JSON.stringify(questao.correta);
+    }
+
+    return String(respostaUsuario) === String(questao.correta);
+  };
+
+  const corrigirQuestao = (questao, respostaUsuario) => {
+    const acertou = verificarResposta(questao, respostaUsuario);
+
     setRespostasSelecionadas((prev) => ({
       ...prev,
-      [questaoAtual.id]: opcao
+      [questao.id]: respostaUsuario,
     }));
+
+    setRespostasCorrigidas((prev) => ({
+      ...prev,
+      [questao.id]: {
+        acertou,
+        respostaUsuario,
+        mensagem: acertou
+          ? questao.explicacaoCorreta || 'Muito bem! Você acertou!'
+          : questao.explicacaoErrada || `Quase! A resposta correta era ${questao.correta}.`,
+      },
+    }));
+
     setErroMensagem('');
+  };
+
+  const handleSelecionarOpcao = (opcao) => {
+    if (correcaoAtual) return;
+    corrigirQuestao(questaoAtual, opcao);
   };
 
   const handleVoltar = () => {
@@ -78,51 +124,35 @@ export default function QuestionPage({ setPontos, concluidas, setConcluidas }) {
 
   const finalizarQuestionario = () => {
     let ganhouNaSessao = 0;
-    let errouAlguma = false;
-    let totalErros = 0;
+    let totalAcertos = 0;
     const novasConcluidas = [...concluidas];
 
     const resumoQuestoes = questoes.map((questao) => {
       const respostaUsuario = respostasSelecionadas[questao.id];
-      
-      let acertou = false;
-      if (questao.tipo === 'conectar-pares') {
-        acertou = JSON.stringify(respostaUsuario) === JSON.stringify(questao.correta);
-      } else {
-        acertou = String(respostaUsuario) === String(questao.correta);
-      }
-
-      const idUnico = `${materia}-${questao.id}`;
+      const acertou = verificarResposta(questao, respostaUsuario);
 
       if (acertou) {
+        totalAcertos += 1;
+
+        const idUnico = `${materia}-${questao.id}`;
+
         if (!concluidas.includes(idUnico)) {
           ganhouNaSessao += 10;
           novasConcluidas.push(idUnico);
         }
-      } else {
-        errouAlguma = true;
-        totalErros += 1;
       }
 
       return {
         id: questao.id,
         pergunta: questao.pergunta,
-        pares: questao.pares || [],
-        alvos: questao.alvos || [],
         respostaUsuario,
         respostaCorreta: questao.correta,
         acertou,
         explicacao: acertou
-          ? (questao.explicacaoCorreta || 'Resposta correta!')
-          : (questao.explicacaoErrada || `A resposta correta era ${questao.correta}.`)
+          ? questao.explicacaoCorreta || 'Resposta correta!'
+          : questao.explicacaoErrada || `A resposta correta era ${questao.correta}.`,
       };
     });
-
-    if (totalErros >= 2) {
-      alert(`Ops! Você cometeu ${totalErros} erros. Vamos tentar novamente? 🦊`);
-      navigate(`/trilha/${materiaBase}`);
-      return;
-    }
 
     if (ganhouNaSessao > 0) {
       setPontos((prev) => prev + ganhouNaSessao);
@@ -130,24 +160,29 @@ export default function QuestionPage({ setPontos, concluidas, setConcluidas }) {
 
     setConcluidas([...new Set(novasConcluidas)]);
 
-    const progressoKey = `lumi_progresso_trilha_${materiaBase}`;
-    const progressoAtual = JSON.parse(localStorage.getItem(progressoKey) || '{}');
-    progressoAtual[`fase_${faseId}`] = true; 
-    localStorage.setItem(progressoKey, JSON.stringify(progressoAtual));
+    const aprovado = totalAcertos >= 2;
 
-    navigate('/vitoria', {
-      state: {
-        ganhos: ganhouNaSessao,
-        errouAlguma,
-        materia,
-        resumoQuestoes
-      }
+    if (aprovado) {
+      const progressoKey = `lumi_progresso_trilha_${materiaBase}`;
+      const progressoAtual = JSON.parse(localStorage.getItem(progressoKey) || '{}');
+      progressoAtual[`fase_${faseId}`] = true;
+      localStorage.setItem(progressoKey, JSON.stringify(progressoAtual));
+    }
+
+    setResultadoFinal({
+      totalAcertos,
+      totalQuestoes: questoes.length,
+      ganhouNaSessao,
+      aprovado,
+      resumoQuestoes,
     });
+
+    setFaseFinalizada(true);
   };
 
   const handleAvancar = () => {
-    if (respostaSelecionada === null || respostaSelecionada === undefined) {
-      setErroMensagem('Selecione uma alternativa antes de continuar.');
+    if (!correcaoAtual) {
+      setErroMensagem('Responda a questão antes de continuar.');
       return;
     }
 
@@ -160,39 +195,122 @@ export default function QuestionPage({ setPontos, concluidas, setConcluidas }) {
     finalizarQuestionario();
   };
 
+  const handleRefazer = () => {
+    setIndice(0);
+    setRespostasSelecionadas({});
+    setRespostasCorrigidas({});
+    setErroMensagem('');
+    setFaseFinalizada(false);
+    setResultadoFinal(null);
+  };
+
+  const handleContinuar = () => {
+    navigate(`/trilha/${materiaBase}`);
+  };
+
   const renderizarDesafio = () => {
     const handleResposta = (acertou, valor) => {
-      setRespostasSelecionadas(prev => ({
-        ...prev,
-        [questaoAtual.id]: valor
-      }));
-      setErroMensagem('');
+      if (correcaoAtual) return;
+      corrigirQuestao(questaoAtual, valor);
     };
 
     switch (questaoAtual.tipo) {
       case 'completar-equacao':
       case 'completar-frase':
         return <CompletarEquacao questao={questaoAtual} onResponder={handleResposta} />;
+
       case 'conectar-pares':
         return <ConectarPares questao={questaoAtual} onResponder={handleResposta} />;
+
       default:
         return (
           <div className="question-options-grid">
-            {questaoAtual.opcoes.map((opcao) => (
-              <button
-                key={opcao}
-                type="button"
-                className={`question-option ${respostaSelecionada === opcao ? 'selected' : ''}`}
-                onClick={() => handleSelecionarOpcao(opcao)}
-              >
-                {/* AQUI ESTÁ A MUDANÇA: Usamos a função auxiliar */}
-                {renderTextoComSublinhado(opcao)}
-              </button>
-            ))}
+            {questaoAtual.opcoes.map((opcao) => {
+              const selecionada = respostaSelecionada === opcao;
+
+              return (
+                <button
+                  key={opcao}
+                  type="button"
+                  disabled={!!correcaoAtual}
+                  className={`question-option
+                    ${selecionada ? 'selected' : ''}
+                    ${
+                      correcaoAtual && selecionada
+                        ? correcaoAtual.acertou
+                          ? 'answer-correct'
+                          : 'answer-wrong'
+                        : ''
+                    }
+                    ${correcaoAtual ? 'locked' : ''}`}
+                  onClick={() => handleSelecionarOpcao(opcao)}
+                >
+                  {renderTextoComSublinhado(opcao)}
+                </button>
+              );
+            })}
           </div>
         );
     }
   };
+
+  if (faseFinalizada && resultadoFinal) {
+    return (
+      <div className="question-page page-wrapper">
+        <main className="question-page-content">
+          <section className="question-card question-result-card">
+            <span className="question-badge">Resumo da fase</span>
+
+            <h1 className="question-title">
+              {resultadoFinal.aprovado
+                ? 'Parabéns, pequeno explorador! 🦊'
+                : 'Vamos tentar mais uma vez? 🦊'}
+            </h1>
+
+            <p className="question-instruction">
+              Você acertou {resultadoFinal.totalAcertos} de{' '}
+              {resultadoFinal.totalQuestoes} atividades e ganhou{' '}
+              {resultadoFinal.ganhouNaSessao} pontos.
+            </p>
+
+            <div className="question-review-list">
+              {resultadoFinal.resumoQuestoes.map((item, index) => (
+                <div
+                  key={item.id}
+                  className={`question-review-item ${
+                    item.acertou ? 'correct' : 'wrong'
+                  }`}
+                >
+                  <strong>Atividade {index + 1}</strong>
+                  <p>{item.explicacao}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="question-actions">
+              {resultadoFinal.aprovado ? (
+                <button
+                  type="button"
+                  className="question-next-button"
+                  onClick={handleContinuar}
+                >
+                  Continuar para o próximo desafio ➜
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="question-next-button"
+                  onClick={handleRefazer}
+                >
+                  Refazer seu desafio
+                </button>
+              )}
+            </div>
+          </section>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="question-page page-wrapper">
@@ -214,27 +332,32 @@ export default function QuestionPage({ setPontos, concluidas, setConcluidas }) {
           <h1 className="question-title">{questaoAtual.pergunta}</h1>
 
           <p className="question-instruction">
-            {['completar-equacao', 'completar-frase', 'conectar-pares'].includes(questaoAtual.tipo)
-            ? 'Complete o desafio abaixo para poder avançar!'
-            : 'Selecione a alternativa que você acredita estar correta e avance.'}
+            {['completar-equacao', 'completar-frase', 'conectar-pares'].includes(
+              questaoAtual.tipo
+            )
+              ? 'Complete o desafio abaixo para poder avançar!'
+              : 'Selecione a alternativa que você acredita estar correta.'}
           </p>
 
-          <div className="question-minigame-wrapper">
-            {renderizarDesafio()}
-          </div>
+          <div className="question-minigame-wrapper">{renderizarDesafio()}</div>
 
-          {erroMensagem && (
-            <p className="question-error-message">{erroMensagem}</p>
+          {correcaoAtual && (
+            <div
+              className={`question-feedback-box ${
+                correcaoAtual.acertou ? 'correct' : 'wrong'
+              }`}
+            >
+              <strong>{correcaoAtual.acertou ? 'Muito bem!' : 'Quase lá!'}</strong>
+              <p>{correcaoAtual.mensagem}</p>
+            </div>
           )}
+
+          {erroMensagem && <p className="question-error-message">{erroMensagem}</p>}
 
           <div className="question-actions">
             <button
               type="button"
-              className={`question-next-button ${
-                respostaSelecionada === null || respostaSelecionada === undefined
-                  ? 'disabled'
-                  : ''
-              }`}
+              className={`question-next-button ${!correcaoAtual ? 'disabled' : ''}`}
               onClick={handleAvancar}
             >
               {ultimaQuestao ? 'Finalizar fase 🏁' : 'Próxima pergunta ➜'}
@@ -242,6 +365,7 @@ export default function QuestionPage({ setPontos, concluidas, setConcluidas }) {
           </div>
         </section>
       </main>
+
       <footer className="app-footer student-footer">
         <div className="app-footer-content student-footer-content">
           LumiEduca © 2026 • Aprender com tecnologia, diversão e propósito.
