@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../styles/professor-pages.css';
+import '../styles/question.css';
+import Modal from '../components/UI/Modal';
 
 export default function ReceivedTasksPage({ setPontos }) {
   const navigate = useNavigate();
@@ -8,34 +10,68 @@ export default function ReceivedTasksPage({ setPontos }) {
   const [tarefaAtiva, setTarefaAtiva] = useState(null);
   const [respondido, setRespondido] = useState(false);
   const [escolha, setEscolha] = useState(null);
+  const [modal, setModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info',
+    onConfirm: null,
+    showCancel: false,
+  });
 
   const userType = localStorage.getItem('userType');
   const nomeUsuario = localStorage.getItem('userName') || 'visitante';
   const isProfessor = userType === 'professor';
 
+  const carregarTarefas = () => {
+    const todas = JSON.parse(localStorage.getItem('lumi_tarefas') || '[]');
+    const concluidas = JSON.parse(
+      localStorage.getItem(`lumi_tarefas_concluidas_${nomeUsuario}`) || '[]'
+    );
+
+    if (isProfessor) {
+      setTarefas(todas);
+      return;
+    }
+
+    const codigosAluno = JSON.parse(
+      localStorage.getItem(`salasEstudante_${nomeUsuario}`) || '[]'
+    );
+
+    const pendentes = todas.filter((tarefa) => {
+      const jaConcluida = concluidas.find((c) => c.idTarefa === tarefa.id);
+
+      if (jaConcluida) return false;
+
+      if (!tarefa.salaCodigo) return true;
+
+      return codigosAluno.includes(tarefa.salaCodigo);
+    });
+
+    setTarefas(pendentes);
+  };
+
   useEffect(() => {
-    const carregarDados = () => {
-      const todas = JSON.parse(localStorage.getItem('lumi_tarefas') || '[]');
-      const concluidas = JSON.parse(
-        localStorage.getItem(`lumi_tarefas_concluidas_${nomeUsuario}`) || '[]'
-      );
-
-      if (isProfessor) {
-        setTarefas(todas);
-      } else {
-        const pendentes = todas.filter(
-          (t) => !concluidas.find((c) => c.idTarefa === t.id)
-        );
-        setTarefas(pendentes);
-      }
-    };
-
-    carregarDados();
+    carregarTarefas();
   }, [isProfessor, nomeUsuario]);
+
+  const closeModal = () => {
+    setModal((prev) => ({
+      ...prev,
+      isOpen: false,
+      onConfirm: null,
+      showCancel: false,
+    }));
+  };
 
   const resumo = useMemo(() => {
     return { total: tarefas.length };
   }, [tarefas]);
+
+  const acertouTarefa = () => {
+    if (!tarefaAtiva) return false;
+    return Number(escolha) === Number(tarefaAtiva.respostaCorreta);
+  };
 
   const finalizarTarefa = (tarefa) => {
     const indiceEscolhido = Number(escolha);
@@ -50,7 +86,10 @@ export default function ReceivedTasksPage({ setPontos }) {
     historico.unshift({
       id: Date.now(),
       aluno: nomeUsuario,
+      nomeAtividade: tarefa.nomeAtividade || tarefa.pergunta,
       pergunta: tarefa.pergunta,
+      salaNome: tarefa.salaNome || 'Geral',
+      salaCodigo: tarefa.salaCodigo || null,
       status: acertou ? 'Acertou ✅' : 'Errou ❌',
       data: new Date().toLocaleDateString('pt-BR'),
       hora: new Date().toLocaleTimeString('pt-BR', {
@@ -75,42 +114,66 @@ export default function ReceivedTasksPage({ setPontos }) {
     setRespondido(false);
     setEscolha(null);
 
-    alert(acertou ? 'Incrível! Você ganhou 10 estrelas! 🌟' : 'Resposta enviada! 💪');
+    setModal({
+      isOpen: true,
+      title: acertou ? 'Muito bem! 🌟' : 'Resposta enviada!',
+      message: acertou
+        ? 'Você ganhou 10 estrelas por concluir o desafio.'
+        : 'Sua resposta foi registrada. Continue praticando!',
+      type: acertou ? 'info' : 'default',
+      onConfirm: closeModal,
+      showCancel: false,
+    });
   };
 
   const excluirTarefa = (id) => {
-    if (window.confirm('Apagar este desafio para todos?')) {
-      const todas = JSON.parse(localStorage.getItem('lumi_tarefas') || '[]');
-      const novas = todas.filter((t) => t.id !== id);
+    setModal({
+      isOpen: true,
+      title: 'Apagar desafio?',
+      message: 'Essa atividade será removida da gestão de desafios.',
+      type: 'danger',
+      showCancel: true,
+      onConfirm: () => {
+        const todas = JSON.parse(localStorage.getItem('lumi_tarefas') || '[]');
+        const novas = todas.filter((t) => t.id !== id);
 
-      localStorage.setItem('lumi_tarefas', JSON.stringify(novas));
-      setTarefas(novas);
-    }
+        localStorage.setItem('lumi_tarefas', JSON.stringify(novas));
+        setTarefas(novas);
+        closeModal();
+      },
+    });
+  };
+
+  const voltarLista = () => {
+    setTarefaAtiva(null);
+    setRespondido(false);
+    setEscolha(null);
   };
 
   if (tarefaAtiva) {
     return (
       <div className="professor-page">
         <main className="professor-page-content">
-          <button
-            type="button"
-            className="professor-back-button"
-            onClick={() => setTarefaAtiva(null)}
-          >
+          <button type="button" className="professor-back-button" onClick={voltarLista}>
             ← Voltar para a lista
           </button>
 
           <section className="professor-card orange-top professor-question-card">
-            <span className="professor-badge orange">
-              {isProfessor ? 'Revisão do professor' : 'Desafio ativo'}
-            </span>
+            <div className="question-top">
+              <span className="professor-badge orange">
+                {isProfessor ? 'Revisão do professor' : 'Desafio ativo'}
+              </span>
+
+              <span className="question-progress">
+                Sala: {tarefaAtiva.salaNome || 'Geral'}
+              </span>
+            </div>
 
             <h1 className="professor-title">{tarefaAtiva.pergunta}</h1>
 
             <p className="professor-text">
-              {isProfessor
-                ? 'Revise a atividade como ela aparece para os alunos.'
-                : 'Escolha a alternativa correta e envie sua resposta.'}
+              Atividade:{' '}
+              <strong>{tarefaAtiva.nomeAtividade || 'Atividade personalizada'}</strong>
             </p>
 
             <div className="professor-options-grid">
@@ -119,23 +182,29 @@ export default function ReceivedTasksPage({ setPontos }) {
                   key={idx}
                   type="button"
                   className="professor-option-btn"
-                  onClick={() => !respondido && (setEscolha(idx), setRespondido(true))}
+                  onClick={() => {
+                    if (!respondido) {
+                      setEscolha(idx);
+                      setRespondido(true);
+                    }
+                  }}
                   style={{
                     backgroundColor: respondido
-                      ? idx === tarefaAtiva.respostaCorreta
+                      ? idx === Number(tarefaAtiva.respostaCorreta)
                         ? '#2ecc71'
                         : idx === escolha
-                        ? '#e74c3c'
-                        : 'white'
+                          ? '#e74c3c'
+                          : 'white'
                       : escolha === idx
-                      ? '#fff3e0'
-                      : 'white',
+                        ? '#f3f4f6'
+                        : 'white',
                     color:
                       respondido &&
-                      (idx === tarefaAtiva.respostaCorreta || idx === escolha)
+                      (idx === Number(tarefaAtiva.respostaCorreta) || idx === escolha)
                         ? 'white'
                         : '#1f2f4d',
-                    borderColor: escolha === idx && !respondido ? '#ff8c00' : '#e5ecf3',
+                    borderColor: escolha === idx && !respondido ? '#cbd5e1' : '#e5ecf3',
+                    cursor: respondido ? 'not-allowed' : 'pointer',
                   }}
                 >
                   {op}
@@ -144,16 +213,42 @@ export default function ReceivedTasksPage({ setPontos }) {
             </div>
 
             {respondido && (
-              <div className="professor-action-row">
+              <div
+                className={`question-feedback-box ${
+                  acertouTarefa() ? 'correct' : 'wrong'
+                }`}
+              >
+                <strong>{acertouTarefa() ? 'Muito bem!' : 'Quase lá!'}</strong>
+
+                <p>
+                  {acertouTarefa()
+                    ? 'Parabéns! Você acertou o desafio enviado pelo professor.'
+                    : 'Sua resposta não foi a correta desta vez. Peça ajuda ao professor para revisar essa questão.'}
+                </p>
+              </div>
+            )}
+
+            <div className="professor-action-row">
+              {isProfessor && (
+                <button
+                  type="button"
+                  className="professor-btn secondary"
+                  onClick={voltarLista}
+                >
+                  Fechar revisão
+                </button>
+              )}
+
+              {!isProfessor && respondido && (
                 <button
                   type="button"
                   className="professor-btn green"
                   onClick={() => finalizarTarefa(tarefaAtiva)}
                 >
-                  {isProfessor ? 'Fechar revisão' : 'Concluir desafio'}
+                  Concluir desafio
                 </button>
-              </div>
-            )}
+              )}
+            </div>
           </section>
         </main>
 
@@ -162,6 +257,17 @@ export default function ReceivedTasksPage({ setPontos }) {
             LumiEduca © 2026 • Aprender com tecnologia, diversão e propósito.
           </div>
         </footer>
+
+        <Modal
+          isOpen={modal.isOpen}
+          title={modal.title}
+          message={modal.message}
+          confirmText="Entendi"
+          cancelText="Cancelar"
+          type={modal.type}
+          onConfirm={modal.onConfirm || closeModal}
+          onCancel={modal.showCancel ? closeModal : null}
+        />
       </div>
     );
   }
@@ -203,13 +309,23 @@ export default function ReceivedTasksPage({ setPontos }) {
 
           <div className="professor-action-row">
             {isProfessor && (
-              <button
-                type="button"
-                className="professor-btn primary"
-                onClick={() => navigate('/criar-tarefa')}
-              >
-                + Criar novo desafio
-              </button>
+              <>
+                <button
+                  type="button"
+                  className="professor-btn primary"
+                  onClick={() => navigate('/criar-tarefa')}
+                >
+                  + Criar novo desafio
+                </button>
+
+                <button
+                  type="button"
+                  className="professor-btn secondary"
+                  onClick={() => navigate('/salas-de-aula')}
+                >
+                  Criar sala personalizada
+                </button>
+              </>
             )}
 
             <button
@@ -233,7 +349,14 @@ export default function ReceivedTasksPage({ setPontos }) {
             tarefas.map((t) => (
               <div key={t.id} className="professor-task-card">
                 <div style={{ flex: 1 }}>
-                  <h3 className="professor-task-title">{t.pergunta}</h3>
+                  <h3 className="professor-task-title">
+                    {t.nomeAtividade || t.pergunta}
+                  </h3>
+
+                  <p className="professor-task-meta">
+                    Sala: <strong>{t.salaNome || 'Geral'}</strong>
+                  </p>
+
                   <p className="professor-task-meta">
                     {isProfessor
                       ? 'Revise ou exclua a atividade cadastrada.'
@@ -255,7 +378,11 @@ export default function ReceivedTasksPage({ setPontos }) {
                   <button
                     type="button"
                     className="professor-btn orange"
-                    onClick={() => setTarefaAtiva(t)}
+                    onClick={() => {
+                      setTarefaAtiva(t);
+                      setRespondido(false);
+                      setEscolha(null);
+                    }}
                   >
                     {isProfessor ? 'Revisar' : 'Jogar'}
                   </button>
@@ -271,6 +398,17 @@ export default function ReceivedTasksPage({ setPontos }) {
           LumiEduca © 2026 • Aprender com tecnologia, diversão e propósito.
         </div>
       </footer>
+
+      <Modal
+        isOpen={modal.isOpen}
+        title={modal.title}
+        message={modal.message}
+        confirmText={modal.showCancel ? 'Sim, apagar' : 'Entendi'}
+        cancelText="Cancelar"
+        type={modal.type}
+        onConfirm={modal.onConfirm || closeModal}
+        onCancel={modal.showCancel ? closeModal : null}
+      />
     </div>
   );
 }

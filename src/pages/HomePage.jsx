@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import '../styles/home.css';
 import lumiPointing from '../assets/images/lumi-icon-04.png';
 import lumiTeacher from '../assets/images/lumi-icon-01.png';
+import Modal from '../components/UI/Modal';
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -13,8 +14,14 @@ export default function HomePage() {
     tarefas: 0,
     historico: 0,
   });
+  const [modal, setModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+  });
 
   const userType = localStorage.getItem('userType');
+  const userName = localStorage.getItem('userName') || 'visitante';
   const isProfessor = userType === 'professor';
 
   useEffect(() => {
@@ -32,6 +39,10 @@ export default function HomePage() {
 
     carregarDados();
   }, [isProfessor]);
+
+  const closeModal = () => {
+    setModal((prev) => ({ ...prev, isOpen: false }));
+  };
 
   const heroContent = useMemo(() => {
     if (isProfessor) {
@@ -59,6 +70,40 @@ export default function HomePage() {
 
   const handleOpenProfessorTrail = () => {
     setShowProfessorTrail((prev) => !prev);
+  };
+
+  const handleEntrarSalaPelaHome = () => {
+    const codigo = codigoSala.trim();
+
+    if (!codigo) {
+      setModal({
+        isOpen: true,
+        title: 'Código obrigatório',
+        message: 'Digite o código da sala personalizada para continuar.',
+      });
+      return;
+    }
+
+    const salas = JSON.parse(localStorage.getItem('salas') || '[]');
+    const sala = salas.find((s) => s.codigo === codigo);
+
+    if (!sala) {
+      setModal({
+        isOpen: true,
+        title: 'Sala não encontrada',
+        message: 'Verifique o código informado pelo professor e tente novamente.',
+      });
+      return;
+    }
+
+    const chave = `salasEstudante_${userName}`;
+    const salasAluno = JSON.parse(localStorage.getItem(chave) || '[]');
+
+    if (!salasAluno.includes(codigo)) {
+      localStorage.setItem(chave, JSON.stringify([...salasAluno, codigo]));
+    }
+
+    navigate('/tarefas-recebidas');
   };
 
   return (
@@ -153,17 +198,21 @@ export default function HomePage() {
                     <input
                       id="codigoSala"
                       type="text"
-                      placeholder="Ex: SALA-LUMI-2026"
+                      placeholder="Ex: 278492"
                       value={codigoSala}
-                      onChange={(e) => setCodigoSala(e.target.value)}
+                      onChange={(e) => setCodigoSala(e.target.value.replace(/\D/g, '').slice(0, 6))}
                     />
 
-                    <button type="button" className="btn btn-primary custom-trail-submit">
+                    <button
+                      type="button"
+                      className="btn btn-primary custom-trail-submit"
+                      onClick={handleEntrarSalaPelaHome}
+                    >
                       Explorar
                     </button>
 
                     <p className="custom-trail-note">
-                      Em breve, esta opção permitirá acessar trilhas criadas pelo professor.
+                      Ao entrar na sala, você verá os desafios personalizados do professor.
                     </p>
                   </div>
                 )}
@@ -217,6 +266,14 @@ export default function HomePage() {
                   >
                     Ver relatório
                   </button>
+
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => navigate('/salas-de-aula')}
+                  >
+                    Criar sala personalizada
+                  </button>
                 </div>
               </div>
 
@@ -268,6 +325,15 @@ export default function HomePage() {
           LumiEduca © 2026 • Aprender com tecnologia, diversão e propósito.
         </div>
       </footer>
+
+      <Modal
+        isOpen={modal.isOpen}
+        title={modal.title}
+        message={modal.message}
+        confirmText="Entendi"
+        type="info"
+        onConfirm={closeModal}
+      />
     </div>
   );
 }

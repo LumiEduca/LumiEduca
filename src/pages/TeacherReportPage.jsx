@@ -66,17 +66,26 @@ export default function TeacherReportPage() {
                 <thead>
                   <tr>
                     <th>Usuário</th>
+                    <th>Sala</th>
                     <th>Atividade</th>
                     <th>Status</th>
                     <th>Data/Hora</th>
                   </tr>
                 </thead>
+
                 <tbody>
                   {historico.map((h) => (
                     <tr key={h.id}>
                       <td>{h.aluno}</td>
-                      <td>{h.pergunta}</td>
-                      <td className={h.status.includes('✅') ? 'professor-status-success' : 'professor-status-error'}>
+                      <td>{h.salaNome || 'Geral'}</td>
+                      <td>{h.nomeAtividade || h.pergunta}</td>
+                      <td
+                        className={
+                          h.status.includes('✅')
+                            ? 'professor-status-success'
+                            : 'professor-status-error'
+                        }
+                      >
                         {h.status}
                       </td>
                       <td>

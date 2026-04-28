@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import '../styles/classrooms.css';
 
 function gerarCodigo() {
@@ -48,63 +48,45 @@ export default function ClassroomsPage() {
   const [erro, setErro] = useState('');
   const [sucesso, setSucesso] = useState('');
   const [salaSelecionada, setSalaSelecionada] = useState(null);
+  const [mostrarAtividadesExistentes, setMostrarAtividadesExistentes] = useState(false);
 
-  const [atividades, setAtividades] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem('atividades')) || {};
-    } catch {
-      return {};
-    }
-  });
-  const [mostrarFormAtividade, setMostrarFormAtividade] = useState(false);
-  const [tituloAtividade, setTituloAtividade] = useState('');
-  const [descricaoAtividade, setDescricaoAtividade] = useState('');
-  const [erroAtividade, setErroAtividade] = useState('');
-
-  const salvarAtividades = (novas) => {
-    localStorage.setItem('atividades', JSON.stringify(novas));
-    setAtividades(novas);
-  };
-
-  const handleAdicionarAtividade = (e) => {
-    e.preventDefault();
-    const titulo = tituloAtividade.trim();
-    const descricao = descricaoAtividade.trim();
-    if (!titulo) {
-      setErroAtividade('Informe um título para a atividade.');
-      return;
-    }
-    const salaId = salaSelecionada.id;
-    const novaAtividade = {
-      id: Date.now().toString(),
-      titulo,
-      descricao,
-      criadaEm: new Date().toLocaleDateString('pt-BR'),
-    };
-    const novas = {
-      ...atividades,
-      [salaId]: [...(atividades[salaId] || []), novaAtividade],
-    };
-    salvarAtividades(novas);
-    setTituloAtividade('');
-    setDescricaoAtividade('');
-    setErroAtividade('');
-    setMostrarFormAtividade(false);
-  };
+  const tarefas = JSON.parse(localStorage.getItem('lumi_tarefas') || '[]');
 
   const minhasSalas = isProfessor
     ? salas.filter((s) => s.criadoPor === userName)
     : [];
 
-  const salasDoEstudante = !isProfessor
+  const salasDoAluno = !isProfessor
     ? salas.filter((s) => salasEstudante.includes(s.codigo))
     : [];
 
-  const listaSalas = isProfessor ? minhasSalas : salasDoEstudante;
+  const listaSalas = isProfessor ? minhasSalas : salasDoAluno;
+
+  const tarefasDaSala = salaSelecionada
+    ? tarefas.filter((tarefa) => tarefa.salaId === salaSelecionada.id)
+    : [];
+
+  const tarefasDisponiveisParaAdicionar = useMemo(() => {
+    if (!salaSelecionada) return [];
+
+    return tarefas.filter((tarefa) => {
+      const pertenceAoProfessor =
+        tarefa.criadoPor === userName || tarefa.criadoPor === 'Professor';
+
+      const naoEstaNaSala = tarefa.salaId !== salaSelecionada.id;
+
+      return pertenceAoProfessor && naoEstaNaSala;
+    });
+  }, [tarefas, salaSelecionada, userName]);
+
+  const atualizarTarefas = (novasTarefas) => {
+    localStorage.setItem('lumi_tarefas', JSON.stringify(novasTarefas));
+  };
 
   const handleCriarSala = (e) => {
     e.preventDefault();
     const nome = nomeSala.trim();
+
     if (!nome) {
       setErro('Informe um nome para a sala.');
       return;
@@ -118,8 +100,10 @@ export default function ClassroomsPage() {
     };
 
     const novasSalas = [...salas, novaSala];
+
     salvarSalas(novasSalas);
     setSalas(novasSalas);
+    setSalaSelecionada(novaSala);
     setNomeSala('');
     setErro('');
     setSucesso(`Sala "${nome}" criada! Código: ${novaSala.codigo}`);
@@ -128,13 +112,16 @@ export default function ClassroomsPage() {
 
   const handleEntrarComCodigo = (e) => {
     e.preventDefault();
+
     const codigo = codigoInput.trim();
+
     if (!codigo) {
       setErro('Informe o código da sala.');
       return;
     }
 
     const sala = salas.find((s) => s.codigo === codigo);
+
     if (!sala) {
       setErro('Código inválido. Verifique e tente novamente.');
       return;
@@ -142,21 +129,45 @@ export default function ClassroomsPage() {
 
     if (salasEstudante.includes(codigo)) {
       setErro('Você já está nessa sala.');
+      setSalaSelecionada(sala);
       return;
     }
 
     const novosCodigos = [...salasEstudante, codigo];
+
     salvarSalasEstudante(userName, novosCodigos);
     setSalasEstudante(novosCodigos);
+    setSalaSelecionada(sala);
     setCodigoInput('');
     setErro('');
     setSucesso(`Você entrou na sala "${sala.nome}"!`);
     setTimeout(() => setSucesso(''), 4000);
   };
 
+  const handleAdicionarAtividadeExistente = (atividadeId) => {
+    if (!salaSelecionada) return;
+
+    const novasTarefas = tarefas.map((tarefa) => {
+      if (String(tarefa.id) !== String(atividadeId)) {
+        return tarefa;
+      }
+
+      return {
+        ...tarefa,
+        salaId: salaSelecionada.id,
+        salaNome: salaSelecionada.nome,
+        salaCodigo: salaSelecionada.codigo,
+      };
+    });
+
+    atualizarTarefas(novasTarefas);
+    setMostrarAtividadesExistentes(false);
+    setSucesso('Atividade adicionada à sala com sucesso!');
+    setTimeout(() => setSucesso(''), 4000);
+  };
+
   return (
     <div className="classrooms-page">
-      {/* Sidebar */}
       <aside className="classrooms-sidebar">
         <h2 className="classrooms-sidebar-title">🏫 Salas de Aula</h2>
 
@@ -173,6 +184,7 @@ export default function ClassroomsPage() {
               }}
               maxLength={60}
             />
+
             <button type="submit" className="classrooms-btn primary full">
               + Criar sala
             </button>
@@ -190,6 +202,7 @@ export default function ClassroomsPage() {
               }}
               maxLength={6}
             />
+
             <button type="submit" className="classrooms-btn primary full">
               Entrar na sala
             </button>
@@ -211,82 +224,124 @@ export default function ClassroomsPage() {
                 className={`classrooms-sidebar-item ${
                   salaSelecionada?.id === sala.id ? 'active' : ''
                 }`}
-                onClick={() => setSalaSelecionada(sala)}
+                onClick={() => {
+                  setSalaSelecionada(sala);
+                  setMostrarAtividadesExistentes(false);
+                  setErro('');
+                  setSucesso('');
+                }}
               >
                 <span className="classrooms-sidebar-item-name">{sala.nome}</span>
-                {isProfessor && (
-                  <span className="classrooms-sidebar-item-code">{sala.codigo}</span>
-                )}
+                <span className="classrooms-sidebar-item-code">{sala.codigo}</span>
               </button>
             ))
           )}
         </div>
       </aside>
 
-      {/* Conteúdo principal */}
       <main className="classrooms-main">
         {salaSelecionada ? (
           <div className="classrooms-room">
             <div className="classrooms-room-header">
-              <h1 className="classrooms-room-title">{salaSelecionada.nome}</h1>
-              <div className="classrooms-room-header-actions">
-                {isProfessor && (
-                  <span className="classrooms-room-code">
-                    Código: <strong>{salaSelecionada.codigo}</strong>
-                  </span>
-                )}
-                {isProfessor && (
+              <div>
+                <h1 className="classrooms-room-title">{salaSelecionada.nome}</h1>
+                <p className="classrooms-room-subtitle">
+                  Código da sala: <strong>{salaSelecionada.codigo}</strong>
+                </p>
+              </div>
+
+              {isProfessor && (
+                <div className="classrooms-room-header-actions">
                   <button
+                    type="button"
+                    className="classrooms-btn secondary"
+                    onClick={() =>
+                      setMostrarAtividadesExistentes((prev) => !prev)
+                    }
+                  >
+                    {mostrarAtividadesExistentes
+                      ? 'Fechar atividades existentes'
+                      : '+ Adicionar atividade existente'}
+                  </button>
+
+                  <button
+                    type="button"
                     className="classrooms-btn primary"
                     onClick={() => {
-                      setMostrarFormAtividade((v) => !v);
-                      setErroAtividade('');
+                      window.location.href = '/criar-tarefa';
                     }}
                   >
-                    {mostrarFormAtividade ? 'Cancelar' : '+ Adicionar Atividade'}
+                    + Criar atividade para esta sala
                   </button>
-                )}
-              </div>
+                </div>
+              )}
             </div>
 
-            {isProfessor && mostrarFormAtividade && (
-              <form onSubmit={handleAdicionarAtividade} className="classrooms-activity-form">
-                <input
-                  type="text"
-                  className="classrooms-input"
-                  placeholder="Título da atividade"
-                  value={tituloAtividade}
-                  onChange={(e) => { setTituloAtividade(e.target.value); setErroAtividade(''); }}
-                  maxLength={100}
-                />
-                <textarea
-                  className="classrooms-input classrooms-textarea"
-                  placeholder="Descrição"
-                  value={descricaoAtividade}
-                  onChange={(e) => setDescricaoAtividade(e.target.value)}
-                  rows={3}
-                  maxLength={500}
-                />
-                {erroAtividade && <p className="classrooms-error">{erroAtividade}</p>}
-                <button type="submit" className="classrooms-btn primary">
-                  Salvar atividade
-                </button>
-              </form>
+            {isProfessor && mostrarAtividadesExistentes && (
+              <section className="classrooms-existing-panel">
+                <h2 className="classrooms-existing-title">
+                  Atividades já criadas
+                </h2>
+
+                {tarefasDisponiveisParaAdicionar.length === 0 ? (
+                  <p className="classrooms-empty">
+                    Nenhuma atividade disponível para adicionar nesta sala.
+                  </p>
+                ) : (
+                  <div className="classrooms-existing-list">
+                    {tarefasDisponiveisParaAdicionar.map((atividade) => (
+                      <div
+                        key={atividade.id}
+                        className="classrooms-existing-card"
+                      >
+                        <div>
+                          <strong>
+                            {atividade.nomeAtividade || atividade.pergunta}
+                          </strong>
+
+                          <p>
+                            Sala atual:{' '}
+                            <span>{atividade.salaNome || 'Geral'}</span>
+                          </p>
+                        </div>
+
+                        <button
+                          type="button"
+                          className="classrooms-btn primary"
+                          onClick={() =>
+                            handleAdicionarAtividadeExistente(atividade.id)
+                          }
+                        >
+                          Adicionar
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </section>
             )}
 
             <div className="classrooms-activities">
-              {(atividades[salaSelecionada.id] || []).length === 0 ? (
-                <p className="classrooms-empty">Nenhuma atividade nesta sala ainda.</p>
+              {tarefasDaSala.length === 0 ? (
+                <p className="classrooms-empty">
+                  {isProfessor
+                    ? 'Nenhuma atividade vinculada a esta sala ainda.'
+                    : 'Nenhuma atividade disponível nesta sala ainda.'}
+                </p>
               ) : (
-                (atividades[salaSelecionada.id] || []).map((atv) => (
+                tarefasDaSala.map((atv) => (
                   <div key={atv.id} className="classrooms-activity-card">
                     <div className="classrooms-activity-header">
-                      <span className="classrooms-activity-title">{atv.titulo}</span>
-                      <span className="classrooms-activity-date">{atv.criadaEm}</span>
+                      <span className="classrooms-activity-title">
+                        {atv.nomeAtividade || atv.pergunta}
+                      </span>
+
+                      <span className="classrooms-activity-date">
+                        {atv.salaNome || salaSelecionada.nome}
+                      </span>
                     </div>
-                    {atv.descricao && (
-                      <p className="classrooms-activity-desc">{atv.descricao}</p>
-                    )}
+
+                    <p className="classrooms-activity-desc">{atv.pergunta}</p>
                   </div>
                 ))
               )}

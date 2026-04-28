@@ -280,3 +280,65 @@
   font-size: 0.88rem;
   margin: 0;
 }
+
+.classrooms-existing-panel {
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 18px;
+  padding: 1.2rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 8px 20px rgba(31, 41, 55, 0.05);
+}
+
+.classrooms-existing-title {
+  margin: 0 0 1rem;
+  font-size: 1.1rem;
+  font-weight: 900;
+  color: #1f2f4d;
+}
+
+.classrooms-existing-list {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.classrooms-existing-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 0.95rem 1rem;
+}
+
+.classrooms-existing-card strong {
+  display: block;
+  color: #1f2f4d;
+  font-weight: 900;
+  margin-bottom: 0.25rem;
+}
+
+.classrooms-existing-card p {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.classrooms-existing-card span {
+  color: #3498db;
+  font-weight: 800;
+}
+
+@media (max-width: 768px) {
+  .classrooms-existing-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .classrooms-existing-card .classrooms-btn {
+    width: 100%;
+  }
+}
