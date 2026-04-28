@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../styles/professor-pages.css';
+import { showLumiNotification } from '../services/notificationClient';
 
 export default function CreateTaskPage() {
   const [pergunta, setPergunta] = useState('');
@@ -14,7 +15,7 @@ export default function CreateTaskPage() {
     setOpcoes(novasOpcoes);
   };
 
-  const salvarTarefa = (e) => {
+  const salvarTarefa = async (e) => {
     e.preventDefault();
 
     if (opcoes.some((opt) => opt.trim() === '')) {
@@ -34,7 +35,12 @@ export default function CreateTaskPage() {
     };
 
     localStorage.setItem('lumi_tarefas', JSON.stringify([...tarefasAtuais, novaTarefa]));
-    alert('Desafio de múltipla escolha lançado! 🚀');
+
+    await showLumiNotification(
+      'Nova atividade no LumiEduca! 🦊',
+      'Seu professor enviou um novo desafio para você.'
+    );
+
     navigate('/tarefas-recebidas');
   };
 

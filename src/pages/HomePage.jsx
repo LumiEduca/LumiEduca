@@ -7,7 +7,6 @@ import lumiTeacher from '../assets/images/lumi-icon-01.png';
 export default function HomePage() {
   const navigate = useNavigate();
 
-  const [pendentes, setPendentes] = useState(0);
   const [showProfessorTrail, setShowProfessorTrail] = useState(false);
   const [codigoSala, setCodigoSala] = useState('');
   const [resumoProfessor, setResumoProfessor] = useState({
@@ -22,22 +21,12 @@ export default function HomePage() {
     const carregarDados = () => {
       const todas = JSON.parse(localStorage.getItem('lumi_tarefas') || '[]');
       const historico = JSON.parse(localStorage.getItem('lumi_historico_tarefas') || '[]');
-      const nomeUsuario = localStorage.getItem('userName') || 'visitante';
-
-      const chaveConcluidas = `lumi_tarefas_concluidas_${nomeUsuario}`;
-      const concluidas = JSON.parse(localStorage.getItem(chaveConcluidas) || '[]');
 
       if (isProfessor) {
-        setPendentes(todas.length);
         setResumoProfessor({
           tarefas: todas.length,
           historico: historico.length,
         });
-      } else {
-        const listaPendentes = todas.filter(
-          (t) => !concluidas.find((c) => c.idTarefa === t.id)
-        );
-        setPendentes(listaPendentes.length);
       }
     };
 
@@ -75,25 +64,6 @@ export default function HomePage() {
   return (
     <div className={`student-home page-wrapper ${isProfessor ? 'professor-home' : ''}`}>
       <main className="student-home-content">
-        {!isProfessor && pendentes > 0 && (
-          <section className="pending-alert">
-            <div className="pending-alert-text">
-              <span className="pending-alert-icon">🔔</span>
-              <p>
-                <strong>{pendentes}</strong> desafio(s) esperando por você!
-              </p>
-            </div>
-
-            <button
-              type="button"
-              className="btn btn-primary pending-alert-button"
-              onClick={() => navigate('/tarefas-recebidas')}
-            >
-              Ver agora
-            </button>
-          </section>
-        )}
-
         <section className="student-hero">
           <div className="student-hero-text">
             <div className="student-hero-badge">{heroContent.badge}</div>
