@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import '../styles/header.css';
 import logoLumi from '../assets/images/lumi-logo.png';
 import Modal from './UI/Modal';
+import usePushNotifications from './usePushNotifications';
 
 export default function Header({ pontos = 0 }) {
   const navigate = useNavigate();
@@ -22,6 +23,8 @@ export default function Header({ pontos = 0 }) {
 
   const userType = localStorage.getItem('userType');
   const isProfessor = userType === 'professor';
+
+  usePushNotifications();
 
   useEffect(() => {
     const handler = (e) => {

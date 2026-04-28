@@ -1,8 +1,12 @@
-import admin from "firebase-admin";
-import serviceAccount from "./serviceAccountKey.json";
-
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-});
+const admin = {
+  messaging() {
+    return {
+      async send(message) {
+        console.log('Notificação simulada:', message);
+        return 'mock-message-id';
+      },
+    };
+  },
+};
 
 export default admin;

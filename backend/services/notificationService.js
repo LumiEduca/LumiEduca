@@ -9,10 +9,3 @@ export const sendNotification = async (token, data) => {
     },
   });
 };
-
-let tokens = [];
-
-export const saveToken = (req, res) => {
-  tokens.push(req.body);
-  res.sendStatus(200);
-};
