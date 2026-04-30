@@ -103,7 +103,7 @@ export default function HomePage() {
       localStorage.setItem(chave, JSON.stringify([...salasAluno, codigo]));
     }
 
-    navigate('/tarefas-recebidas');
+    navigate('/tarefas-recebidas', { state: { salaCodigo: codigo } });
   };
 
   return (
