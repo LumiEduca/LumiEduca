@@ -42,6 +42,13 @@
 .brand-lumi { color: #ff8c00; }
 .brand-educa { color: #1f2f4d; }
 
+/* --- Container da Direita (Score + Nav) --- */
+.header-right-side {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
 /* --- Ações do Header (Desktop) --- */
 .header-actions {
   display: flex;
@@ -92,10 +99,24 @@
   transition: 0.2s ease;
 }
 
-.install-btn { background: #3498db; color: white; }
+/* Botão de Instalar Laranja (Estilo 3D) */
+.install-btn { 
+  background: #ff8c00; 
+  color: white; 
+  box-shadow: 0 4px 0 #d35400;
+}
+.install-btn:hover { 
+  background: #e67e22; 
+  transform: translateY(-1px);
+}
+.install-btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #d35400;
+}
+
 .logout-btn { background: #ff4d4d; color: white; }
 
-/* --- Hamburger Mobile (Dropdown) --- */
+/* --- Hamburger Mobile --- */
 .hamburger-btn {
   display: none;
   flex-direction: column;
@@ -114,7 +135,7 @@
   top: 100%;
   left: 0;
   width: 100%;
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.98);
   backdrop-filter: blur(8px);
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
   padding: 1.5rem;
@@ -137,15 +158,49 @@
 
 .logout-btn-mobile { background: #ff4d4d !important; color: white !important; }
 
-/* --- Responsividade --- */
-@media (max-width: 768px) {
-  .desktop-nav { display: none !important; }
-  .hamburger-btn { display: flex !important; }
-  .header-logo { width: 42px; height: 42px; }
-  .header-brand-text { font-size: 1.45rem; }
+/* Botão de Instalar App no Menu Mobile */
+.install-btn-mobile {
+  width: 100% !important;
+  text-align: center !important;
+  background: #fff3e0 !important;
+  border: 2px solid #ffcc80 !important;
+  color: #e67e22 !important;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-weight: 900;
 }
 
-@media (max-width: 560px) {
+/* --- Responsividade --- */
+@media (max-width: 768px) {
+  /* Esconde a navegação desktop e força o botão de instalar a sumir do header */
+  .desktop-nav, 
+  .install-btn.header-desktop-only { 
+    display: none !important; 
+  }
+
+  .hamburger-btn { display: flex !important; order: 2; }
+  .header-right-side { order: 1; }
+
+  .header-logo { width: 42px; height: 42px; }
+  .header-brand-text { font-size: 1.45rem; }
+
+  /* Ajuste do score para ficar compacto no mobile */
+  .header-score {
+    padding: 0.4rem 0.7rem;
+    min-height: 38px;
+    background: #fff9f0;
+    border-color: #ffecd1;
+  }
+}
+
+@media (max-width: 480px) {
   .app-header-container { padding: 0.7rem 0.8rem; }
   .header-brand-text { font-size: 1.2rem; }
+  .header-logo { width: 36px; height: 36px; }
+}
+
+@media (max-width: 350px) {
+  .header-brand-text { display: none; }
 }
