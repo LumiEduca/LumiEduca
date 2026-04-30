@@ -151,7 +151,7 @@ export default function HomePage() {
                     <span className="trail-subject-icon">🔢</span>
                     <div className="trail-subject-info">
                       <strong>Matemática</strong>
-                      <span>Desafios de soma</span>
+                      <span>Explorar trilha</span>
                     </div>
                   </button>
 
@@ -297,7 +297,7 @@ export default function HomePage() {
                       <span className="trail-subject-icon">🔢</span>
                       <div className="trail-subject-info">
                         <strong>Matemática</strong>
-                        <span>Abrir fase pronta</span>
+                        <span>Acessar trilha</span>
                       </div>
                     </button>
 
@@ -309,7 +309,7 @@ export default function HomePage() {
                       <span className="trail-subject-icon">📚</span>
                       <div className="trail-subject-info">
                         <strong>Português</strong>
-                        <span>Abrir fase pronta</span>
+                        <span>Acessar trilha</span>
                       </div>
                     </button>
                   </div>

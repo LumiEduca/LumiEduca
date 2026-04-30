@@ -1,4 +1,3 @@
-/* --- Base do Header --- */
 .app-header {
   position: sticky;
   top: 0;
@@ -29,7 +28,11 @@
   padding: 0;
 }
 
-.header-logo { width: 54px; height: 54px; object-fit: contain; }
+.header-logo {
+  width: 54px;
+  height: 54px;
+  object-fit: contain;
+}
 
 .header-brand-text {
   display: flex;
@@ -39,17 +42,20 @@
   letter-spacing: -0.03em;
 }
 
-.brand-lumi { color: #ff8c00; }
-.brand-educa { color: #1f2f4d; }
+.brand-lumi {
+  color: #ff8c00;
+}
 
-/* --- Container da Direita (Score + Nav) --- */
+.brand-educa {
+  color: #1f2f4d;
+}
+
 .header-right-side {
   display: flex;
   align-items: center;
-  gap: 0.8rem;
+  gap: 0.75rem;
 }
 
-/* --- Ações do Header (Desktop) --- */
 .header-actions {
   display: flex;
   align-items: center;
@@ -60,7 +66,6 @@
   display: flex;
   align-items: center;
   gap: 0.55rem;
-  margin-right: 0.2rem;
 }
 
 .header-nav-chip {
@@ -72,10 +77,17 @@
   background: #eef5fb;
   color: #2478b1;
   transition: 0.2s ease;
+  white-space: nowrap;
 }
 
-.header-nav-chip:hover { background: #dcecf8; }
-.header-nav-chip.active { background: #3498db; color: white; }
+.header-nav-chip:hover {
+  background: #dcecf8;
+}
+
+.header-nav-chip.active {
+  background: #3498db;
+  color: white;
+}
 
 .header-score {
   display: flex;
@@ -86,9 +98,14 @@
   border-radius: 999px;
   padding: 0.55rem 0.9rem;
   min-height: 46px;
+  white-space: nowrap;
 }
 
-.score-value { font-size: 0.95rem; font-weight: 800; color: #334155; }
+.score-value {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #334155;
+}
 
 .header-btn {
   border: none;
@@ -97,26 +114,34 @@
   font-weight: 800;
   cursor: pointer;
   transition: 0.2s ease;
+  white-space: nowrap;
 }
 
-/* Botão de Instalar Laranja (Estilo 3D) */
-.install-btn { 
-  background: #ff8c00; 
-  color: white; 
-  box-shadow: 0 4px 0 #d35400;
+.install-btn {
+  background: #3498db;
+  color: white;
+  box-shadow: 0 4px 0 #2478b1;
 }
-.install-btn:hover { 
-  background: #e67e22; 
+
+.install-btn:hover {
+  background: #2c80b9;
   transform: translateY(-1px);
 }
+
 .install-btn:active {
   transform: translateY(2px);
-  box-shadow: 0 2px 0 #d35400;
+  box-shadow: 0 2px 0 #2478b1;
 }
 
-.logout-btn { background: #ff4d4d; color: white; }
+.logout-btn {
+  background: #ff4d4d;
+  color: white;
+}
 
-/* --- Hamburger Mobile --- */
+.logout-btn:hover {
+  background: #e23d3d;
+}
+
 .hamburger-btn {
   display: none;
   flex-direction: column;
@@ -126,8 +151,12 @@
   cursor: pointer;
   padding: 10px;
 }
+
 .hamburger-btn span {
-  width: 25px; height: 3px; background: #1f2f4d; border-radius: 2px;
+  width: 25px;
+  height: 3px;
+  background: #1f2f4d;
+  border-radius: 2px;
 }
 
 .dropdown-menu {
@@ -145,26 +174,35 @@
   animation: slideDown 0.2s ease-out;
 }
 
-@keyframes slideDown {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
+.mobile-nav-links {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
 }
 
-.mobile-nav-links { display: flex; flex-direction: column; gap: 15px; }
 .mobile-nav-links button {
-  width: 100%; text-align: left; padding: 15px;
-  background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; font-weight: 700;
+  width: 100%;
+  text-align: left;
+  padding: 15px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  font-weight: 700;
+  color: #1f2f4d;
 }
 
-.logout-btn-mobile { background: #ff4d4d !important; color: white !important; }
+.mobile-nav-links hr {
+  width: 100%;
+  border: none;
+  border-top: 1px solid #e2e8f0;
+}
 
-/* Botão de Instalar App no Menu Mobile */
 .install-btn-mobile {
   width: 100% !important;
   text-align: center !important;
-  background: #fff3e0 !important;
-  border: 2px solid #ffcc80 !important;
-  color: #e67e22 !important;
+  background: #eaf4fb !important;
+  border: 2px solid #b7dcf5 !important;
+  color: #2478b1 !important;
   display: flex !important;
   align-items: center;
   justify-content: center;
@@ -172,35 +210,97 @@
   font-weight: 900;
 }
 
-/* --- Responsividade --- */
-@media (max-width: 768px) {
-  /* Esconde a navegação desktop e força o botão de instalar a sumir do header */
-  .desktop-nav, 
-  .install-btn.header-desktop-only { 
-    display: none !important; 
+.logout-btn-mobile {
+  background: #ff4d4d !important;
+  color: white !important;
+  text-align: center !important;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
   }
 
-  .hamburger-btn { display: flex !important; order: 2; }
-  .header-right-side { order: 1; }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 
-  .header-logo { width: 42px; height: 42px; }
-  .header-brand-text { font-size: 1.45rem; }
+@media (max-width: 1024px) {
+  .app-header-container {
+    max-width: 100%;
+  }
 
-  /* Ajuste do score para ficar compacto no mobile */
+  .header-brand-text {
+    font-size: 1.65rem;
+  }
+
+  .header-nav-chip,
+  .header-btn {
+    padding: 0.68rem 0.8rem;
+    font-size: 0.9rem;
+  }
+
+  .header-right-side {
+    gap: 0.55rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .desktop-nav,
+  .header-desktop-only,
+  .desktop-logout {
+    display: none !important;
+  }
+
+  .hamburger-btn {
+    display: flex !important;
+  }
+
+  .header-logo {
+    width: 42px;
+    height: 42px;
+  }
+
+  .header-brand-text {
+    font-size: 1.45rem;
+  }
+
   .header-score {
     padding: 0.4rem 0.7rem;
     min-height: 38px;
-    background: #fff9f0;
-    border-color: #ffecd1;
+    background: #f8fafc;
+    border-color: #dde4ee;
+  }
+
+  .score-value {
+    font-size: 0.85rem;
   }
 }
 
 @media (max-width: 480px) {
-  .app-header-container { padding: 0.7rem 0.8rem; }
-  .header-brand-text { font-size: 1.2rem; }
-  .header-logo { width: 36px; height: 36px; }
+  .app-header-container {
+    padding: 0.7rem 0.8rem;
+  }
+
+  .header-brand-text {
+    font-size: 1.2rem;
+  }
+
+  .header-logo {
+    width: 36px;
+    height: 36px;
+  }
+
+  .header-right-side {
+    gap: 0.35rem;
+  }
 }
 
 @media (max-width: 350px) {
-  .header-brand-text { display: none; }
+  .header-brand-text {
+    display: none;
+  }
 }

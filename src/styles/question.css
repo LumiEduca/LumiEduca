@@ -83,6 +83,10 @@
   line-height: 1.75;
 }
 
+.question-minigame-wrapper {
+  width: 100%;
+}
+
 .question-options-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -179,6 +183,11 @@
   justify-content: center;
 }
 
+.question-actions-with-hint {
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
 .question-next-button {
   width: 100%;
   max-width: 360px;
@@ -204,6 +213,34 @@
   cursor: not-allowed;
 }
 
+.question-hint-button {
+  width: 100%;
+  max-width: 260px;
+  min-height: 58px;
+  border-radius: var(--radius-pill);
+  background: #ffffff;
+  color: var(--color-primary);
+  border: 2px solid var(--color-primary);
+  font-size: 1rem;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 8px 0 #ffd1a3;
+  transition: 0.2s ease;
+}
+
+.question-hint-button:hover:not(:disabled) {
+  background: #fff7eb;
+  transform: translateY(-1px);
+}
+
+.question-hint-button:disabled {
+  background: #f3f4f6;
+  color: #7a8699;
+  border-color: #d1d5db;
+  box-shadow: 0 8px 0 #d1d5db;
+  cursor: not-allowed;
+}
+
 .question-feedback-box {
   margin-top: 1.5rem;
   padding: 1.1rem 1.3rem;
@@ -222,6 +259,7 @@
 .question-feedback-box p {
   color: var(--color-text-light);
   line-height: 1.5;
+  margin: 0;
 }
 
 .question-feedback-box.correct {
@@ -278,70 +316,30 @@
 .question-review-item p {
   color: var(--color-text-light);
   line-height: 1.5;
+  margin: 0.35rem 0;
 }
 
-@keyframes feedbackIn {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.question-review-item .review-question {
+  color: var(--color-text);
+  font-weight: 700;
 }
 
-@media (max-width: 768px) {
-  .question-page-content {
-    padding: 1.4rem 0.9rem 2.2rem;
-  }
-
-  .question-card {
-    padding: 1.4rem;
-  }
-
-  .question-top {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .question-options-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .question-option {
-    min-height: 82px;
-    font-size: 1.35rem;
-  }
-
-  .question-next-button {
-    max-width: 100%;
-  }
-
-  .question-back-button {
-    width: 100%;
-    text-align: center;
-  }
-}
-
-/* --- ESTILIZAÇÃO DA DICA INTEGRADA DO LUMI --- */
+/* Dica do Lumi */
 
 .lumi-hint-box {
-  background: #fff9f0; /* Tom amarelado suave para destacar sem agredir */
+  background: #fff9f0;
   border: 2px solid #ffd8a8;
-  border-left: 6px solid #f39c12; /* Barra lateral para hierarquia visual */
+  border-left: 6px solid #f39c12;
   border-radius: 24px;
   padding: 1.2rem 1.5rem;
   margin: 1.5rem 0;
   box-shadow: 0 8px 20px rgba(243, 156, 18, 0.1);
-  animation: feedbackIn 0.3s ease; /* Reaproveitando sua animação existente */
+  animation: feedbackIn 0.3s ease;
   position: relative;
 }
 
-/* Estado de carregamento (Skeleton/Thinking) */
 .lumi-hint-box.loading {
-  opacity: 0.7;
+  opacity: 0.78;
   border-style: dashed;
 }
 
@@ -390,25 +388,77 @@
   margin: 0;
 }
 
-/* Efeito de digitação para o loading */
 .typing-text {
   font-style: italic;
   color: #a0522d;
 }
 
-/* --- AJUSTES DE RESPONSIVIDADE MOBILE --- */
+@keyframes feedbackIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 
 @media (max-width: 768px) {
+  .question-page-content {
+    padding: 1.4rem 0.9rem 2.2rem;
+  }
+
+  .question-card {
+    padding: 1.4rem;
+    border-radius: 24px;
+  }
+
+  .question-top {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .question-title {
+    font-size: clamp(1.85rem, 8vw, 2.4rem);
+  }
+
+  .question-options-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .question-option {
+    min-height: 82px;
+    font-size: 1.35rem;
+  }
+
+  .question-actions,
+  .question-actions-with-hint {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .question-next-button,
+  .question-hint-button {
+    max-width: 100%;
+  }
+
+  .question-back-button {
+    width: 100%;
+    text-align: center;
+  }
+
   .lumi-hint-box {
     padding: 1rem;
     border-radius: 18px;
     margin: 1rem 0;
   }
-  
+
   .lumi-hint-header span {
     font-size: 1rem;
   }
-  
+
   .lumi-hint-content p {
     font-size: 0.95rem;
   }

@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import {
-  requestNotificationPermission,
   registerNotificationServiceWorker,
+  requestNotificationPermission,
 } from '../services/notificationClient';
 
 export default function usePushNotifications() {
@@ -9,7 +9,7 @@ export default function usePushNotifications() {
     const setupNotifications = async () => {
       await registerNotificationServiceWorker();
 
-      if (Notification.permission === 'default') {
+      if ('Notification' in window && Notification.permission === 'default') {
         await requestNotificationPermission();
       }
     };
