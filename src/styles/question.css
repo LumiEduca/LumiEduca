@@ -324,3 +324,92 @@
     text-align: center;
   }
 }
+
+/* --- ESTILIZAÇÃO DA DICA INTEGRADA DO LUMI --- */
+
+.lumi-hint-box {
+  background: #fff9f0; /* Tom amarelado suave para destacar sem agredir */
+  border: 2px solid #ffd8a8;
+  border-left: 6px solid #f39c12; /* Barra lateral para hierarquia visual */
+  border-radius: 24px;
+  padding: 1.2rem 1.5rem;
+  margin: 1.5rem 0;
+  box-shadow: 0 8px 20px rgba(243, 156, 18, 0.1);
+  animation: feedbackIn 0.3s ease; /* Reaproveitando sua animação existente */
+  position: relative;
+}
+
+/* Estado de carregamento (Skeleton/Thinking) */
+.lumi-hint-box.loading {
+  opacity: 0.7;
+  border-style: dashed;
+}
+
+.lumi-hint-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.6rem;
+}
+
+.lumi-hint-header span {
+  font-weight: 900;
+  color: #d35400;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.close-hint {
+  background: #fdf2e9;
+  border: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  color: #e67e22;
+  font-size: 1.2rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: 0.2s;
+  font-weight: bold;
+}
+
+.close-hint:hover {
+  background: #fee7d3;
+  transform: scale(1.1);
+}
+
+.lumi-hint-content p {
+  color: #5d4037;
+  line-height: 1.6;
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+/* Efeito de digitação para o loading */
+.typing-text {
+  font-style: italic;
+  color: #a0522d;
+}
+
+/* --- AJUSTES DE RESPONSIVIDADE MOBILE --- */
+
+@media (max-width: 768px) {
+  .lumi-hint-box {
+    padding: 1rem;
+    border-radius: 18px;
+    margin: 1rem 0;
+  }
+  
+  .lumi-hint-header span {
+    font-size: 1rem;
+  }
+  
+  .lumi-hint-content p {
+    font-size: 0.95rem;
+  }
+}
