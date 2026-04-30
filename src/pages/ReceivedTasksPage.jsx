@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import '../styles/professor-pages.css';
 import '../styles/question.css';
 import Modal from '../components/UI/Modal';
+import { pedirDicaAoLumi } from '../services/aiService';
 
 export default function ReceivedTasksPage({ setPontos }) {
   const navigate = useNavigate();
@@ -18,6 +19,11 @@ export default function ReceivedTasksPage({ setPontos }) {
     onConfirm: null,
     showCancel: false,
   });
+
+  // Novos estados para a Dica Integrada
+  const [exibirDica, setExibirDica] = useState(false);
+  const [textoDica, setTextoDica] = useState('');
+  const [carregandoDica, setCarregandoDica] = useState(false);
 
   const userType = localStorage.getItem('userType');
   const nomeUsuario = localStorage.getItem('userName') || 'visitante';
@@ -40,11 +46,8 @@ export default function ReceivedTasksPage({ setPontos }) {
 
     const pendentes = todas.filter((tarefa) => {
       const jaConcluida = concluidas.find((c) => c.idTarefa === tarefa.id);
-
       if (jaConcluida) return false;
-
       if (!tarefa.salaCodigo) return true;
-
       return codigosAluno.includes(tarefa.salaCodigo);
     });
 
@@ -62,6 +65,23 @@ export default function ReceivedTasksPage({ setPontos }) {
       onConfirm: null,
       showCancel: false,
     }));
+  };
+
+  // Função atualizada para exibir a dica na página (sem Modal)
+  const handlePedirAjuda = async () => {
+    if (!tarefaAtiva) return;
+    
+    setCarregandoDica(true);
+    setExibirDica(true); // Mostra a caixa (pode ter um esqueleto/loading dentro)
+    
+    const dica = await pedirDicaAoLumi(
+      tarefaAtiva.pergunta, 
+      tarefaAtiva.opcoes, 
+      tarefaAtiva.nomeAtividade
+    );
+    
+    setTextoDica(dica);
+    setCarregandoDica(false);
   };
 
   const resumo = useMemo(() => {
@@ -82,7 +102,6 @@ export default function ReceivedTasksPage({ setPontos }) {
     }
 
     const historico = JSON.parse(localStorage.getItem('lumi_historico_tarefas') || '[]');
-
     historico.unshift({
       id: Date.now(),
       aluno: nomeUsuario,
@@ -103,16 +122,15 @@ export default function ReceivedTasksPage({ setPontos }) {
     if (!isProfessor) {
       const chaveConcluidas = `lumi_tarefas_concluidas_${nomeUsuario}`;
       const feitas = JSON.parse(localStorage.getItem(chaveConcluidas) || '[]');
-
       feitas.push({ idTarefa: tarefa.id });
       localStorage.setItem(chaveConcluidas, JSON.stringify(feitas));
-
       setTarefas((prev) => prev.filter((t) => t.id !== tarefa.id));
     }
 
     setTarefaAtiva(null);
     setRespondido(false);
     setEscolha(null);
+    setExibirDica(false); // Limpa a dica ao finalizar
 
     setModal({
       isOpen: true,
@@ -136,7 +154,6 @@ export default function ReceivedTasksPage({ setPontos }) {
       onConfirm: () => {
         const todas = JSON.parse(localStorage.getItem('lumi_tarefas') || '[]');
         const novas = todas.filter((t) => t.id !== id);
-
         localStorage.setItem('lumi_tarefas', JSON.stringify(novas));
         setTarefas(novas);
         closeModal();
@@ -148,6 +165,7 @@ export default function ReceivedTasksPage({ setPontos }) {
     setTarefaAtiva(null);
     setRespondido(false);
     setEscolha(null);
+    setExibirDica(false);
   };
 
   if (tarefaAtiva) {
@@ -163,7 +181,6 @@ export default function ReceivedTasksPage({ setPontos }) {
               <span className="professor-badge orange">
                 {isProfessor ? 'Revisão do professor' : 'Desafio ativo'}
               </span>
-
               <span className="question-progress">
                 Sala: {tarefaAtiva.salaNome || 'Geral'}
               </span>
@@ -171,9 +188,25 @@ export default function ReceivedTasksPage({ setPontos }) {
 
             <h1 className="professor-title">{tarefaAtiva.pergunta}</h1>
 
+            {/* CAIXA DE DICA DO LUMI INTEGRADA */}
+            {exibirDica && (
+              <div className={`lumi-hint-box ${carregandoDica ? 'loading' : ''}`}>
+                <div className="lumi-hint-header">
+                  <span>🦊 Dica do Lumi</span>
+                  <button onClick={() => setExibirDica(false)} className="close-hint">×</button>
+                </div>
+                <div className="lumi-hint-content">
+                  {carregandoDica ? (
+                    <p className="typing-text">O Lumi está pensando...</p>
+                  ) : (
+                    <p>{textoDica}</p>
+                  )}
+                </div>
+              </div>
+            )}
+
             <p className="professor-text">
-              Atividade:{' '}
-              <strong>{tarefaAtiva.nomeAtividade || 'Atividade personalizada'}</strong>
+              Atividade: <strong>{tarefaAtiva.nomeAtividade || 'Atividade personalizada'}</strong>
             </p>
 
             <div className="professor-options-grid">
@@ -182,6 +215,7 @@ export default function ReceivedTasksPage({ setPontos }) {
                   key={idx}
                   type="button"
                   className="professor-option-btn"
+                  disabled={respondido}
                   onClick={() => {
                     if (!respondido) {
                       setEscolha(idx);
@@ -213,40 +247,44 @@ export default function ReceivedTasksPage({ setPontos }) {
             </div>
 
             {respondido && (
-              <div
-                className={`question-feedback-box ${
-                  acertouTarefa() ? 'correct' : 'wrong'
-                }`}
-              >
+              <div className={`question-feedback-box ${acertouTarefa() ? 'correct' : 'wrong'}`}>
                 <strong>{acertouTarefa() ? 'Muito bem!' : 'Quase lá!'}</strong>
-
                 <p>
                   {acertouTarefa()
                     ? 'Parabéns! Você acertou o desafio enviado pelo professor.'
-                    : 'Sua resposta não foi a correta desta vez. Peça ajuda ao professor para revisar essa questão.'}
+                    : 'Sua resposta não foi a correta desta vez. Tente revisar o conceito ou peça uma dica para o próximo!'}
                 </p>
               </div>
             )}
 
             <div className="professor-action-row">
               {isProfessor && (
-                <button
-                  type="button"
-                  className="professor-btn secondary"
-                  onClick={voltarLista}
-                >
+                <button type="button" className="professor-btn secondary" onClick={voltarLista}>
                   Fechar revisão
                 </button>
               )}
 
-              {!isProfessor && respondido && (
-                <button
-                  type="button"
-                  className="professor-btn green"
-                  onClick={() => finalizarTarefa(tarefaAtiva)}
-                >
-                  Concluir desafio
-                </button>
+              {!isProfessor && (
+                <>
+                  <button 
+                    type="button" 
+                    className="professor-btn secondary"
+                    onClick={handlePedirAjuda}
+                    disabled={carregandoDica}
+                  >
+                    {carregandoDica ? 'Chamando o Lumi...' : '🦊 Pedir dica ao Lumi'}
+                  </button>
+
+                  {respondido && (
+                    <button
+                      type="button"
+                      className="professor-btn green"
+                      onClick={() => finalizarTarefa(tarefaAtiva)}
+                    >
+                      Concluir desafio
+                    </button>
+                  )}
+                </>
               )}
             </div>
           </section>
@@ -272,6 +310,7 @@ export default function ReceivedTasksPage({ setPontos }) {
     );
   }
 
+  // Renderização da lista de tarefas (Dashboard) - Sem alterações aqui
   return (
     <div className="professor-page">
       <main className="professor-page-content">
@@ -352,11 +391,9 @@ export default function ReceivedTasksPage({ setPontos }) {
                   <h3 className="professor-task-title">
                     {t.nomeAtividade || t.pergunta}
                   </h3>
-
                   <p className="professor-task-meta">
                     Sala: <strong>{t.salaNome || 'Geral'}</strong>
                   </p>
-
                   <p className="professor-task-meta">
                     {isProfessor
                       ? 'Revise ou exclua a atividade cadastrada.'
