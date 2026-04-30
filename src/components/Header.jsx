@@ -8,17 +8,12 @@ import usePushNotifications from './usePushNotifications';
 export default function Header({ pontos = 0 }) {
   const navigate = useNavigate();
   const location = useLocation();
-
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
+  
   const [modal, setModal] = useState({
-    isOpen: false,
-    title: '',
-    message: '',
-    confirmText: 'Confirmar',
-    cancelText: 'Cancelar',
-    type: 'default',
-    onConfirm: null,
-    onCancel: null,
+    isOpen: false, title: '', message: '', confirmText: 'Confirmar',
+    cancelText: 'Cancelar', type: 'default', onConfirm: null, onCancel: null,
   });
 
   const userType = localStorage.getItem('userType');
@@ -27,42 +22,18 @@ export default function Header({ pontos = 0 }) {
   usePushNotifications();
 
   useEffect(() => {
-    const handler = (e) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-    };
-
+    const handler = (e) => { e.preventDefault(); setDeferredPrompt(e); };
     window.addEventListener('beforeinstallprompt', handler);
-
-    return () => {
-      window.removeEventListener('beforeinstallprompt', handler);
-    };
+    return () => window.removeEventListener('beforeinstallprompt', handler);
   }, []);
 
-  const closeModal = () => {
-    setModal((prev) => ({
-      ...prev,
-      isOpen: false,
-    }));
-  };
+  const closeModal = () => setModal((prev) => ({ ...prev, isOpen: false }));
 
   const showInfoModal = ({ title, message, confirmText = 'Entendi' }) => {
-    setModal({
-      isOpen: true,
-      title,
-      message,
-      confirmText,
-      cancelText: '',
-      type: 'info',
-      onConfirm: closeModal,
-      onCancel: null,
-    });
+    setModal({ isOpen: true, title, message, confirmText, cancelText: '', type: 'info', onConfirm: closeModal, onCancel: null });
   };
 
-  const handleGoHome = () => {
-    navigate('/');
-  };
-
+  const handleGoHome = () => { navigate('/'); closeMenu(); };
   const handleLogout = () => {
     localStorage.removeItem('userType');
     localStorage.removeItem('userName');
@@ -71,54 +42,26 @@ export default function Header({ pontos = 0 }) {
 
   const openLogoutModal = () => {
     setModal({
-      isOpen: true,
-      title: 'Deseja realmente sair?',
+      isOpen: true, title: 'Deseja realmente sair?',
       message: 'Você será redirecionado para a tela de login do LumiEduca.',
-      confirmText: 'Sim, sair',
-      cancelText: 'Cancelar',
-      type: 'danger',
-      onConfirm: handleLogout,
-      onCancel: closeModal,
+      confirmText: 'Sim, sair', cancelText: 'Cancelar', type: 'danger',
+      onConfirm: handleLogout, onCancel: closeModal,
     });
   };
 
   const handleInstall = async () => {
     if (!deferredPrompt) {
-      showInfoModal({
-        title: 'Instalação indisponível no momento',
-        message:
-          'Este navegador ainda não liberou a instalação do LumiEduca. Tente novamente mais tarde ou use um navegador compatível com PWA.',
-        confirmText: 'Entendi',
-      });
+      showInfoModal({ title: 'Instalação indisponível', message: 'Tente usar um navegador compatível com PWA.', confirmText: 'Entendi' });
       return;
     }
-
-    try {
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-
-      if (outcome === 'accepted') {
-        setDeferredPrompt(null);
-
-        showInfoModal({
-          title: 'LumiEduca pronto para instalar!',
-          message: 'A instalação foi iniciada com sucesso no seu dispositivo.',
-          confirmText: 'Legal!',
-        });
-      }
-    } catch (error) {
-      console.error('Erro ao tentar instalar o app:', error);
-
-      showInfoModal({
-        title: 'Não foi possível iniciar a instalação',
-        message:
-          'Ocorreu um erro ao tentar instalar o LumiEduca. Verifique o navegador e tente novamente.',
-        confirmText: 'Entendi',
-      });
-    }
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') setDeferredPrompt(null);
   };
 
   const isActive = (path) => location.pathname === path;
+  const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
+  const closeMenu = () => setIsMenuOpen(false);
 
   return (
     <>
@@ -126,50 +69,22 @@ export default function Header({ pontos = 0 }) {
         <div className="app-header-container">
           <button className="header-brand" onClick={handleGoHome}>
             <img src={logoLumi} alt="LumiEduca" className="header-logo" />
-
             <span className="header-brand-text">
               <span className="brand-lumi">Lumi</span>
               <span className="brand-educa">Educa</span>
             </span>
           </button>
 
-          <div className="header-actions">
-            {isProfessor && (
-              <nav className="header-professor-nav">
-                <button
-                  type="button"
-                  className={`header-nav-chip ${isActive('/salas-de-aula') ? 'active' : ''}`}
-                  onClick={() => navigate('/salas-de-aula')}
-                >
-                  🏫 Salas
-                </button>
-
-                <button
-                  type="button"
-                  className={`header-nav-chip ${isActive('/tarefas-recebidas') ? 'active' : ''}`}
-                  onClick={() => navigate('/tarefas-recebidas')}
-                >
-                  🗂️ Gestão de tarefas
-                </button>
-
-                <button
-                  type="button"
-                  className={`header-nav-chip ${isActive('/relatorio-professor') ? 'active' : ''}`}
-                  onClick={() => navigate('/relatorio-professor')}
-                >
-                  📊 Relatório
-                </button>
-              </nav>
-            )}
-
-            {!isProfessor && (
-              <button
-                type="button"
-                className={`header-nav-chip ${isActive('/salas-de-aula') ? 'active' : ''}`}
-                onClick={() => navigate('/salas-de-aula')}
-              >
-                🏫 Salas
-              </button>
+          {/* Navegação Desktop */}
+          <nav className="header-actions desktop-nav">
+            {isProfessor ? (
+              <div className="header-professor-nav">
+                <button type="button" className={`header-nav-chip ${isActive('/salas-de-aula') ? 'active' : ''}`} onClick={() => navigate('/salas-de-aula')}>🏫 Salas</button>
+                <button type="button" className={`header-nav-chip ${isActive('/tarefas-recebidas') ? 'active' : ''}`} onClick={() => navigate('/tarefas-recebidas')}>🗂️ Gestão de tarefas</button>
+                <button type="button" className={`header-nav-chip ${isActive('/relatorio-professor') ? 'active' : ''}`} onClick={() => navigate('/relatorio-professor')}>📊 Relatório</button>
+              </div>
+            ) : (
+              <button type="button" className={`header-nav-chip ${isActive('/salas-de-aula') ? 'active' : ''}`} onClick={() => navigate('/salas-de-aula')}>🏫 Salas</button>
             )}
 
             <div className="header-score">
@@ -177,27 +92,37 @@ export default function Header({ pontos = 0 }) {
               <span className="score-value">{isProfessor ? 'Gestão' : pontos}</span>
             </div>
 
-            <button className="header-btn install-btn" onClick={handleInstall}>
-              Instalar
-            </button>
+            <button className="header-btn install-btn" onClick={handleInstall}>Instalar</button>
+            <button className="header-btn logout-btn" onClick={openLogoutModal}>Sair</button>
+          </nav>
 
-            <button className="header-btn logout-btn" onClick={openLogoutModal}>
-              Sair
-            </button>
-          </div>
+          {/* Botão Hambúrguer (Mobile) */}
+          <button className="hamburger-btn" onClick={toggleMenu} aria-label="Menu">
+            <span></span><span></span><span></span>
+          </button>
         </div>
+
+        {/* Menu Drop-down Mobile */}
+        {isMenuOpen && (
+          <div className="dropdown-menu">
+            <div className="mobile-nav-links">
+              {isProfessor ? (
+                <>
+                  <button onClick={() => {navigate('/salas-de-aula'); closeMenu();}}>🏫 Salas</button>
+                  <button onClick={() => {navigate('/tarefas-recebidas'); closeMenu();}}>🗂️ Gestão de tarefas</button>
+                  <button onClick={() => {navigate('/relatorio-professor'); closeMenu();}}>📊 Relatório</button>
+                </>
+              ) : (
+                <button onClick={() => {navigate('/salas-de-aula'); closeMenu();}}>🏫 Salas</button>
+              )}
+              <hr />
+              <button className="logout-btn-mobile" onClick={() => {openLogoutModal(); closeMenu();}}>Sair do LumiEduca</button>
+            </div>
+          </div>
+        )}
       </header>
 
-      <Modal
-        isOpen={modal.isOpen}
-        title={modal.title}
-        message={modal.message}
-        confirmText={modal.confirmText}
-        cancelText={modal.cancelText}
-        type={modal.type}
-        onConfirm={modal.onConfirm}
-        onCancel={modal.onCancel}
-      />
+      <Modal isOpen={modal.isOpen} title={modal.title} message={modal.message} confirmText={modal.confirmText} cancelText={modal.cancelText} type={modal.type} onConfirm={modal.onConfirm} onCancel={modal.onCancel} />
     </>
   );
 }

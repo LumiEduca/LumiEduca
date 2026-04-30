@@ -1,3 +1,4 @@
+/* --- Base do Header --- */
 .app-header {
   position: sticky;
   top: 0;
@@ -28,11 +29,7 @@
   padding: 0;
 }
 
-.header-logo {
-  width: 54px;
-  height: 54px;
-  object-fit: contain;
-}
+.header-logo { width: 54px; height: 54px; object-fit: contain; }
 
 .header-brand-text {
   display: flex;
@@ -42,14 +39,10 @@
   letter-spacing: -0.03em;
 }
 
-.brand-lumi {
-  color: #ff8c00;
-}
+.brand-lumi { color: #ff8c00; }
+.brand-educa { color: #1f2f4d; }
 
-.brand-educa {
-  color: #1f2f4d;
-}
-
+/* --- Ações do Header (Desktop) --- */
 .header-actions {
   display: flex;
   align-items: center;
@@ -74,15 +67,8 @@
   transition: 0.2s ease;
 }
 
-.header-nav-chip:hover {
-  transform: translateY(-1px);
-  background: #dcecf8;
-}
-
-.header-nav-chip.active {
-  background: #3498db;
-  color: white;
-}
+.header-nav-chip:hover { background: #dcecf8; }
+.header-nav-chip.active { background: #3498db; color: white; }
 
 .header-score {
   display: flex;
@@ -95,15 +81,7 @@
   min-height: 46px;
 }
 
-.score-icon {
-  font-size: 1rem;
-}
-
-.score-value {
-  font-size: 0.95rem;
-  font-weight: 800;
-  color: #334155;
-}
+.score-value { font-size: 0.95rem; font-weight: 800; color: #334155; }
 
 .header-btn {
   border: none;
@@ -114,141 +92,60 @@
   transition: 0.2s ease;
 }
 
-.install-btn {
-  background: #3498db;
-  color: white;
-}
+.install-btn { background: #3498db; color: white; }
+.logout-btn { background: #ff4d4d; color: white; }
 
-.install-btn:hover {
-  background: #2586c8;
-}
-
-.logout-btn {
-  background: #ff4d4d;
-  color: white;
-}
-
-.logout-btn:hover {
-  background: #e23d3d;
-}
-
-.logout-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(15, 23, 42, 0.45);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 999;
-  padding: 1rem;
-}
-
-.logout-modal {
-  width: 100%;
-  max-width: 380px;
-  background: white;
-  border-radius: 24px;
-  padding: 1.6rem;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.16);
-  text-align: center;
-}
-
-.logout-modal h3 {
-  margin: 0 0 1.2rem;
-  color: #1f2f4d;
-}
-
-.logout-actions {
-  display: flex;
-  gap: 0.75rem;
-}
-
-.confirm-btn,
-.cancel-btn {
-  flex: 1;
+/* --- Hamburger Mobile (Dropdown) --- */
+.hamburger-btn {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  background: none;
   border: none;
-  border-radius: 14px;
-  padding: 0.9rem;
-  font-weight: 800;
   cursor: pointer;
+  padding: 10px;
+}
+.hamburger-btn span {
+  width: 25px; height: 3px; background: #1f2f4d; border-radius: 2px;
 }
 
-.confirm-btn {
-  background: #ff4d4d;
-  color: white;
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+  z-index: 99;
+  border-bottom-left-radius: 20px;
+  border-bottom-right-radius: 20px;
+  animation: slideDown 0.2s ease-out;
 }
 
-.cancel-btn {
-  background: #e5e7eb;
-  color: #1f2937;
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-@media (max-width: 980px) {
-  .app-header-container {
-    flex-wrap: wrap;
-  }
-
-  .header-actions {
-    width: 100%;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-  }
-
-  .header-professor-nav {
-    width: 100%;
-    justify-content: flex-end;
-    margin-right: 0;
-  }
+.mobile-nav-links { display: flex; flex-direction: column; gap: 15px; }
+.mobile-nav-links button {
+  width: 100%; text-align: left; padding: 15px;
+  background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; font-weight: 700;
 }
 
+.logout-btn-mobile { background: #ff4d4d !important; color: white !important; }
+
+/* --- Responsividade --- */
 @media (max-width: 768px) {
-  .header-logo {
-    width: 42px;
-    height: 42px;
-  }
-
-  .header-brand-text {
-    font-size: 1.45rem;
-  }
-
-  .header-score {
-    padding: 0.45rem 0.7rem;
-  }
-
-  .score-value {
-    display: none;
-  }
-
-  .header-btn {
-    padding: 0.65rem 0.8rem;
-    font-size: 0.85rem;
-  }
-
-  .header-nav-chip {
-    padding: 0.62rem 0.8rem;
-    font-size: 0.82rem;
-  }
+  .desktop-nav { display: none !important; }
+  .hamburger-btn { display: flex !important; }
+  .header-logo { width: 42px; height: 42px; }
+  .header-brand-text { font-size: 1.45rem; }
 }
 
 @media (max-width: 560px) {
-  .app-header-container {
-    padding: 0.7rem 0.8rem;
-  }
-
-  .header-brand-text {
-    font-size: 1.2rem;
-  }
-
-  .install-btn {
-    display: none;
-  }
-
-  .logout-actions {
-    flex-direction: column;
-  }
-
-  .header-professor-nav {
-    flex-direction: column;
-    align-items: stretch;
-  }
+  .app-header-container { padding: 0.7rem 0.8rem; }
+  .header-brand-text { font-size: 1.2rem; }
 }
