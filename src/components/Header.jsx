@@ -95,7 +95,7 @@ export default function Header({ pontos = 0 }) {
               {isProfessor ? (
                 <div className="header-professor-nav">
                   <button type="button" className={`header-nav-chip ${isActive('/salas-de-aula') ? 'active' : ''}`} onClick={() => navigate('/salas-de-aula')}>🏫 Salas</button>
-                  <button type="button" className={`header-nav-chip ${isActive('/tarefas-recebidas') ? 'active' : ''}`} onClick={() => navigate('/tarefas-recebidas')}>🗂️ Gestão</button>
+                  <button type="button" className={`header-nav-chip ${isActive('/tarefas-recebidas') ? 'active' : ''}`} onClick={() => navigate('/tarefas-recebidas')}>🗂️ Gestão de tarefas</button>
                   <button type="button" className={`header-nav-chip ${isActive('/relatorio-professor') ? 'active' : ''}`} onClick={() => navigate('/relatorio-professor')}>📊 Relatório</button>
                 </div>
               ) : (
