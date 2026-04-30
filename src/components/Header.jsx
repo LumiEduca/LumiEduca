@@ -34,6 +34,7 @@ export default function Header({ pontos = 0 }) {
   };
 
   const handleGoHome = () => { navigate('/'); closeMenu(); };
+  
   const handleLogout = () => {
     localStorage.removeItem('userType');
     localStorage.removeItem('userName');
@@ -51,7 +52,7 @@ export default function Header({ pontos = 0 }) {
 
   const handleInstall = async () => {
     if (!deferredPrompt) {
-      showInfoModal({ title: 'Instalação indisponível', message: 'Tente usar um navegador compatível com PWA.', confirmText: 'Entendi' });
+      showInfoModal({ title: 'Instalação indisponível', message: 'Tente usar um navegador compatível com PWA ou verifique se o app já está instalado.', confirmText: 'Entendi' });
       return;
     }
     deferredPrompt.prompt();
@@ -75,31 +76,39 @@ export default function Header({ pontos = 0 }) {
             </span>
           </button>
 
-          {/* Navegação Desktop */}
-          <nav className="header-actions desktop-nav">
-            {isProfessor ? (
-              <div className="header-professor-nav">
-                <button type="button" className={`header-nav-chip ${isActive('/salas-de-aula') ? 'active' : ''}`} onClick={() => navigate('/salas-de-aula')}>🏫 Salas</button>
-                <button type="button" className={`header-nav-chip ${isActive('/tarefas-recebidas') ? 'active' : ''}`} onClick={() => navigate('/tarefas-recebidas')}>🗂️ Gestão de tarefas</button>
-                <button type="button" className={`header-nav-chip ${isActive('/relatorio-professor') ? 'active' : ''}`} onClick={() => navigate('/relatorio-professor')}>📊 Relatório</button>
-              </div>
-            ) : (
-              <button type="button" className={`header-nav-chip ${isActive('/salas-de-aula') ? 'active' : ''}`} onClick={() => navigate('/salas-de-aula')}>🏫 Salas</button>
-            )}
-
+          {/* Área de Ações do Header */}
+          <div className="header-right-side">
+            
+            {/* 1. CONTADOR DE PONTOS: Sempre visível no desktop e mobile */}
             <div className="header-score">
               <span className="score-icon">{isProfessor ? '🌟∞' : '🌟'}</span>
               <span className="score-value">{isProfessor ? 'Gestão' : pontos}</span>
             </div>
 
-            <button className="header-btn install-btn" onClick={handleInstall}>Instalar</button>
-            <button className="header-btn logout-btn" onClick={openLogoutModal}>Sair</button>
-          </nav>
+            {/* 2. BOTÃO INSTALAR (HEADER): Visível apenas no desktop ou telas mobile largas */}
+            <button className="header-btn install-btn header-desktop-only" onClick={handleInstall}>
+              Instalar App
+            </button>
 
-          {/* Botão Hambúrguer (Mobile) */}
-          <button className="hamburger-btn" onClick={toggleMenu} aria-label="Menu">
-            <span></span><span></span><span></span>
-          </button>
+            {/* Navegação Desktop Oculta no Mobile */}
+            <nav className="header-actions desktop-nav">
+              {isProfessor ? (
+                <div className="header-professor-nav">
+                  <button type="button" className={`header-nav-chip ${isActive('/salas-de-aula') ? 'active' : ''}`} onClick={() => navigate('/salas-de-aula')}>🏫 Salas</button>
+                  <button type="button" className={`header-nav-chip ${isActive('/tarefas-recebidas') ? 'active' : ''}`} onClick={() => navigate('/tarefas-recebidas')}>🗂️ Gestão</button>
+                  <button type="button" className={`header-nav-chip ${isActive('/relatorio-professor') ? 'active' : ''}`} onClick={() => navigate('/relatorio-professor')}>📊 Relatório</button>
+                </div>
+              ) : (
+                <button type="button" className={`header-nav-chip ${isActive('/salas-de-aula') ? 'active' : ''}`} onClick={() => navigate('/salas-de-aula')}>🏫 Salas</button>
+              )}
+              <button className="header-btn logout-btn" onClick={openLogoutModal}>Sair</button>
+            </nav>
+
+            {/* Botão Hambúrguer */}
+            <button className="hamburger-btn" onClick={toggleMenu} aria-label="Menu">
+              <span></span><span></span><span></span>
+            </button>
+          </div>
         </div>
 
         {/* Menu Drop-down Mobile */}
@@ -108,15 +117,24 @@ export default function Header({ pontos = 0 }) {
             <div className="mobile-nav-links">
               {isProfessor ? (
                 <>
-                  <button onClick={() => {navigate('/salas-de-aula'); closeMenu();}}>🏫 Salas</button>
-                  <button onClick={() => {navigate('/tarefas-recebidas'); closeMenu();}}>🗂️ Gestão de tarefas</button>
-                  <button onClick={() => {navigate('/relatorio-professor'); closeMenu();}}>📊 Relatório</button>
+                  <button onClick={() => {navigate('/salas-de-aula'); closeMenu();}}>🏫 Salas de Aula</button>
+                  <button onClick={() => {navigate('/tarefas-recebidas'); closeMenu();}}>🗂️ Gestão de Tarefas</button>
+                  <button onClick={() => {navigate('/relatorio-professor'); closeMenu();}}>📊 Relatório Pedagógico</button>
                 </>
               ) : (
-                <button onClick={() => {navigate('/salas-de-aula'); closeMenu();}}>🏫 Salas</button>
+                <button onClick={() => {navigate('/salas-de-aula'); closeMenu();}}>🏫 Minhas Salas</button>
               )}
+              
               <hr />
-              <button className="logout-btn-mobile" onClick={() => {openLogoutModal(); closeMenu();}}>Sair do LumiEduca</button>
+              
+              {/* 3. BOTÃO INSTALAR (MENU): Sempre visível no mobile quando o menu abre */}
+              <button className="install-btn-mobile" onClick={() => {handleInstall(); closeMenu();}}>
+                📲 Instalar App no Celular
+              </button>
+
+              <button className="logout-btn-mobile" onClick={() => {openLogoutModal(); closeMenu();}}>
+                Sair do LumiEduca
+              </button>
             </div>
           </div>
         )}
