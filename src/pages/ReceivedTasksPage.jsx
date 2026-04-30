@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import '../styles/professor-pages.css';
 import '../styles/question.css';
 import Modal from '../components/UI/Modal';
@@ -7,10 +7,14 @@ import { pedirDicaAoLumi } from '../services/aiService';
 
 export default function ReceivedTasksPage({ setPontos }) {
   const navigate = useNavigate();
+  const location = useLocation();
+
   const [tarefas, setTarefas] = useState([]);
   const [tarefaAtiva, setTarefaAtiva] = useState(null);
   const [respondido, setRespondido] = useState(false);
   const [escolha, setEscolha] = useState(null);
+  const [modoRevisao, setModoRevisao] = useState(false);
+
   const [modal, setModal] = useState({
     isOpen: false,
     title: '',
@@ -20,7 +24,6 @@ export default function ReceivedTasksPage({ setPontos }) {
     showCancel: false,
   });
 
-  // Novos estados para a Dica Integrada
   const [exibirDica, setExibirDica] = useState(false);
   const [textoDica, setTextoDica] = useState('');
   const [carregandoDica, setCarregandoDica] = useState(false);
@@ -28,6 +31,14 @@ export default function ReceivedTasksPage({ setPontos }) {
   const userType = localStorage.getItem('userType');
   const nomeUsuario = localStorage.getItem('userName') || 'visitante';
   const isProfessor = userType === 'professor';
+
+  const salaCodigoOrigem = location.state?.salaCodigo || null;
+  const tarefaIdOrigem = location.state?.tarefaId || null;
+  const modoRevisaoOrigem = Boolean(location.state?.modoRevisao);
+
+  const tarefaEstaConcluida = (tarefa, concluidas) => {
+    return concluidas.some((c) => String(c.idTarefa) === String(tarefa.id));
+  };
 
   const carregarTarefas = () => {
     const todas = JSON.parse(localStorage.getItem('lumi_tarefas') || '[]');
@@ -44,19 +55,48 @@ export default function ReceivedTasksPage({ setPontos }) {
       localStorage.getItem(`salasEstudante_${nomeUsuario}`) || '[]'
     );
 
-    const pendentes = todas.filter((tarefa) => {
-      const jaConcluida = concluidas.find((c) => c.idTarefa === tarefa.id);
-      if (jaConcluida) return false;
+    let tarefasDoAluno = todas.filter((tarefa) => {
       if (!tarefa.salaCodigo) return true;
       return codigosAluno.includes(tarefa.salaCodigo);
     });
 
-    setTarefas(pendentes);
+    if (salaCodigoOrigem) {
+      tarefasDoAluno = tarefasDoAluno.filter(
+        (tarefa) => String(tarefa.salaCodigo) === String(salaCodigoOrigem)
+      );
+    } else {
+      tarefasDoAluno = tarefasDoAluno.filter(
+        (tarefa) => !tarefaEstaConcluida(tarefa, concluidas)
+      );
+    }
+
+    const tarefasComStatus = tarefasDoAluno.map((tarefa) => ({
+      ...tarefa,
+      concluida: tarefaEstaConcluida(tarefa, concluidas),
+    }));
+
+    setTarefas(tarefasComStatus);
+
+    if (tarefaIdOrigem) {
+      const tarefaEncontrada = tarefasComStatus.find(
+        (tarefa) => String(tarefa.id) === String(tarefaIdOrigem)
+      );
+
+      if (tarefaEncontrada) {
+        const revisar = modoRevisaoOrigem || tarefaEncontrada.concluida;
+
+        setTarefaAtiva(tarefaEncontrada);
+        setModoRevisao(revisar);
+        setRespondido(false);
+        setEscolha(null);
+        setExibirDica(false);
+      }
+    }
   };
 
   useEffect(() => {
     carregarTarefas();
-  }, [isProfessor, nomeUsuario]);
+  }, [isProfessor, nomeUsuario, salaCodigoOrigem, tarefaIdOrigem, modoRevisaoOrigem]);
 
   const closeModal = () => {
     setModal((prev) => ({
@@ -67,19 +107,18 @@ export default function ReceivedTasksPage({ setPontos }) {
     }));
   };
 
-  // Função atualizada para exibir a dica na página (sem Modal)
   const handlePedirAjuda = async () => {
     if (!tarefaAtiva) return;
-    
+
     setCarregandoDica(true);
-    setExibirDica(true); // Mostra a caixa (pode ter um esqueleto/loading dentro)
-    
+    setExibirDica(true);
+
     const dica = await pedirDicaAoLumi(
-      tarefaAtiva.pergunta, 
-      tarefaAtiva.opcoes, 
+      tarefaAtiva.pergunta,
+      tarefaAtiva.opcoes,
       tarefaAtiva.nomeAtividade
     );
-    
+
     setTextoDica(dica);
     setCarregandoDica(false);
   };
@@ -94,6 +133,11 @@ export default function ReceivedTasksPage({ setPontos }) {
   };
 
   const finalizarTarefa = (tarefa) => {
+    if (modoRevisao) {
+      voltarLista();
+      return;
+    }
+
     const indiceEscolhido = Number(escolha);
     const acertou = indiceEscolhido === Number(tarefa.respostaCorreta);
 
@@ -122,15 +166,27 @@ export default function ReceivedTasksPage({ setPontos }) {
     if (!isProfessor) {
       const chaveConcluidas = `lumi_tarefas_concluidas_${nomeUsuario}`;
       const feitas = JSON.parse(localStorage.getItem(chaveConcluidas) || '[]');
-      feitas.push({ idTarefa: tarefa.id });
-      localStorage.setItem(chaveConcluidas, JSON.stringify(feitas));
-      setTarefas((prev) => prev.filter((t) => t.id !== tarefa.id));
+      const jaConcluida = feitas.some((item) => String(item.idTarefa) === String(tarefa.id));
+
+      if (!jaConcluida) {
+        feitas.push({ idTarefa: tarefa.id });
+        localStorage.setItem(chaveConcluidas, JSON.stringify(feitas));
+      }
+
+      setTarefas((prev) =>
+        salaCodigoOrigem
+          ? prev.map((t) =>
+              String(t.id) === String(tarefa.id) ? { ...t, concluida: true } : t
+            )
+          : prev.filter((t) => String(t.id) !== String(tarefa.id))
+      );
     }
 
     setTarefaAtiva(null);
     setRespondido(false);
     setEscolha(null);
-    setExibirDica(false); // Limpa a dica ao finalizar
+    setModoRevisao(false);
+    setExibirDica(false);
 
     setModal({
       isOpen: true,
@@ -165,6 +221,7 @@ export default function ReceivedTasksPage({ setPontos }) {
     setTarefaAtiva(null);
     setRespondido(false);
     setEscolha(null);
+    setModoRevisao(false);
     setExibirDica(false);
   };
 
@@ -179,7 +236,11 @@ export default function ReceivedTasksPage({ setPontos }) {
           <section className="professor-card orange-top professor-question-card">
             <div className="question-top">
               <span className="professor-badge orange">
-                {isProfessor ? 'Revisão do professor' : 'Desafio ativo'}
+                {isProfessor
+                  ? 'Revisão do professor'
+                  : modoRevisao
+                    ? 'Revisão de atividade'
+                    : 'Desafio ativo'}
               </span>
               <span className="question-progress">
                 Sala: {tarefaAtiva.salaNome || 'Geral'}
@@ -188,12 +249,13 @@ export default function ReceivedTasksPage({ setPontos }) {
 
             <h1 className="professor-title">{tarefaAtiva.pergunta}</h1>
 
-            {/* CAIXA DE DICA DO LUMI INTEGRADA */}
             {exibirDica && (
               <div className={`lumi-hint-box ${carregandoDica ? 'loading' : ''}`}>
                 <div className="lumi-hint-header">
                   <span>🦊 Dica do Lumi</span>
-                  <button onClick={() => setExibirDica(false)} className="close-hint">×</button>
+                  <button onClick={() => setExibirDica(false)} className="close-hint">
+                    ×
+                  </button>
                 </div>
                 <div className="lumi-hint-content">
                   {carregandoDica ? (
@@ -206,8 +268,15 @@ export default function ReceivedTasksPage({ setPontos }) {
             )}
 
             <p className="professor-text">
-              Atividade: <strong>{tarefaAtiva.nomeAtividade || 'Atividade personalizada'}</strong>
+              Atividade:{' '}
+              <strong>{tarefaAtiva.nomeAtividade || 'Atividade personalizada'}</strong>
             </p>
+
+            {modoRevisao && !isProfessor && (
+              <p className="professor-text">
+                Esta atividade já foi concluída. Você pode revisar sem ganhar pontos novamente.
+              </p>
+            )}
 
             <div className="professor-options-grid">
               {tarefaAtiva.opcoes.map((op, idx) => (
@@ -251,8 +320,12 @@ export default function ReceivedTasksPage({ setPontos }) {
                 <strong>{acertouTarefa() ? 'Muito bem!' : 'Quase lá!'}</strong>
                 <p>
                   {acertouTarefa()
-                    ? 'Parabéns! Você acertou o desafio enviado pelo professor.'
-                    : 'Sua resposta não foi a correta desta vez. Tente revisar o conceito ou peça uma dica para o próximo!'}
+                    ? modoRevisao
+                      ? 'Resposta correta! Essa revisão não altera sua pontuação.'
+                      : 'Parabéns! Você acertou o desafio enviado pelo professor.'
+                    : modoRevisao
+                      ? 'Essa não era a resposta correta. Continue revisando para fixar melhor.'
+                      : 'Sua resposta não foi a correta desta vez. Tente revisar o conceito ou peça uma dica para o próximo!'}
                 </p>
               </div>
             )}
@@ -266,8 +339,8 @@ export default function ReceivedTasksPage({ setPontos }) {
 
               {!isProfessor && (
                 <>
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
                     className="professor-btn secondary"
                     onClick={handlePedirAjuda}
                     disabled={carregandoDica}
@@ -275,7 +348,17 @@ export default function ReceivedTasksPage({ setPontos }) {
                     {carregandoDica ? 'Chamando o Lumi...' : '🦊 Pedir dica ao Lumi'}
                   </button>
 
-                  {respondido && (
+                  {modoRevisao && (
+                    <button
+                      type="button"
+                      className="professor-btn green"
+                      onClick={voltarLista}
+                    >
+                      Fechar revisão
+                    </button>
+                  )}
+
+                  {!modoRevisao && respondido && (
                     <button
                       type="button"
                       className="professor-btn green"
@@ -310,7 +393,6 @@ export default function ReceivedTasksPage({ setPontos }) {
     );
   }
 
-  // Renderização da lista de tarefas (Dashboard) - Sem alterações aqui
   return (
     <div className="professor-page">
       <main className="professor-page-content">
@@ -340,7 +422,11 @@ export default function ReceivedTasksPage({ setPontos }) {
           <div className="professor-summary-grid">
             <div className="professor-summary-item">
               <span className="professor-summary-label">
-                {isProfessor ? 'Desafios cadastrados' : 'Desafios pendentes'}
+                {isProfessor
+                  ? 'Desafios cadastrados'
+                  : salaCodigoOrigem
+                    ? 'Desafios da sala'
+                    : 'Desafios pendentes'}
               </span>
               <strong className="professor-summary-value">{resumo.total}</strong>
             </div>
@@ -382,7 +468,9 @@ export default function ReceivedTasksPage({ setPontos }) {
             <div className="professor-empty">
               {isProfessor
                 ? 'Nenhuma tarefa criada ainda.'
-                : 'Nenhum desafio pendente no momento.'}
+                : salaCodigoOrigem
+                  ? 'Nenhum desafio encontrado nesta sala.'
+                  : 'Nenhum desafio pendente no momento.'}
             </div>
           ) : (
             tarefas.map((t) => (
@@ -397,7 +485,9 @@ export default function ReceivedTasksPage({ setPontos }) {
                   <p className="professor-task-meta">
                     {isProfessor
                       ? 'Revise ou exclua a atividade cadastrada.'
-                      : 'Abra o desafio e responda quando estiver pronto.'}
+                      : t.concluida
+                        ? 'Atividade concluída. Você pode abrir novamente para revisar.'
+                        : 'Abra o desafio e responda quando estiver pronto.'}
                   </p>
                 </div>
 
@@ -417,11 +507,13 @@ export default function ReceivedTasksPage({ setPontos }) {
                     className="professor-btn orange"
                     onClick={() => {
                       setTarefaAtiva(t);
+                      setModoRevisao(!isProfessor && Boolean(t.concluida));
                       setRespondido(false);
                       setEscolha(null);
+                      setExibirDica(false);
                     }}
                   >
-                    {isProfessor ? 'Revisar' : 'Jogar'}
+                    {isProfessor ? 'Revisar' : t.concluida ? 'Revisar' : 'Jogar'}
                   </button>
                 </div>
               </div>

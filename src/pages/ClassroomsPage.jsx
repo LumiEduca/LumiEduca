@@ -379,12 +379,16 @@ export default function ClassroomsPage() {
                       <div
                         key={atv.id}
                         className={`classrooms-activity-card ${
-                          !isProfessor && estaPendente ? 'clickable' : ''
+                          !isProfessor ? 'clickable' : ''
                         }`}
                         onClick={() => {
-                          if (!isProfessor && estaPendente) {
+                          if (!isProfessor) {
                             navigate('/tarefas-recebidas', {
-                              state: { salaCodigo: salaSelecionada.codigo },
+                              state: {
+                                salaCodigo: salaSelecionada.codigo,
+                                tarefaId: atv.id,
+                                modoRevisao: !estaPendente,
+                              },
                             });
                           }
                         }}
