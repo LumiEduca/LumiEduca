@@ -247,11 +247,11 @@ docs/readme
 
 ## 📌 Status do Projeto
 
-🟢 Estrutura consolidada
-🟢 Funcionalidades principais implementadas 
-🟢 IA integrada e funcional  
-🟢 PWA configurado
-🟢 Pronto para deploy
+- Estrutura consolidada
+- Funcionalidades principais implementadas 
+- IA integrada e funcional  
+- PWA configurado
+- Pronto para deploy
 
 ---
 
