@@ -198,12 +198,12 @@ REACT_APP_GEMINI_KEY=
 Para facilitar a avaliação e testes da plataforma, disponibilizamos usuários padrão:
 
 ### 👨‍🏫 Professor
-- **Usuário:** ProfessorLumiTeste  
-- **Senha:** prof123  
+- Usuário: João_Lucas  
+- Senha: prof123  
 
 ### 🎓 Aluno
-- **Usuário:** AlunoLumiTeste  
-- **Senha:** aluno123  
+- Usuário: Adriel_Azevedo  
+- Senha: aluno123  
 
 > ⚠️ Esses usuários são destinados apenas para demonstração e testes da aplicação.
 
