@@ -198,7 +198,7 @@ REACT_APP_GEMINI_KEY=
 Para facilitar a avaliação e testes da plataforma, disponibilizamos usuários padrão:
 
 ### 👨‍🏫 Professor
-- Usuário: João_Lucas  
+- Usuário: Joao_Lucas  
 - Senha: prof123  
 
 ### 🎓 Aluno
@@ -235,16 +235,28 @@ docs/readme
 
 ## 👥 Gestão da Equipe
 
-### Liderança do Projeto
-- **Bryan Duarte de Araujo Pereira** — Líder Técnico e Organizador da Base Inicial
+### 👑 Liderança do Projeto
+- **Bryan Duarte de Araujo Pereira** — Líder Técnico e Gerente do Projeto  
+- **Emmanuel Nazareth Bravo da Costa** — Tech Lead / Desenvolvedor Principal  
 
-### Desenvolvedores
-- Adriel dos Santos Azevedo
-- Bernardo Teixeira Oliveira
-- Emmanuel Nazareth Bravo da Costa
-- João Lucas Bittencourt Rocha
-- João Paulo Amarilha Coelho
-- José Carlos Silva Pimentel
+---
+
+### 💻 Desenvolvimento
+- **Adriel dos Santos Azevedo** — Desenvolvedor  
+- **José Carlos Silva Pimentel** — Desenvolvedor  
+
+---
+
+### 🧪 Análise e Qualidade (QA)
+- **João Lucas Bittencourt Rocha** — Analista de Sistemas, QA e UI/UX  
+- **Bernardo Teixeira Oliveira** — Analista de Sistemas e QA  
+- **João Paulo Amarilha Coelho** — Analista de Sistemas e QA  
+
+---
+
+### 🧠 Sobre a Estrutura da Equipe
+
+A equipe foi organizada com divisão clara de responsabilidades, contemplando liderança técnica, desenvolvimento e validação de qualidade (QA), garantindo uma construção estruturada, colaborativa e focada na melhor experiência para o usuário.
 
 ---
 
