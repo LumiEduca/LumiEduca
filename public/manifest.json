@@ -4,22 +4,52 @@
   "icons": [
     {
       "src": "favicon.ico",
-      "sizes": "64x64 32x32 24x24 16x16",
+      "sizes": "48x48",
       "type": "image/x-icon"
     },
     {
       "src": "pwa-192x192.png",
       "type": "image/png",
-      "sizes": "192x192"
+      "sizes": "192x192",
+      "purpose": "maskable"
+    },    
+    {
+      "src": "pwa-192x192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any"
     },
     {
       "src": "pwa-512x512.png",
       "type": "image/png",
-      "sizes": "512x512"
+      "sizes": "512x512",
+      "purpose": "maskable"
+    },
+    {
+      "src": "pwa-512x512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any"
     }
+  ],
+  "screenshots": [
+  {
+    "src": "screenshot-desktop.png",
+    "sizes": "2557x1377",
+    "type": "image/png",
+    "form_factor": "wide",
+    "label": "LumiEduca no Computador"
+  },
+  {
+    "src": "screenshot-mobile.png",
+    "sizes": "736x1431",
+    "type": "image/png",
+    "label": "LumiEduca no Celular"
+  }
   ],
   "start_url": "/",
   "display": "standalone",
   "theme_color": "#FF8C00",
-  "background_color": "#ffffff"
+  "background_color": "#FF8C00"
 }
+
