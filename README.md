@@ -193,6 +193,22 @@ REACT_APP_GEMINI_KEY=
 
 ---
 
+## 🧪 Usuários de Teste (Demo)
+
+Para facilitar a avaliação e testes da plataforma, disponibilizamos usuários padrão:
+
+### 👨‍🏫 Professor
+- **Usuário:** ProfessorLumiTeste  
+- **Senha:** prof123  
+
+### 🎓 Aluno
+- **Usuário:** AlunoLumiTeste  
+- **Senha:** aluno123  
+
+> ⚠️ Esses usuários são destinados apenas para demonstração e testes da aplicação.
+
+---
+
 ## 🌐 Fluxo de Branches
 
 ### Branches principais
