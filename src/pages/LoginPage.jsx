@@ -29,19 +29,21 @@ export default function LoginPage() {
       return;
     }
 
+    // =========================
     // LOGIN PROFESSOR
+    // =========================
     if (selectedProfile === 'professor') {
       const professorPadraoValido =
         usuarioNormalizado === 'professor' && senha === SENHA_PROF;
 
       const professorTesteValido =
-        usuarioNormalizado === 'professorlumiteste' && senha === SENHA_PROF;
+        usuarioNormalizado === 'joão_lucas' && senha === SENHA_PROF;
 
       if (professorPadraoValido || professorTesteValido) {
         localStorage.setItem('userType', 'professor');
         localStorage.setItem(
           'userName',
-          professorTesteValido ? 'ProfessorLumiTeste' : 'Professor'
+          professorTesteValido ? 'João_Lucas' : 'Professor'
         );
         window.location.href = '/';
         return;
@@ -51,18 +53,20 @@ export default function LoginPage() {
       return;
     }
 
+    // =========================
     // LOGIN ALUNO
+    // =========================
     if (selectedProfile === 'aluno') {
       const alunoComEnvValido = senha === SENHA_ALUNO && usuario.trim() !== '';
 
       const alunoTesteValido =
-        usuarioNormalizado === 'alunolumiteste' && senha === SENHA_ALUNO;
+        usuarioNormalizado === 'adriel_azevedo' && senha === SENHA_ALUNO;
 
       if (alunoComEnvValido || alunoTesteValido) {
         localStorage.setItem('userType', 'estudante');
         localStorage.setItem(
           'userName',
-          alunoTesteValido ? 'AlunoLumiTeste' : usuario.trim()
+          alunoTesteValido ? 'Adriel_Azevedo' : usuario.trim()
         );
         window.location.href = '/';
         return;
