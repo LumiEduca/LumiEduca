@@ -37,7 +37,7 @@ export default function LoginPage() {
         usuarioNormalizado === 'professor' && senha === SENHA_PROF;
 
       const professorTesteValido =
-        usuarioNormalizado === 'joão_lucas' && senha === SENHA_PROF;
+        usuarioNormalizado === 'joao_lucas' && senha === SENHA_PROF;
 
       if (professorPadraoValido || professorTesteValido) {
         localStorage.setItem('userType', 'professor');
