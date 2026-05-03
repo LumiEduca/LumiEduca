@@ -15,22 +15,34 @@ export default function LoginPage() {
     const SENHA_PROF = process.env.REACT_APP_SENHA_PROFESSOR;
     const SENHA_ALUNO = process.env.REACT_APP_SENHA_ESTUDANTE;
 
-    console.log('DEBUG LOGIN:', {
-      digitado: senha,
-      esperado: SENHA_ALUNO,
-      perfil: selectedProfile,
-    });
+    const usuarioNormalizado = usuario.trim().toLowerCase();
 
     if (!selectedProfile) {
       setErrorMessage('Selecione se você é professor ou aluno para continuar.');
       return;
     }
 
+    if (!SENHA_PROF || !SENHA_ALUNO) {
+      setErrorMessage(
+        'As senhas de acesso não foram configuradas corretamente no ambiente.'
+      );
+      return;
+    }
+
     // LOGIN PROFESSOR
     if (selectedProfile === 'professor') {
-      if (usuario.trim().toLowerCase() === 'professor' && senha === SENHA_PROF) {
+      const professorPadraoValido =
+        usuarioNormalizado === 'professor' && senha === SENHA_PROF;
+
+      const professorTesteValido =
+        usuarioNormalizado === 'professorlumiteste' && senha === SENHA_PROF;
+
+      if (professorPadraoValido || professorTesteValido) {
         localStorage.setItem('userType', 'professor');
-        localStorage.setItem('userName', 'Professor');
+        localStorage.setItem(
+          'userName',
+          professorTesteValido ? 'ProfessorLumiTeste' : 'Professor'
+        );
         window.location.href = '/';
         return;
       }
@@ -41,9 +53,17 @@ export default function LoginPage() {
 
     // LOGIN ALUNO
     if (selectedProfile === 'aluno') {
-      if (senha === SENHA_ALUNO && usuario.trim() !== '') {
+      const alunoComEnvValido = senha === SENHA_ALUNO && usuario.trim() !== '';
+
+      const alunoTesteValido =
+        usuarioNormalizado === 'alunolumiteste' && senha === SENHA_ALUNO;
+
+      if (alunoComEnvValido || alunoTesteValido) {
         localStorage.setItem('userType', 'estudante');
-        localStorage.setItem('userName', usuario.trim());
+        localStorage.setItem(
+          'userName',
+          alunoTesteValido ? 'AlunoLumiTeste' : usuario.trim()
+        );
         window.location.href = '/';
         return;
       }
@@ -95,7 +115,9 @@ export default function LoginPage() {
                 <div className="login-profile-options">
                   <button
                     type="button"
-                    className={`profile-option ${selectedProfile === 'professor' ? 'active' : ''}`}
+                    className={`profile-option ${
+                      selectedProfile === 'professor' ? 'active' : ''
+                    }`}
                     onClick={() => {
                       setSelectedProfile('professor');
                       setErrorMessage('');
@@ -106,7 +128,9 @@ export default function LoginPage() {
 
                   <button
                     type="button"
-                    className={`profile-option ${selectedProfile === 'aluno' ? 'active' : ''}`}
+                    className={`profile-option ${
+                      selectedProfile === 'aluno' ? 'active' : ''
+                    }`}
                     onClick={() => {
                       setSelectedProfile('aluno');
                       setErrorMessage('');
