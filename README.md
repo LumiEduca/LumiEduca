@@ -2,58 +2,111 @@
 
 ## 📚 Sobre o Projeto
 
-O **LumiEduca** é uma plataforma educacional gamificada criada para aumentar o engajamento dos alunos por meio de interatividade, desafios e acompanhamento pedagógico. O projeto foi idealizado no contexto acadêmico e evoluído com foco em organização, acessibilidade e experiência do usuário.
+O **LumiEduca** é uma plataforma educacional gamificada desenvolvida com foco em **engajamento, interatividade e acompanhamento pedagógico**.
 
-A proposta do LumiEduca é unir **tecnologia + educação + gamificação** para tornar o aprendizado mais atrativo, moderno e eficiente.
+O projeto nasceu no contexto acadêmico e evoluiu para uma aplicação completa, com foco em:
+
+- Experiência do usuário (UX/UI)
+- Gamificação do aprendizado
+- Organização pedagógica
+- Acessibilidade e responsividade
+- Escalabilidade para futuras evoluções
+
+A proposta central é unir **tecnologia + educação + gamificação**, criando uma experiência moderna e eficiente para alunos e professores.
 
 ---
 
 ## 🎯 Objetivos
 
-- Tornar o aprendizado mais dinâmico e interessante
-- Estimular participação e foco dos alunos
-- Auxiliar professores no acompanhamento da turma
-- Reforçar conteúdos com atividades interativas
-- Criar uma experiência digital moderna para educação
-- Evoluir para uma plataforma completa no futuro
+- Tornar o aprendizado mais dinâmico e envolvente  
+- Aumentar o foco e participação dos alunos  
+- Auxiliar professores no acompanhamento pedagógico  
+- Reforçar conteúdos através de desafios interativos  
+- Criar uma experiência educacional digital moderna  
+- Servir como base para evolução futura (plataforma completa)
 
 ---
 
 ## ✨ Funcionalidades Atuais
 
-### 👨‍🏫 Professor
-- Login como professor
-- Criar desafios e tarefas
-- Revisar atividades criadas
-- Excluir tarefas
-- Visualizar relatórios
-- Acompanhar desempenho dos alunos
+### 👨‍🏫 Área do Professor
+- Login com controle de acesso
+- Criação de atividades personalizadas
+- Associação de atividades às salas
+- Adição de atividades já existentes em salas
+- Gerenciamento de tarefas criadas
+- Visualização de relatórios pedagógicos
+- Acompanhamento de desempenho dos alunos
 
-### 🎓 Aluno
+---
+
+### 🎓 Área do Aluno
 - Login como estudante
-- Acessar desafios disponíveis
-- Responder atividades
-- Ganhar estrelas por acertos
-- Evoluir nas trilhas de aprendizagem
+- Acesso às salas por código
+- Visualização de atividades da sala
+- Resolução de desafios personalizados
+- Revisão de atividades concluídas (sem ganhar pontos novamente)
+- Sistema de pontuação com estrelas ⭐
+- Progresso individual por trilhas
 
-### ⚙️ Sistema
-- Rotas organizadas
-- Interface responsiva
-- Armazenamento local com LocalStorage
-- PWA (instalável em navegador)
-- Estrutura preparada para evolução em equipe
+---
+
+### 🧠 Trilha do Lumi (Gamificação)
+- Fases organizadas por dificuldade e conteúdo
+- Sistema de progressão por etapas
+- Feedback imediato ao responder questões
+- Revisão completa ao final da fase
+- Dicas inteligentes com IA (Lumi 🦊)
+- Liberação de fases conforme desempenho
+
+---
+
+### 🤖 Inteligência Artificial (Lumi)
+- Geração de dicas pedagógicas em tempo real
+- Integração com API Gemini (Google Generative AI)
+- Respostas dinâmicas e contextualizadas
+- Sistema de fallback em caso de erro
+- Aplicável tanto nas trilhas quanto nas atividades do professor
+
+---
+
+### 📲 PWA & Notificações
+- Aplicação instalável (PWA)
+- Suporte a funcionamento offline parcial
+- Service Workers configurados
+- Sistema de notificações push (Firebase)
+- Experiência semelhante a aplicativo mobile
+
+---
+
+### 🎨 Interface & UX
+- Design moderno e responsivo
+- Layout adaptado para desktop e mobile
+- Header global com navegação inteligente
+- Footer padronizado em todas as páginas
+- Componentização e padronização visual
+- Feedback visual de acertos e erros
 
 ---
 
 ## 🛠️ Tecnologias Utilizadas
 
+### Frontend
 - React
-- JavaScript
+- JavaScript (ES6+)
 - React Router DOM
-- CSS
-- LocalStorage
-- Workbox / PWA
-- Git / GitHub
+- CSS (modular e global)
+
+### Funcionalidades
+- LocalStorage (persistência local)
+- PWA (Workbox / Service Workers)
+- Firebase Messaging (Notificações Push)
+- Gemini API (IA generativa)
+
+### Ferramentas
+- Git & GitHub
+- VS Code
+- Vercel (deploy)
 
 ---
 
@@ -61,22 +114,34 @@ A proposta do LumiEduca é unir **tecnologia + educação + gamificação** para
 
 ```text
 LumiEduca/
+├── backend/
+│   ├── controllers/
+│   ├── routes/
+│   ├── services/
+│   └── server.js
+│
 ├── public/
+│   ├── favicon.ico
+│   ├── manifest.json
+│   ├── firebase-messaging-sw.js
+│   └── lumi-notification-sw.js
+│
 ├── src/
 │   ├── assets/
-│   └── images/
+│   │   └── images/
 │   ├── components/
 │   ├── data/
 │   ├── pages/
 │   ├── routes/
+│   ├── services/
 │   ├── styles/
 │   ├── App.jsx
 │   └── index.js
+│
 ├── .env.example
 ├── .gitignore
 ├── package.json
-├── README.md
-└── workbox-config.js
+└── README.md
 ```
 
 ---
@@ -121,15 +186,10 @@ http://localhost:3000
 ```env
 REACT_APP_SENHA_PROFESSOR=
 REACT_APP_SENHA_ESTUDANTE=
+REACT_APP_GEMINI_KEY=
 ```
 
-### Arquivo `.env` (local, não versionado)
-```env
-REACT_APP_SENHA_PROFESSOR=sua_senha
-REACT_APP_SENHA_ESTUDANTE=sua_senha
-```
-
-> O arquivo `.env` é local e está protegido pelo `.gitignore`.
+### Nunca versionar o arquivo .env (já protegido pelo .gitignore)
 
 ---
 
@@ -137,7 +197,7 @@ REACT_APP_SENHA_ESTUDANTE=sua_senha
 
 ### Branches principais
 
-- `main` → versão estável  
+- `main` → versão estáveL (produção)
 - `dev` → integração de desenvolvimento
 
 ### Branches de trabalho
@@ -174,27 +234,31 @@ docs/readme
 
 ## 🚀 Próximos Passos
 
-- Melhorias visuais e UX  
-- Refatoração de componentes  
-- Backend e banco de dados  
-- Autenticação real  
-- Dashboard avançado  
-- Sistema de ranking  
-- Expansão da gamificação  
-- Deploy oficial  
-- Evolução para versão mobile
+- Backend completo com banco de dados
+- Sistema real de autenticação (JWT/Auth)
+- Dashboard avançado para professores
+- Ranking e leaderboard
+- Expansão da gamificação
+- Sistema de turmas e permissões
+- Versão mobile (React Native)
+- Melhorias contínuas de UX/UI
 
 ---
 
 ## 📌 Status do Projeto
 
-🟢 Base oficial concluída  
-🟢 Estrutura organizada  
-🟢 Fluxo Git definido  
-🟢 Time pronto para desenvolvimento
+🟢 Estrutura consolidada
+🟢 Funcionalidades principais implementadas 
+🟢 IA integrada e funcional  
+🟢 PWA configurado
+🟢 Pronto para deploy
 
 ---
 
 ## 📄 Licença
 
-Projeto acadêmico desenvolvido para fins educacionais e de aprendizagem.
+All Rights Reserved © LumiEduca
+
+This project is proprietary and confidential.
+
+Unauthorized copying, modification, distribution, or use of this software is strictly prohibited without prior written permission from the authors.
