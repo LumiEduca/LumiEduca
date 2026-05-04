@@ -363,3 +363,43 @@
     padding: 1rem 0.8rem;
   }
 }
+
+.password-input-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.password-input-wrapper input {
+  width: 100%;
+  padding-right: 52px;
+}
+
+.password-toggle-button {
+  position: absolute;
+  top: 50%;
+  right: 14px;
+
+  transform: translateY(-50%) !important;
+
+  border: none;
+  background: transparent;
+  cursor: pointer;
+
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 4px;
+  border-radius: 6px;
+  transition: none !important;
+}
+
+.password-toggle-button:hover,
+.password-toggle-button:active,
+.password-toggle-button:focus {
+  transform: translateY(-50%) !important;
+  background: transparent !important;
+  color: #6b7280 !important;
+  outline: none;
+}

@@ -7,6 +7,7 @@ export default function LoginPage() {
   const [selectedProfile, setSelectedProfile] = useState('professor');
   const [usuario, setUsuario] = useState('');
   const [senha, setSenha] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
   const handleLogin = (e) => {
@@ -29,9 +30,6 @@ export default function LoginPage() {
       return;
     }
 
-    // =========================
-    // LOGIN PROFESSOR
-    // =========================
     if (selectedProfile === 'professor') {
       const professorPadraoValido =
         usuarioNormalizado === 'professor' && senha === SENHA_PROF;
@@ -53,9 +51,6 @@ export default function LoginPage() {
       return;
     }
 
-    // =========================
-    // LOGIN ALUNO
-    // =========================
     if (selectedProfile === 'aluno') {
       const alunoComEnvValido = senha === SENHA_ALUNO && usuario.trim() !== '';
 
@@ -168,17 +163,41 @@ export default function LoginPage() {
                   Senha
                 </label>
 
-                <input
-                  id="senha"
-                  type="password"
-                  placeholder="Digite sua senha"
-                  value={senha}
-                  onChange={(e) => {
-                    setSenha(e.target.value);
-                    setErrorMessage('');
-                  }}
-                  required
-                />
+                <div className="password-input-wrapper">
+                  <input
+                    id="senha"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="Digite sua senha"
+                    value={senha}
+                    onChange={(e) => {
+                      setSenha(e.target.value);
+                      setErrorMessage('');
+                    }}
+                    required
+                  />
+
+                  <button
+                    type="button"
+                    className="password-toggle-button"
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                  >
+                    {showPassword ? (
+                      // OLHO FECHADO
+                      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M17.94 17.94A10.94 10.94 0 0 1 12 19C7 19 2.73 15.11 1 12c.72-1.29 1.68-2.49 2.83-3.54" />
+                        <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
+                        <path d="M1 1l22 22" />
+                      </svg>
+                    ) : (
+                      // OLHO ABERTO
+                      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" />
+                        <circle cx="12" cy="12" r="3" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
               </div>
 
               {errorMessage && <p className="login-error">{errorMessage}</p>}
