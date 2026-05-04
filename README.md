@@ -247,7 +247,7 @@ docs/readme
 ## 👥 Gestão da Equipe
 
 ### 👑 Liderança do Projeto
-- **Bryan Duarte de Araujo Pereira** — Líder Técnico e Gerente do Projeto  
+- **Bryan Duarte de Araujo Pereira** — Project Manager & Software Architect  
 - **Emmanuel Nazareth Bravo da Costa** — Tech Lead / Desenvolvedor Principal  
 
 ---
