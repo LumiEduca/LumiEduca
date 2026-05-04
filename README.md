@@ -143,6 +143,17 @@ LumiEduca/
 ├── package.json
 └── README.md
 ```
+---
+
+## 🌐 Teste Online
+
+A plataforma LumiEduca está disponível para teste através do deploy na Vercel:
+
+[![Acessar LumiEduca](https://img.shields.io/badge/Acessar%20LumiEduca-FF8C00?style=for-the-badge)](https://lumieduca.vercel.app)
+
+Você pode testar a aplicação diretamente pelo navegador, tanto no computador quanto no celular.
+
+Por ser uma aplicação PWA, também é possível instalar o LumiEduca no dispositivo e utilizá-lo com experiência semelhante a um aplicativo mobile.
 
 ---
 
@@ -279,7 +290,8 @@ A equipe foi organizada com divisão clara de responsabilidades, contemplando li
 - Funcionalidades principais implementadas 
 - IA integrada e funcional  
 - PWA configurado
-- Pronto para deploy
+- Deploy publicado na Vercel
+- Disponível para testes
 
 ---
 
