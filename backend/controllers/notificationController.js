@@ -1,30 +1,48 @@
+import prisma from "../config/prismaClient.js";
 import { sendNotification } from "../services/notificationService.js";
+import { ApiError } from "../middlewares/errorHandler.js";
 
-let tokens = [];
+export const saveToken = async (req, res, next) => {
+  try {
+    const { userId, token } = req.body;
 
-export const saveToken = (req, res) => {
-  const { userId, token } = req.body;
+    if (!userId || !token) {
+      throw new ApiError(400, "userId e token são obrigatórios");
+    }
 
-  const jaExiste = tokens.find((t) => t.userId === userId);
+    await prisma.notificacaoToken.upsert({
+      where: { token },
+      update: {
+        usuarioId: userId,
+      },
+      create: {
+        usuarioId: userId,
+        token,
+      },
+    });
 
-  if (!jaExiste) {
-    tokens.push({ userId, token });
+    res.sendStatus(200);
+  } catch (err) {
+    next(err);
   }
-
-  res.sendStatus(200);
 };
 
-export const sendToAll = async (req, res) => {
-  const { title, body } = req.body;
-
+export const sendToAll = async (req, res, next) => {
   try {
-    for (const user of tokens) {
-      await sendNotification(user.token, { title, body });
+    const { title, body } = req.body;
+
+    if (!title || !body) {
+      throw new ApiError(400, "title e body são obrigatórios");
+    }
+
+    const tokens = await prisma.notificacaoToken.findMany();
+
+    for (const item of tokens) {
+      await sendNotification(item.token, { title, body });
     }
 
     res.json({ success: true });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Erro ao enviar notificação" });
+  } catch (err) {
+    next(err);
   }
 };
