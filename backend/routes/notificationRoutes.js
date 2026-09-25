@@ -1,7 +1,7 @@
 import express from "express";
 import {
   saveToken,
-  sendToAll
+  sendToAll,
 } from "../controllers/notificationController.js";
 
 const router = express.Router();

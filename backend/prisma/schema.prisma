@@ -1,0 +1,110 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+}
+
+enum TipoUsuario {
+  PROFESSOR
+  ALUNO
+}
+
+model Usuario {
+  id            String       @id @default(uuid())
+  nome          String
+  usuario       String       @unique
+  senhaHash     String
+  tipo          TipoUsuario
+  criadoEm      DateTime     @default(now())
+  atualizadoEm  DateTime     @updatedAt
+
+  salasCriadas  Sala[]           @relation("SalasDoProfessor")
+  matriculas    Matricula[]
+  atividadesCriadas Atividade[]  @relation("AtividadesDoProfessor")
+  progresso     Progresso[]
+  tokens        NotificacaoToken[]
+
+  @@map("usuarios")
+}
+
+model Sala {
+  id           String      @id @default(uuid())
+  nome         String
+  codigo       String      @unique
+  professorId  String
+  professor    Usuario     @relation("SalasDoProfessor", fields: [professorId], references: [id])
+  criadaEm     DateTime    @default(now())
+
+  matriculas   Matricula[]
+  atividades   Atividade[]
+
+  @@map("salas")
+}
+
+model Matricula {
+  id        String   @id @default(uuid())
+  alunoId   String
+  aluno     Usuario  @relation(fields: [alunoId], references: [id])
+  salaId    String
+  sala      Sala     @relation(fields: [salaId], references: [id])
+  entrouEm  DateTime @default(now())
+
+  @@unique([alunoId, salaId])
+  @@map("matriculas")
+}
+
+model Atividade {
+  id            String      @id @default(uuid())
+  titulo        String
+  materia       String
+  salaId        String
+  sala          Sala        @relation(fields: [salaId], references: [id])
+  professorId   String
+  professor     Usuario     @relation("AtividadesDoProfessor", fields: [professorId], references: [id])
+  prazo         DateTime?
+  criadaEm      DateTime    @default(now())
+
+  questoes      Questao[]
+  progresso     Progresso[]
+
+  @@map("atividades")
+}
+
+model Questao {
+  id             String    @id @default(uuid())
+  atividadeId    String
+  atividade      Atividade @relation(fields: [atividadeId], references: [id])
+  enunciado      String
+  opcoes         Json
+  respostaCorreta String
+  ordem          Int       @default(0)
+
+  @@map("questoes")
+}
+
+model Progresso {
+  id           String     @id @default(uuid())
+  alunoId      String
+  aluno        Usuario    @relation(fields: [alunoId], references: [id])
+  atividadeId  String?
+  atividade    Atividade? @relation(fields: [atividadeId], references: [id])
+  materia      String?
+  pontos       Int        @default(0)
+  concluida    Boolean    @default(false)
+  atualizadoEm DateTime   @updatedAt
+
+  @@unique([alunoId, atividadeId])
+  @@map("progresso")
+}
+
+model NotificacaoToken {
+  id         String   @id @default(uuid())
+  usuarioId  String
+  usuario    Usuario  @relation(fields: [usuarioId], references: [id])
+  token      String   @unique
+  criadoEm   DateTime @default(now())
+
+  @@map("notificacao_tokens")
+}
