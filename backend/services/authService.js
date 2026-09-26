@@ -11,13 +11,13 @@ export const autenticarUsuario = async (usuario, senha, tipo) => {
   });
 
   if (!user || user.tipo !== tipo) {
-    throw new ApiError('Usuário não encontrado ou tipo incorreto', 401);
+    throw new ApiError(401, 'Usuário não encontrado ou tipo incorreto');
   }
 
   // Validação da senha utilizando bcryptjs
   const senhaValida = await bcrypt.compare(senha, user.senhaHash);
   if (!senhaValida) {
-    throw new ApiError('Credenciais inválidas', 401);
+    throw new ApiError(401, 'Credenciais inválidas');
   }
 
   // Geração do token JWT
