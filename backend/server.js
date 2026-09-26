@@ -3,6 +3,7 @@ import cors from "cors";
 import "dotenv/config";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import { errorHandler } from "./middlewares/errorHandler.js";
+import authRoutes from './routes/authRoutes.js';
 
 const app = express();
 
@@ -10,6 +11,7 @@ app.use(cors());
 app.use(express.json());
 
 app.use("/api/v1/notifications", notificationRoutes);
+app.use('/api/v1/auth', authRoutes);
 
 app.get("/", (req, res) => {
   res.send("LumiEduca Backend Online");
