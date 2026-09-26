@@ -10,67 +10,55 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-
-    const SENHA_PROF = process.env.REACT_APP_SENHA_PROFESSOR;
-    const SENHA_ALUNO = process.env.REACT_APP_SENHA_ESTUDANTE;
-
-    const usuarioNormalizado = usuario.trim().toLowerCase();
+    setErrorMessage(''); // Limpa os erros anteriores
 
     if (!selectedProfile) {
       setErrorMessage('Selecione se você é professor ou aluno para continuar.');
       return;
     }
 
-    if (!SENHA_PROF || !SENHA_ALUNO) {
-      setErrorMessage(
-        'As senhas de acesso não foram configuradas corretamente no ambiente.'
-      );
-      return;
-    }
+    try {
+      // Define a rota baseada no perfil selecionado
+      const endpoint = selectedProfile === 'professor' 
+        ? '/api/v1/auth/login/professor' 
+        : '/api/v1/auth/login/aluno';
 
-    if (selectedProfile === 'professor') {
-      const professorPadraoValido =
-        usuarioNormalizado === 'professor' && senha === SENHA_PROF;
+      // Dispara a requisição HTTP para o backend
+      const response = await fetch(`http://localhost:5000${endpoint}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ usuario, senha }),
+      });
 
-      const professorTesteValido =
-        usuarioNormalizado === 'joao_lucas' && senha === SENHA_PROF;
+      const data = await response.json();
 
-      if (professorPadraoValido || professorTesteValido) {
-        localStorage.setItem('userType', 'professor');
-        localStorage.setItem(
-          'userName',
-          professorTesteValido ? 'João_Lucas' : 'Professor'
-        );
-        window.location.href = '/';
-        return;
+      // O response.ok verifica se o status HTTP está na faixa 200-299
+      if (!response.ok) {
+        // Utiliza a mensagem de erro padronizada que criamos no backend (ApiError)
+        throw new Error(data.erro || 'Erro ao realizar login.');
       }
 
-      setErrorMessage('Credenciais de professor inválidas.');
-      return;
-    }
+      // Se o login for bem-sucedido, salva o token e os dados reais no localStorage
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('userType', data.usuario.tipo.toLowerCase());
+      localStorage.setItem('userName', data.usuario.nome);
 
-    if (selectedProfile === 'aluno') {
-      const alunoComEnvValido = senha === SENHA_ALUNO && usuario.trim() !== '';
-
-      const alunoTesteValido =
-        usuarioNormalizado === 'adriel_azevedo' && senha === SENHA_ALUNO;
-
-      if (alunoComEnvValido || alunoTesteValido) {
-        localStorage.setItem('userType', 'estudante');
-        localStorage.setItem(
-          'userName',
-          alunoTesteValido ? 'Adriel_Azevedo' : usuario.trim()
-        );
-        window.location.href = '/';
-        return;
+      // Redireciona para a página principal
+      window.location.href = '/';
+      
+    } catch (error) {
+      // Captura falhas de rede (servidor desligado) ou credenciais inválidas (status 401)
+      if (error.message === 'Failed to fetch') {
+        setErrorMessage('Não foi possível conectar ao servidor. Verifique se a API está rodando.');
+      } else {
+        setErrorMessage(error.message);
       }
-
-      setErrorMessage('Nome de usuário ou senha de aluno inválidos.');
     }
   };
-
   return (
     <div className="page-wrapper login-page">
       <main className="login-main">
