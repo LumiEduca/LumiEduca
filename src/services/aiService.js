@@ -1,59 +1,67 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+// A chave da Gemini NÃO fica mais aqui. Toda a chamada à IA passa pelo backend
+// (rota protegida /api/v1/lumi/dica), que guarda a GEMINI_API_KEY.
 
-// Configuração da API usando variável de ambiente
-const genAI = new GoogleGenerativeAI(process.env.REACT_APP_GEMINI_KEY);
+// IMPORTANTE (produção/Vercel): defina REACT_APP_API_URL com a URL pública do
+// backend. Sem isso, o fallback abaixo (http://localhost:5000) só funciona em dev.
+const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
+
+const MENSAGEM_ERRO_PADRAO =
+  "Ops! O Lumi precisou dar uma corridinha na floresta e não conseguiu responder agora. 🦊 Tente clicar no botão novamente em alguns segundos!";
+
+const MENSAGEM_LIMITE =
+  "Calma! O Lumi precisa de um respiro. Tente de novo em alguns instantes 🦊";
+
+function obterToken() {
+  return localStorage.getItem("token");
+}
 
 /**
  * Solicita uma dica pedagógica ao Lumi baseada na pergunta e opções da tarefa.
+ * Mesma assinatura de antes — só a implementação interna mudou.
  */
 export const pedirDicaAoLumi = async (pergunta, opcoes, nomeAtividade) => {
   try {
-    // 1. Validação básica de entrada
     if (!pergunta) {
       throw new Error("A pergunta da atividade não foi fornecida.");
     }
 
-    // 2. Inicialização do modelo (Gemini 3 Flash)
-    const model = genAI.getGenerativeModel({ 
-      model: "gemini-3-flash-preview",
-      // O System Instruction mantém a IA no "eixo" pedagógico
-      systemInstruction: `Você é o Lumi, tutor da LumiEduca. 
-      REGRAS: 
-      1. NUNCA dê a resposta correta.
-      2. Use apenas a pergunta e opções enviadas.
-      3. Dê dicas curtas e motivadoras.
-      4. Use emojis 🦊⭐.`
+    const token = obterToken();
+
+    if (!token) {
+      throw new Error("Usuário não autenticado.");
+    }
+
+    const resposta = await fetch(`${API_BASE_URL}/api/v1/lumi/dica`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ pergunta, opcoes, nomeAtividade }),
     });
 
-    // 3. Formatação do prompt de dados
-    const inputDoEstudante = `
-      ATIVIDADE: ${nomeAtividade}
-      QUESTÃO: ${pergunta}
-      OPÇÕES: ${Array.isArray(opcoes) ? opcoes.join(", ") : "Não fornecidas"}
-      
-      Dê uma dica para o aluno sem revelar qual alternativa é a correta.
-    `;
+    // Rate limit: mensagem amigável específica
+    if (resposta.status === 429) {
+      return MENSAGEM_LIMITE;
+    }
 
-    // 4. Chamada da API
-    // CORREÇÃO: Agora o nome da variável coincide com a definição acima
-    const result = await model.generateContent(inputDoEstudante);
-    const response = await result.response;
-    const text = response.text();
+    const dados = await resposta.json();
 
-    if (!text) {
+    if (!resposta.ok) {
+      throw new Error(dados.erro || "Erro ao consultar o Lumi.");
+    }
+
+    if (!dados.dica) {
       throw new Error("O Lumi não conseguiu gerar uma resposta.");
     }
 
-    return text;
-
+    return dados.dica;
   } catch (error) {
-    // Log detalhado para o console do desenvolvedor
-    console.error("Erro na integração com Gemini API:", {
+    console.error("Erro na integração com o Lumi (backend):", {
       mensagem: error.message,
-      contexto: { nomeAtividade, pergunta }
+      contexto: { nomeAtividade, pergunta },
     });
 
-    // Retorno amigável para o aluno em Saquarema
-    return "Ops! O Lumi precisou dar uma corridinha na floresta e não conseguiu responder agora. 🦊 Tente clicar no botão novamente em alguns segundos!";
+    return MENSAGEM_ERRO_PADRAO;
   }
 };
