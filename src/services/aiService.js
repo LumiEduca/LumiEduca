@@ -1,15 +1,16 @@
-// A chave da Gemini NÃO fica mais aqui. Toda a chamada à IA agora passa
-// pelo backend (rota protegida /api/v1/lumi/dica), que é quem guarda a
-// GEMINI_API_KEY como variável de ambiente do servidor.
+// A chave da Gemini NÃO fica mais aqui. Toda a chamada à IA passa pelo backend
+// (rota protegida /api/v1/lumi/dica), que guarda a GEMINI_API_KEY.
 
-// ATENÇÃO (ajuste conforme o projeto real):
-// 1. API_BASE_URL — assumido como localhost:5000 em dev, ou REACT_APP_API_URL
-//    se estiver definida. Ajuste se a URL do backend em produção for outra.
+// IMPORTANTE (produção/Vercel): defina REACT_APP_API_URL com a URL pública do
+// backend. Sem isso, o fallback abaixo (http://localhost:5000) só funciona em dev.
 const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
-// 2. Como o token JWT é recuperado — assumido localStorage.getItem("token").
-//    Se o projeto guarda o token de outro jeito (Context/Redux/outra chave),
-//    troque só esta função.
+const MENSAGEM_ERRO_PADRAO =
+  "Ops! O Lumi precisou dar uma corridinha na floresta e não conseguiu responder agora. 🦊 Tente clicar no botão novamente em alguns segundos!";
+
+const MENSAGEM_LIMITE =
+  "Calma! O Lumi precisa de um respiro. Tente de novo em alguns instantes 🦊";
+
 function obterToken() {
   return localStorage.getItem("token");
 }
@@ -39,6 +40,11 @@ export const pedirDicaAoLumi = async (pergunta, opcoes, nomeAtividade) => {
       body: JSON.stringify({ pergunta, opcoes, nomeAtividade }),
     });
 
+    // Rate limit: mensagem amigável específica
+    if (resposta.status === 429) {
+      return MENSAGEM_LIMITE;
+    }
+
     const dados = await resposta.json();
 
     if (!resposta.ok) {
@@ -56,6 +62,6 @@ export const pedirDicaAoLumi = async (pergunta, opcoes, nomeAtividade) => {
       contexto: { nomeAtividade, pergunta },
     });
 
-    return "Ops! O Lumi precisou dar uma corridinha na floresta e não conseguiu responder agora. 🦊 Tente clicar no botão novamente em alguns segundos!";
+    return MENSAGEM_ERRO_PADRAO;
   }
 };

@@ -25,6 +25,7 @@ model Usuario {
   atividadesCriadas Atividade[]  @relation("AtividadesDoProfessor")
   progresso     Progresso[]
   tokens        NotificacaoToken[]
+  notificacoes  Notificacao[]
 
   @@map("usuarios")
 }
@@ -107,4 +108,17 @@ model NotificacaoToken {
   criadoEm   DateTime @default(now())
 
   @@map("notificacao_tokens")
+}
+
+model Notificacao {
+  id         String   @id @default(uuid())
+  usuarioId  String
+  usuario    Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  titulo     String
+  corpo      String
+  lida       Boolean  @default(false)
+  criadaEm   DateTime @default(now())
+
+  @@index([usuarioId, criadaEm])
+  @@map("notificacoes")
 }

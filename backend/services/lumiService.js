@@ -1,113 +1,142 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 // A chave da Gemini fica SOMENTE no backend (variável de ambiente).
-// Nunca expor essa chave para o frontend (nunca usar prefixo REACT_APP_ nela).
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-
-// Modelo padrão — usa o alias "latest", que a Google aponta automaticamente
-// para a versão estável mais recente do Flash (evita quebrar quando um
-// modelo específico é descontinuado).
 const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-flash-latest";
+
+// Limita o tamanho da resposta (controle de custo por chamada).
+const MAX_OUTPUT_TOKENS = 300;
+
+// O /status pode fazer no máximo 1 chamada real à Gemini a cada 60s.
+const STATUS_CACHE_MS = 60 * 1000;
+
+const SYSTEM_INSTRUCTION =
+  "Você é o Lumi, tutor da LumiEduca. REGRAS: 1. NUNCA dê a resposta correta. 2. Use apenas a pergunta e opções enviadas. 3. Dê dicas curtas e motivadoras. 4. Use emojis 🦊⭐.";
 
 let genAI = null;
 
-/**
- * Inicializa o client da Gemini de forma preguiçosa (lazy),
- * para não quebrar o boot do servidor caso a env var não esteja setada.
- */
 function getClient() {
-  if (!GEMINI_API_KEY) {
+  const apiKey = process.env.GEMINI_API_KEY;
+
+  if (!apiKey) {
     return null;
   }
 
   if (!genAI) {
-    genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+    genAI = new GoogleGenerativeAI(apiKey);
   }
 
   return genAI;
 }
 
+// ---------- STATUS (com cache em memória) ----------
+let statusCache = { valor: null, expiraEm: 0 };
+let statusEmAndamento = null; // evita chamadas simultâneas na mesma janela
+
 /**
- * Verifica se a integração com a Gemini está disponível.
- * Usado pelo endpoint público GET /lumi/status (e pelo fallback do frontend).
+ * Informa se a Gemini está disponível.
+ * - Sem GEMINI_API_KEY: responde { disponivel: false } sem chamar nada.
+ * - Com chave: no máximo 1 chamada real por minuto, o resto vem do cache.
+ *   (uma falha também fica em cache por 60s, para não martelar a API fora do ar)
  */
 export async function verificarStatus() {
   const client = getClient();
 
   if (!client) {
-    return {
-      disponivel: false,
-      motivo: "GEMINI_API_KEY não configurada no backend",
-    };
+    return { disponivel: false };
   }
 
+  if (statusCache.valor && Date.now() < statusCache.expiraEm) {
+    return statusCache.valor;
+  }
+
+  if (statusEmAndamento) {
+    return statusEmAndamento;
+  }
+
+  statusEmAndamento = (async () => {
+    let resultado;
+
+    try {
+      const model = client.getGenerativeModel({
+        model: GEMINI_MODEL,
+        generationConfig: { maxOutputTokens: 10 },
+      });
+
+      await model.generateContent("ping");
+      resultado = { disponivel: true };
+    } catch (error) {
+      console.error("[lumiService] Falha ao verificar status da Gemini:", error.message);
+      resultado = { disponivel: false };
+    }
+
+    statusCache = { valor: resultado, expiraEm: Date.now() + STATUS_CACHE_MS };
+    return resultado;
+  })();
+
   try {
-    const model = client.getGenerativeModel({ model: GEMINI_MODEL });
-
-    // Chamada mínima só para validar que a chave/API respondem.
-    await model.generateContent("ping");
-
-    return { disponivel: true };
-  } catch (error) {
-    console.error("[lumiService] Falha ao verificar status da Gemini:", error.message);
-    return {
-      disponivel: false,
-      motivo: "Falha ao comunicar com a Gemini API",
-    };
+    return await statusEmAndamento;
+  } finally {
+    statusEmAndamento = null;
   }
 }
 
+// ---------- DICA ----------
 /**
- * Gera uma dica pedagógica com base na questão/contexto enviado.
+ * Gera uma dica pedagógica no tom do Lumi.
+ * Os dados já chegam validados pelo controller.
  *
  * @param {Object} params
- * @param {string} [params.pergunta] - pergunta livre do aluno/professor.
- * @param {string} [params.contexto] - enunciado da questão ou contexto adicional.
- * @param {string} [params.questaoId] - id da questão, se a dica for sobre uma questão específica do banco.
+ * @param {string} params.pergunta
+ * @param {string[]} [params.opcoes]
+ * @param {string} [params.nomeAtividade]
+ * @param {string} [params.contexto]   - opcional (compatibilidade)
+ * @param {string} [params.questaoId]  - opcional (compatibilidade)
  */
-export async function gerarDica({ pergunta, contexto, questaoId }) {
+export async function gerarDica({ pergunta, opcoes, nomeAtividade, contexto, questaoId }) {
   const client = getClient();
 
   if (!client) {
-    const erro = new Error("Integração com a Gemini API não está disponível");
-    erro.status = 503;
-    throw erro;
+    throw new Error("GEMINI_API_KEY não configurada");
   }
 
-  if (!pergunta && !contexto) {
-    const erro = new Error("Informe 'pergunta' e/ou 'contexto' para gerar a dica");
-    erro.status = 400;
-    throw erro;
-  }
+  const model = client.getGenerativeModel({
+    model: GEMINI_MODEL,
+    systemInstruction: SYSTEM_INSTRUCTION,
+    generationConfig: { maxOutputTokens: MAX_OUTPUT_TOKENS },
+  });
 
-  const model = client.getGenerativeModel({ model: GEMINI_MODEL });
+  const resultado = await model.generateContent(
+    montarEntradaDoAluno({ pergunta, opcoes, nomeAtividade, contexto, questaoId })
+  );
 
-  const prompt = montarPrompt({ pergunta, contexto, questaoId });
-
-  const resultado = await model.generateContent(prompt);
   const texto = resultado.response.text();
 
-  return { dica: texto };
+  if (!texto || !texto.trim()) {
+    throw new Error("A Gemini retornou uma resposta vazia");
+  }
+
+  return { dica: texto.trim() };
 }
 
-function montarPrompt({ pergunta, contexto, questaoId }) {
-  const partes = [
-    "Você é um assistente pedagógico do LumiEduca.",
-    "Gere uma dica curta, didática e encorajadora para ajudar o aluno a avançar,",
-    "SEM entregar a resposta final diretamente.",
+function montarEntradaDoAluno({ pergunta, opcoes, nomeAtividade, contexto, questaoId }) {
+  const listaOpcoes =
+    Array.isArray(opcoes) && opcoes.length > 0 ? opcoes.join(", ") : "Não fornecidas";
+
+  const linhas = [
+    `ATIVIDADE: ${nomeAtividade || "Não informada"}`,
+    `QUESTÃO: ${pergunta}`,
+    `OPÇÕES: ${listaOpcoes}`,
   ];
 
-  if (questaoId) {
-    partes.push(`ID da questão: ${questaoId}`);
-  }
-
   if (contexto) {
-    partes.push(`Contexto/enunciado da questão: ${contexto}`);
+    linhas.push(`CONTEXTO: ${contexto}`);
   }
 
-  if (pergunta) {
-    partes.push(`Dúvida do aluno: ${pergunta}`);
+  if (questaoId) {
+    linhas.push(`ID DA QUESTÃO: ${questaoId}`);
   }
 
-  return partes.join("\n");
+  linhas.push("", "Dê uma dica para o aluno sem revelar qual alternativa é a correta.");
+
+  return linhas.join("\n");
 }
