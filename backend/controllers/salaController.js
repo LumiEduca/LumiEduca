@@ -1,108 +1,114 @@
 import crypto from "node:crypto";
 import { salaRepository } from "../repositories/salaRepository.js";
+import { ApiError } from "../middlewares/errorHandler.js";
 
 // Código de 6 caracteres, sem letras/números ambíguos (0, O, 1, I)
 const ALFABETO = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const gerarCodigo = (tamanho = 6) =>
   Array.from(crypto.randomBytes(tamanho), (b) => ALFABETO[b % ALFABETO.length]).join("");
 
-// Remove campos que o aluno não deve ver
-const versaoAluno = ({ codigoAcesso, alunos, ...publico }) => publico;
+// Remove o código de acesso e a lista de matrículas da resposta para o aluno
+const versaoAluno = (sala) => {
+  const { codigo, matriculas, ...publico } = sala;
+  return publico;
+};
 
-// POST /salas — professor cria uma sala
-export const criarSala = async (req, res) => {
+// POST /api/v1/salas — professor cria uma sala
+export const criarSala = async (req, res, next) => {
   try {
-    const { nome, descricao } = req.body ?? {};
+    const { nome } = req.body ?? {};
     if (!nome || !String(nome).trim()) {
-      return res.status(400).json({ erro: "O nome da sala é obrigatório" });
+      throw new ApiError(400, "O nome da sala é obrigatório");
     }
 
-    let codigoAcesso;
+    let codigo;
     for (let i = 0; i < 5; i++) {
       const candidato = gerarCodigo();
       if (!(await salaRepository.buscarPorCodigo(candidato))) {
-        codigoAcesso = candidato;
+        codigo = candidato;
         break;
       }
     }
-    if (!codigoAcesso) {
-      return res.status(500).json({ erro: "Não foi possível gerar um código de acesso único" });
+    if (!codigo) {
+      throw new ApiError(500, "Não foi possível gerar um código de acesso único");
     }
 
     const sala = await salaRepository.criar({
       nome: String(nome).trim(),
-      descricao: descricao ? String(descricao).trim() : "",
-      codigoAcesso,
+      codigo,
       professorId: req.usuario.id,
     });
     res.status(201).json(sala);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ erro: "Erro ao criar sala" });
+    next(err);
   }
 };
 
-// GET /salas — lista as salas do professor logado
-export const listarSalas = async (req, res) => {
+// GET /api/v1/salas — lista as salas do professor logado
+export const listarSalas = async (req, res, next) => {
   try {
     const salas = await salaRepository.listarPorProfessor(req.usuario.id);
-    res.json(salas.map(({ alunos, ...resto }) => ({ ...resto, totalAlunos: alunos.length })));
+    res.json(
+      salas.map(({ matriculas, ...resto }) => ({
+        ...resto,
+        totalAlunos: matriculas.length,
+      }))
+    );
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ erro: "Erro ao listar salas" });
+    next(err);
   }
 };
 
-// GET /salas/:id — professor dono ou aluno matriculado
-export const detalharSala = async (req, res) => {
+// GET /api/v1/salas/:id — professor dono ou aluno matriculado
+export const detalharSala = async (req, res, next) => {
   try {
     const sala = await salaRepository.buscarPorId(req.params.id);
-    if (!sala) return res.status(404).json({ erro: "Sala não encontrada" });
+    if (!sala) throw new ApiError(404, "Sala não encontrada");
 
-    const { id, papel } = req.usuario;
-    const ehDono = papel === "professor" && sala.professorId === id;
-    const ehAluno = papel === "aluno" && sala.alunos.includes(id);
+    const { id, tipo } = req.usuario;
+    const ehDono = tipo === "PROFESSOR" && sala.professorId === id;
+    const ehAluno = tipo === "ALUNO" && sala.matriculas.some((m) => m.alunoId === id);
+
     if (!ehDono && !ehAluno) {
-      return res.status(403).json({ erro: "Você não tem acesso a esta sala" });
+      throw new ApiError(403, "Você não tem acesso a esta sala");
     }
 
-    res.json(papel === "aluno" ? versaoAluno(sala) : sala);
+    res.json(tipo === "ALUNO" ? versaoAluno(sala) : sala);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ erro: "Erro ao buscar sala" });
+    next(err);
   }
 };
 
-// POST /salas/entrar — aluno entra com o código de acesso
-export const entrarNaSala = async (req, res) => {
+// POST /api/v1/salas/entrar — aluno entra usando o código de acesso
+export const entrarNaSala = async (req, res, next) => {
   try {
     const codigo = String(req.body?.codigo ?? "").trim().toUpperCase();
-    if (!codigo) return res.status(400).json({ erro: "Informe o código de acesso" });
+    if (!codigo) throw new ApiError(400, "Informe o código de acesso");
 
     const sala = await salaRepository.buscarPorCodigo(codigo);
-    if (!sala) return res.status(404).json({ erro: "Código de acesso inválido" });
+    if (!sala) throw new ApiError(404, "Código de acesso inválido");
 
-    const atualizada = await salaRepository.adicionarAluno(sala.id, req.usuario.id);
-    res.json({ mensagem: "Você entrou na sala", sala: versaoAluno(atualizada) });
+    await salaRepository.matricularAluno(sala.id, req.usuario.id);
+
+    const { codigo: _codigo, ...publico } = sala;
+    res.json({ mensagem: "Você entrou na sala", sala: publico });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ erro: "Erro ao entrar na sala" });
+    next(err);
   }
 };
 
-// DELETE /salas/:id — professor dono remove a sala
-export const removerSala = async (req, res) => {
+// DELETE /api/v1/salas/:id — professor dono remove a sala
+export const removerSala = async (req, res, next) => {
   try {
     const sala = await salaRepository.buscarPorId(req.params.id);
-    if (!sala) return res.status(404).json({ erro: "Sala não encontrada" });
+    if (!sala) throw new ApiError(404, "Sala não encontrada");
     if (sala.professorId !== req.usuario.id) {
-      return res.status(403).json({ erro: "Apenas o professor dono pode remover a sala" });
+      throw new ApiError(403, "Apenas o professor dono pode remover a sala");
     }
 
     await salaRepository.remover(sala.id);
     res.status(204).send();
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ erro: "Erro ao remover sala" });
+    next(err);
   }
 };

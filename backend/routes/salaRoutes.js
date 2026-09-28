@@ -6,14 +6,14 @@ import {
   entrarNaSala,
   removerSala,
 } from "../controllers/salaController.js";
-import { autenticar, exigirPapel } from "../middlewares/auth.js";
+import { verificarToken, exigirTipo } from "../middlewares/auth.js";
 
 const router = express.Router();
 
-router.post("/", autenticar, exigirPapel("professor"), criarSala);
-router.get("/", autenticar, exigirPapel("professor"), listarSalas);
-router.post("/entrar", autenticar, exigirPapel("aluno"), entrarNaSala);
-router.get("/:id", autenticar, detalharSala);
-router.delete("/:id", autenticar, exigirPapel("professor"), removerSala);
+router.post("/", verificarToken, exigirTipo("PROFESSOR"), criarSala);
+router.get("/", verificarToken, exigirTipo("PROFESSOR"), listarSalas);
+router.post("/entrar", verificarToken, exigirTipo("ALUNO"), entrarNaSala);
+router.get("/:id", verificarToken, detalharSala);
+router.delete("/:id", verificarToken, exigirTipo("PROFESSOR"), removerSala);
 
 export default router;

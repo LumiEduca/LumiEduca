@@ -1,46 +1,46 @@
-import crypto from "node:crypto";
-
-// Armazenamento EM MEMÓRIA: os dados somem quando o servidor reinicia.
-// Quando o Firebase real estiver configurado, troque só este arquivo por
-// uma versão que usa Firestore, mantendo os mesmos métodos.
-const salas = new Map();
+import prisma from "../config/prismaClient.js";
 
 export const salaRepository = {
-  async criar(dados) {
-    const sala = {
-      id: crypto.randomUUID(),
-      ...dados,
-      alunos: [],
-      criadoEm: new Date().toISOString(),
-    };
-    salas.set(sala.id, sala);
-    return sala;
+  async criar({ nome, codigo, professorId }) {
+    return prisma.sala.create({
+      data: { nome, codigo, professorId },
+    });
   },
 
   async buscarPorId(id) {
-    return salas.get(id) ?? null;
+    return prisma.sala.findUnique({
+      where: { id },
+      include: {
+        professor: { select: { id: true, nome: true } },
+        matriculas: {
+          include: { aluno: { select: { id: true, nome: true } } },
+        },
+      },
+    });
   },
 
   async buscarPorCodigo(codigo) {
-    for (const sala of salas.values()) {
-      if (sala.codigoAcesso === codigo) return sala;
-    }
-    return null;
+    return prisma.sala.findUnique({ where: { codigo } });
   },
 
   async listarPorProfessor(professorId) {
-    return [...salas.values()]
-      .filter((s) => s.professorId === professorId)
-      .sort((a, b) => b.criadoEm.localeCompare(a.criadoEm));
+    return prisma.sala.findMany({
+      where: { professorId },
+      orderBy: { criadaEm: "desc" },
+      include: { matriculas: true },
+    });
   },
 
-  async adicionarAluno(id, alunoId) {
-    const sala = salas.get(id);
-    if (sala && !sala.alunos.includes(alunoId)) sala.alunos.push(alunoId);
-    return sala ?? null;
+  // upsert evita erro se o aluno tentar entrar duas vezes na mesma sala
+  async matricularAluno(salaId, alunoId) {
+    return prisma.matricula.upsert({
+      where: { alunoId_salaId: { alunoId, salaId } },
+      update: {},
+      create: { alunoId, salaId },
+    });
   },
 
   async remover(id) {
-    return salas.delete(id);
+    return prisma.sala.delete({ where: { id } });
   },
 };
