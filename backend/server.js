@@ -9,7 +9,7 @@ app.use(cors());
 app.use(express.json());
 
 app.use("/api/notifications", notificationRoutes);
-app.use("/salas", salaRoutes);
+app.use("/api/v1/salas", salaRoutes);
 
 app.get("/", (req, res) => {
   res.send("LumiEduca Backend Online 🚀");
