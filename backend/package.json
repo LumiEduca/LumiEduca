@@ -19,6 +19,7 @@
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
     "express": "^5.2.1",
+    "express-rate-limit": "^8.7.0",
     "firebase-admin": "^13.8.0",
     "jsonwebtoken": "^9.0.3",
     "pg": "^8.23.0",
