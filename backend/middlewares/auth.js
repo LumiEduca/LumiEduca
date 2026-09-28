@@ -35,3 +35,13 @@ export const verificarToken = async (req, res, next) => {
     next(error);
   }
 };
+
+// Autorização por tipo de usuário (enum TipoUsuario do schema: "PROFESSOR" | "ALUNO")
+export const exigirTipo = (tipo) => (req, res, next) => {
+  if (req.usuario?.tipo !== tipo) {
+    return next(
+      new ApiError(403, `Apenas ${tipo === "PROFESSOR" ? "professor" : "aluno"} pode acessar esta rota`)
+    );
+  }
+  next();
+};
