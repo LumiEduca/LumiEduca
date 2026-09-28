@@ -58,7 +58,7 @@ export const sendToAll = async (req, res, next) => {
           firebaseErrorCode === 'messaging/registration-token-not-registered' ||
           firebaseErrorCode === 'messaging/invalid-registration-token'
         ) {
-          await prisma.notificacaoToken.delete({
+          await prisma.notificacaoToken.deleteMany({
             where: { token: t.token }
           });
         }
