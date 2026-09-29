@@ -1,0 +1,46 @@
+ESPECIFICAÇÃO DO SEU MÓDULO (Atividades e questões) — base /api/v1
+
+POST /atividades              Professor cria uma atividade         Sim (professor)
+GET  /atividades               Lista atividades do professor logado Sim (professor)
+GET  /atividades/:id           Detalhes, incluindo questões         Sim
+POST /salas/:id/atividades     Associa atividade existente a sala   Sim (professor)
+GET  /salas/:id/atividades     Lista atividades de uma sala (aluno) Sim
+
+O QUE CRIAR (só isto)
+
+1. backend/controllers/atividadeController.js
+   - criarAtividade: recebe { titulo, materia, prazo?, questoes: [{enunciado,
+     opcoes: string[], respostaCorreta}] }. Validar: titulo obrigatório;
+     pelo menos 1 questão; cada questão com enunciado, opcoes (array com
+     >= 2 itens) e respostaCorreta apontando pra um índice válido de opcoes
+     (salvar respostaCorreta como String, ex: "0", "1"). Body inválido -> 400
+     com { erro }. Usa prisma.atividade.create com questoes.create aninhado
+     (nested write), professorId = req.usuario.id. Retorna 201.
+   - listarAtividades: prisma.atividade.findMany({ where: { professorId:
+     req.usuario.id }, orderBy: { criadaEm: "desc" } }), incluir a
+     contagem de questões (_count ou include leve, sem trazer o array
+     completo de questões na listagem).
+   - obterAtividade: busca por id com questoes. Se professor, só se for o
+     dono (senão 403 ou 404, sua escolha, mas seja consistente). Se aluno,
+     só se existir SalaAtividade ligando a atividade a alguma sala em que
+     ele tem Matricula (senão 403/404). NÃO devolver respostaCorreta pro
+     aluno na resposta (mapear a questão sem esse campo pra quem é ALUNO).
+
+2. backend/routes/atividadeRoutes.js
+   router.post("/", verificarToken, criarAtividade);   // professor
+   router.get("/", verificarToken, listarAtividades);  // professor
+   router.get("/:id", verificarToken, obterAtividade);
+   (a checagem de "só professor" pode ser feita dentro do controller
+   comparando req.usuario.tipo, já que não existe um middleware
+   "exigirPapel" pronto — não crie um, só compare
+   req.usuario.tipo !== "PROFESSOR" e devolva 403)
+
+3. As duas rotas de associação (POST/GET /salas/:id/atividades) — como
+   elas misturam Sala e Atividade, crie um controller separado
+   backend/controllers/salaAtividadeController.js com:
+   - associarAtividade: confere que a sala é do professor logado e que a
+     atividade também é dele, cria o SalaAtividade (se já existir, 409).
+   - listarAtividadesDaSala: confere que quem pede é o professor dono OU
+     um aluno com Matricula na sala; lista as atividades associadas
+     (sem respostaCorreta se for aluno).
+... (47 linhas)
