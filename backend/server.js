@@ -6,6 +6,7 @@ import { errorHandler } from "./middlewares/errorHandler.js";
 import authRoutes from "./routes/authRoutes.js";
 import lumiRoutes from "./routes/lumiRoutes.js";
 import salaRoutes from "./routes/salaRoutes.js";
+import atividadeRoutes from "./routes/atividadeRoutes.js";
 
 const app = express();
 
@@ -16,6 +17,7 @@ app.use("/api/v1/notificacoes", notificationRoutes);
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/lumi", lumiRoutes);
 app.use("/api/v1/salas", salaRoutes);
+app.use("/api/v1/atividades", atividadeRoutes);
 
 app.get("/", (req, res) => {
   res.send("LumiEduca Backend Online");
