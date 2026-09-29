@@ -1,0 +1,82 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Usuario {
+  id       Int      @id @default(autoincrement())
+  usuario  String   @unique
+  nome     String
+  senha    String
+  tipo     String
+  criadoEm DateTime @default(now())
+
+  salasCriadas      Sala[]
+  atividadesCriadas Atividade[]
+  matriculas        Matricula[]
+}
+
+model Sala {
+  id          Int      @id @default(autoincrement())
+  nome        String
+  codigo      String   @unique
+  professorId Int
+  professor   Usuario  @relation(fields: [professorId], references: [id])
+  criadoEm    DateTime @default(now())
+
+  matriculas     Matricula[]
+  salaAtividades SalaAtividade[]
+
+  @@index([professorId])
+}
+
+model Matricula {
+  id       Int      @id @default(autoincrement())
+  alunoId  Int
+  salaId   Int
+  aluno    Usuario  @relation(fields: [alunoId], references: [id])
+  sala     Sala     @relation(fields: [salaId], references: [id], onDelete: Cascade)
+  criadoEm DateTime @default(now())
+
+  @@unique([alunoId, salaId])
+}
+
+model Atividade {
+  id          Int      @id @default(autoincrement())
+  nome        String
+  professorId Int
+  professor   Usuario  @relation(fields: [professorId], references: [id])
+  criadoEm    DateTime @default(now())
+
+  questoes       Questao[]
+  salaAtividades SalaAtividade[]
+
+  @@index([professorId])
+}
+
+model Questao {
+  id              Int       @id @default(autoincrement())
+  atividadeId     Int
+  atividade       Atividade @relation(fields: [atividadeId], references: [id], onDelete: Cascade)
+  ordem           Int
+  enunciado       String
+  opcoes          String
+  respostaCorreta Int
+
+  @@index([atividadeId])
+}
+
+model SalaAtividade {
+  id          Int       @id @default(autoincrement())
+  salaId      Int
+  atividadeId Int
+  sala        Sala      @relation(fields: [salaId], references: [id], onDelete: Cascade)
+  atividade   Atividade @relation(fields: [atividadeId], references: [id], onDelete: Cascade)
+  criadoEm    DateTime  @default(now())
+
+  @@unique([salaId, atividadeId])
+}

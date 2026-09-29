@@ -4,6 +4,8 @@ import '../styles/home.css';
 import lumiPointing from '../assets/images/lumi-icon-04.png';
 import lumiTeacher from '../assets/images/lumi-icon-01.png';
 import Modal from '../components/UI/Modal';
+import { listarAtividades } from '../services/atividadesService';
+import { entrarNaSala } from '../services/salasService';
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -21,23 +23,20 @@ export default function HomePage() {
   });
 
   const userType = localStorage.getItem('userType');
-  const userName = localStorage.getItem('userName') || 'visitante';
   const isProfessor = userType === 'professor';
 
   useEffect(() => {
-    const carregarDados = () => {
-      const todas = JSON.parse(localStorage.getItem('lumi_tarefas') || '[]');
-      const historico = JSON.parse(localStorage.getItem('lumi_historico_tarefas') || '[]');
+    if (!isProfessor) return;
 
-      if (isProfessor) {
-        setResumoProfessor({
-          tarefas: todas.length,
-          historico: historico.length,
-        });
-      }
-    };
+    const historico = JSON.parse(localStorage.getItem('lumi_historico_tarefas') || '[]');
 
-    carregarDados();
+    listarAtividades()
+      .then(({ atividades }) => {
+        setResumoProfessor({ tarefas: atividades.length, historico: historico.length });
+      })
+      .catch(() => {
+        setResumoProfessor({ tarefas: 0, historico: historico.length });
+      });
   }, [isProfessor]);
 
   const closeModal = () => {
@@ -72,7 +71,7 @@ export default function HomePage() {
     setShowProfessorTrail((prev) => !prev);
   };
 
-  const handleEntrarSalaPelaHome = () => {
+  const handleEntrarSalaPelaHome = async () => {
     const codigo = codigoSala.trim();
 
     if (!codigo) {
@@ -84,26 +83,16 @@ export default function HomePage() {
       return;
     }
 
-    const salas = JSON.parse(localStorage.getItem('salas') || '[]');
-    const sala = salas.find((s) => s.codigo === codigo);
-
-    if (!sala) {
+    try {
+      const { sala } = await entrarNaSala(codigo);
+      navigate('/tarefas-recebidas', { state: { salaId: sala.id } });
+    } catch (erro) {
       setModal({
         isOpen: true,
-        title: 'Sala não encontrada',
-        message: 'Verifique o código informado pelo professor e tente novamente.',
+        title: 'Não foi possível entrar na sala',
+        message: erro.message,
       });
-      return;
     }
-
-    const chave = `salasEstudante_${userName}`;
-    const salasAluno = JSON.parse(localStorage.getItem(chave) || '[]');
-
-    if (!salasAluno.includes(codigo)) {
-      localStorage.setItem(chave, JSON.stringify([...salasAluno, codigo]));
-    }
-
-    navigate('/tarefas-recebidas', { state: { salaCodigo: codigo } });
   };
 
   return (

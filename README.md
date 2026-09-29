@@ -116,6 +116,11 @@ A proposta central é unir **tecnologia + educação + gamificação**, criando 
 LumiEduca/
 ├── backend/
 │   ├── controllers/
+│   ├── lib/
+│   ├── middlewares/
+│   ├── prisma/
+│   │   ├── schema.prisma
+│   │   └── seed.js
 │   ├── routes/
 │   ├── services/
 │   └── server.js
@@ -178,7 +183,21 @@ npm install
 
 Copie o arquivo `.env.example` e renomeie para `.env`
 
-### 5️⃣ Executar o projeto
+### 5️⃣ Configurar e subir o backend
+```bash
+cd backend
+npm install
+copy .env.example .env   # (ou "cp .env.example .env" no Linux/Mac)
+npm run prisma:migrate
+npm run prisma:seed
+npm start
+```
+
+O backend sobe em `http://localhost:5000` e cria um banco SQLite local
+(`backend/dev.db`, ignorado pelo Git) já populado com os usuários demo.
+
+### 6️⃣ Executar o frontend
+Em outro terminal, na raiz do projeto:
 ```bash
 npm start
 ```
@@ -193,20 +212,28 @@ http://localhost:3000
 
 ## 🔐 Variáveis de Ambiente
 
-### Arquivo `.env.example`
+### Arquivo `.env.example` (raiz — frontend)
 ```env
-REACT_APP_SENHA_PROFESSOR=
-REACT_APP_SENHA_ESTUDANTE=
+REACT_APP_API_URL=http://localhost:5000
 REACT_APP_GEMINI_KEY=
 ```
 
-### Nunca versionar o arquivo .env (já protegido pelo .gitignore)
+### Arquivo `backend/.env.example`
+```env
+DATABASE_URL="file:./dev.db?connection_limit=1"
+JWT_SECRET=troque-por-um-valor-aleatorio-forte
+PORT=5000
+```
+
+### Nunca versionar os arquivos `.env` (já protegidos pelo .gitignore)
 
 ---
 
 ## 🧪 Usuários de Teste (Demo)
 
-Para facilitar a avaliação e testes da plataforma, disponibilizamos usuários padrão:
+O login agora é validado por um backend real (Express + Prisma + SQLite), com
+senhas armazenadas com hash. Os usuários abaixo são criados automaticamente ao
+rodar `npm run prisma:seed` no backend:
 
 ### 👨‍🏫 Professor
 - Usuário: Joao_Lucas  
@@ -273,8 +300,9 @@ A equipe foi organizada com divisão clara de responsabilidades, contemplando li
 
 ## 🚀 Próximos Passos
 
-- Backend completo com banco de dados
-- Sistema real de autenticação (JWT/Auth)
+- ✅ Backend com banco de dados (Express + Prisma + SQLite)
+- ✅ Autenticação real (JWT + bcrypt)
+- Rota de exclusão de atividades (`DELETE /atividades/:id`)
 - Dashboard avançado para professores
 - Ranking e leaderboard
 - Expansão da gamificação

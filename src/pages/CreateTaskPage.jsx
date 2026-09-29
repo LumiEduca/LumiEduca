@@ -1,17 +1,24 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../styles/professor-pages.css';
 import { showLumiNotification } from '../services/notificationClient';
+import { criarAtividade } from '../services/atividadesService';
 import Modal from '../components/UI/Modal';
+
+function novaQuestaoEmBranco() {
+  return {
+    enunciado: '',
+    opcoes: ['', '', '', ''],
+    respostaCorreta: 0,
+  };
+}
 
 export default function CreateTaskPage() {
   const navigate = useNavigate();
 
   const [nomeAtividade, setNomeAtividade] = useState('');
-  const [pergunta, setPergunta] = useState('');
-  const [opcoes, setOpcoes] = useState(['', '', '', '']);
-  const [correta, setCorreta] = useState(0);
-  const [salaSelecionada, setSalaSelecionada] = useState('');
+  const [questoes, setQuestoes] = useState([novaQuestaoEmBranco()]);
+  const [salvando, setSalvando] = useState(false);
   const [modal, setModal] = useState({
     isOpen: false,
     title: '',
@@ -19,24 +26,42 @@ export default function CreateTaskPage() {
     type: 'info',
   });
 
-  const userName = localStorage.getItem('userName') || 'Professor';
-
-  const salasProfessor = useMemo(() => {
-    const salas = JSON.parse(localStorage.getItem('salas') || '[]');
-    return salas.filter((sala) => sala.criadoPor === userName);
-  }, [userName]);
-
   const closeModal = () => {
     setModal((prev) => ({ ...prev, isOpen: false }));
   };
 
-  const handleOpcaoChange = (index, valor) => {
-    const novasOpcoes = [...opcoes];
-    novasOpcoes[index] = valor;
-    setOpcoes(novasOpcoes);
+  const handleEnunciadoChange = (indiceQuestao, valor) => {
+    setQuestoes((prev) =>
+      prev.map((q, i) => (i === indiceQuestao ? { ...q, enunciado: valor } : q))
+    );
   };
 
-  const salvarTarefa = async (e) => {
+  const handleOpcaoChange = (indiceQuestao, indiceOpcao, valor) => {
+    setQuestoes((prev) =>
+      prev.map((q, i) => {
+        if (i !== indiceQuestao) return q;
+        const novasOpcoes = [...q.opcoes];
+        novasOpcoes[indiceOpcao] = valor;
+        return { ...q, opcoes: novasOpcoes };
+      })
+    );
+  };
+
+  const handleCorretaChange = (indiceQuestao, indiceOpcao) => {
+    setQuestoes((prev) =>
+      prev.map((q, i) => (i === indiceQuestao ? { ...q, respostaCorreta: indiceOpcao } : q))
+    );
+  };
+
+  const handleAdicionarQuestao = () => {
+    setQuestoes((prev) => [...prev, novaQuestaoEmBranco()]);
+  };
+
+  const handleRemoverQuestao = (indiceQuestao) => {
+    setQuestoes((prev) => prev.filter((_, i) => i !== indiceQuestao));
+  };
+
+  const salvarAtividade = async (e) => {
     e.preventDefault();
 
     if (!nomeAtividade.trim()) {
@@ -49,40 +74,41 @@ export default function CreateTaskPage() {
       return;
     }
 
-    if (opcoes.some((opt) => opt.trim() === '')) {
+    const questaoIncompleta = questoes.some(
+      (q) => !q.enunciado.trim() || q.opcoes.some((opt) => opt.trim() === '')
+    );
+
+    if (questaoIncompleta) {
       setModal({
         isOpen: true,
-        title: 'Alternativas incompletas',
-        message: 'Preencha todas as alternativas antes de lançar o desafio.',
+        title: 'Questões incompletas',
+        message: 'Preencha o enunciado e todas as alternativas de cada questão.',
         type: 'info',
       });
       return;
     }
 
-    const tarefasAtuais = JSON.parse(localStorage.getItem('lumi_tarefas') || '[]');
-    const sala = salasProfessor.find((s) => s.id === salaSelecionada);
+    setSalvando(true);
 
-    const novaTarefa = {
-      id: Date.now(),
-      nomeAtividade: nomeAtividade.trim(),
-      pergunta,
-      opcoes,
-      respostaCorreta: correta,
-      tipo: 'multipla_escolha',
-      criadoPor: userName,
-      salaId: sala?.id || null,
-      salaNome: sala?.nome || 'Geral',
-      salaCodigo: sala?.codigo || null,
-    };
+    try {
+      const { atividade } = await criarAtividade(nomeAtividade.trim(), questoes);
 
-    localStorage.setItem('lumi_tarefas', JSON.stringify([...tarefasAtuais, novaTarefa]));
+      await showLumiNotification(
+        'Nova atividade no LumiEduca! 🦊',
+        `${atividade.nome} foi criada e já pode ser vinculada a uma sala.`
+      );
 
-    await showLumiNotification(
-      'Nova atividade no LumiEduca! 🦊',
-      `${novaTarefa.nomeAtividade} foi lançada para os alunos.`
-    );
-
-    navigate('/tarefas-recebidas');
+      navigate('/tarefas-recebidas');
+    } catch (erro) {
+      setModal({
+        isOpen: true,
+        title: 'Não foi possível criar a atividade',
+        message: erro.message,
+        type: 'info',
+      });
+    } finally {
+      setSalvando(false);
+    }
   };
 
   return (
@@ -102,10 +128,11 @@ export default function CreateTaskPage() {
           <h1 className="professor-title">Criar desafio</h1>
 
           <p className="professor-text">
-            Monte uma atividade de múltipla escolha e, se desejar, vincule a uma sala personalizada.
+            Monte uma ou mais questões de múltipla escolha. Depois de criada, vincule a
+            atividade a uma sala pela tela de Salas de Aula.
           </p>
 
-          <form className="professor-form-grid" onSubmit={salvarTarefa}>
+          <form className="professor-form-grid" onSubmit={salvarAtividade}>
             <div>
               <label className="professor-label">Nome da atividade</label>
               <input
@@ -118,63 +145,75 @@ export default function CreateTaskPage() {
               />
             </div>
 
-            <div>
-              <label className="professor-label">Sala personalizada</label>
-              <select
-                className="professor-input"
-                value={salaSelecionada}
-                onChange={(e) => setSalaSelecionada(e.target.value)}
-              >
-                <option value="">Geral — todos os alunos</option>
-                {salasProfessor.map((sala) => (
-                  <option key={sala.id} value={sala.id}>
-                    {sala.nome} — código {sala.codigo}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {questoes.map((questao, indiceQuestao) => (
+              <div key={indiceQuestao} className="professor-card">
+                <div className="question-top">
+                  <span className="professor-badge orange">
+                    Questão {indiceQuestao + 1}
+                  </span>
 
-            <div>
-              <label className="professor-label">Pergunta do desafio</label>
-              <textarea
-                className="professor-textarea"
-                placeholder="Ex: Quanto é 5 + 5?"
-                value={pergunta}
-                onChange={(e) => setPergunta(e.target.value)}
-                required
-              />
-            </div>
+                  {questoes.length > 1 && (
+                    <button
+                      type="button"
+                      className="professor-btn outline-danger"
+                      onClick={() => handleRemoverQuestao(indiceQuestao)}
+                    >
+                      Remover questão
+                    </button>
+                  )}
+                </div>
 
-            <div>
-              <label className="professor-label">Alternativas (marque a correta)</label>
+                <label className="professor-label">Pergunta</label>
+                <textarea
+                  className="professor-textarea"
+                  placeholder="Ex: Quanto é 5 + 5?"
+                  value={questao.enunciado}
+                  onChange={(e) => handleEnunciadoChange(indiceQuestao, e.target.value)}
+                  required
+                />
 
-              <div className="professor-form-grid">
-                {opcoes.map((opcao, index) => (
-                  <div key={index} className="professor-option-row">
-                    <input
-                      className="professor-radio"
-                      type="radio"
-                      name="correta"
-                      checked={correta === index}
-                      onChange={() => setCorreta(index)}
-                    />
+                <label className="professor-label">Alternativas (marque a correta)</label>
 
-                    <input
-                      className="professor-input"
-                      type="text"
-                      placeholder={`Opção ${index + 1}`}
-                      value={opcao}
-                      onChange={(e) => handleOpcaoChange(index, e.target.value)}
-                      required
-                    />
-                  </div>
-                ))}
+                <div className="professor-form-grid">
+                  {questao.opcoes.map((opcao, indiceOpcao) => (
+                    <div key={indiceOpcao} className="professor-option-row">
+                      <input
+                        className="professor-radio"
+                        type="radio"
+                        name={`correta-${indiceQuestao}`}
+                        checked={questao.respostaCorreta === indiceOpcao}
+                        onChange={() => handleCorretaChange(indiceQuestao, indiceOpcao)}
+                      />
+
+                      <input
+                        className="professor-input"
+                        type="text"
+                        placeholder={`Opção ${indiceOpcao + 1}`}
+                        value={opcao}
+                        onChange={(e) =>
+                          handleOpcaoChange(indiceQuestao, indiceOpcao, e.target.value)
+                        }
+                        required
+                      />
+                    </div>
+                  ))}
+                </div>
               </div>
+            ))}
+
+            <div className="professor-action-row">
+              <button
+                type="button"
+                className="professor-btn secondary"
+                onClick={handleAdicionarQuestao}
+              >
+                + Adicionar questão
+              </button>
             </div>
 
             <div className="professor-action-row">
-              <button type="submit" className="professor-btn primary">
-                Lançar para alunos
+              <button type="submit" className="professor-btn primary" disabled={salvando}>
+                {salvando ? 'Salvando...' : 'Criar atividade'}
               </button>
 
               <button

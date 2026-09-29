@@ -2,50 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../styles/classrooms.css';
 import { showLumiNotification } from '../services/notificationClient';
-
-function gerarCodigo() {
-  return Math.floor(100000 + Math.random() * 900000).toString();
-}
-
-function carregarSalas() {
-  try {
-    return JSON.parse(localStorage.getItem('salas')) || [];
-  } catch {
-    return [];
-  }
-}
-
-function salvarSalas(salas) {
-  localStorage.setItem('salas', JSON.stringify(salas));
-}
-
-function carregarTarefas() {
-  try {
-    return JSON.parse(localStorage.getItem('lumi_tarefas')) || [];
-  } catch {
-    return [];
-  }
-}
-
-function salvarTarefas(tarefas) {
-  localStorage.setItem('lumi_tarefas', JSON.stringify(tarefas));
-}
-
-function chaveEstudante(userName) {
-  return `salasEstudante_${userName}`;
-}
-
-function carregarSalasEstudante(userName) {
-  try {
-    return JSON.parse(localStorage.getItem(chaveEstudante(userName))) || [];
-  } catch {
-    return [];
-  }
-}
-
-function salvarSalasEstudante(userName, codigos) {
-  localStorage.setItem(chaveEstudante(userName), JSON.stringify(codigos));
-}
+import * as salasService from '../services/salasService';
+import * as atividadesService from '../services/atividadesService';
 
 export default function ClassroomsPage() {
   const navigate = useNavigate();
@@ -54,24 +12,38 @@ export default function ClassroomsPage() {
   const userName = localStorage.getItem('userName') || '';
   const isProfessor = userType === 'professor';
 
-  const [salas, setSalas] = useState(carregarSalas);
-  const [tarefas, setTarefas] = useState(carregarTarefas);
-  const [salasEstudante, setSalasEstudante] = useState(() =>
-    isProfessor ? [] : carregarSalasEstudante(userName)
-  );
+  const [salas, setSalas] = useState([]);
+  const [salaSelecionada, setSalaSelecionada] = useState(null);
+  const [atividadesDaSala, setAtividadesDaSala] = useState([]);
+  const [atividadesDoProfessor, setAtividadesDoProfessor] = useState([]);
 
   const [nomeSala, setNomeSala] = useState('');
   const [codigoInput, setCodigoInput] = useState('');
   const [erro, setErro] = useState('');
   const [sucesso, setSucesso] = useState('');
-  const [salaSelecionada, setSalaSelecionada] = useState(null);
-
+  const [carregando, setCarregando] = useState(true);
   const [mostrarAtividadesExistentes, setMostrarAtividadesExistentes] = useState(false);
 
   const tarefasConcluidas = useMemo(() => {
     if (isProfessor) return [];
     return JSON.parse(localStorage.getItem(`lumi_tarefas_concluidas_${userName}`) || '[]');
   }, [userName, isProfessor]);
+
+  useEffect(() => {
+    let ativo = true;
+
+    salasService
+      .listarSalas()
+      .then(({ salas: listaSalas }) => {
+        if (ativo) setSalas(listaSalas);
+      })
+      .catch((e) => ativo && setErro(e.message))
+      .finally(() => ativo && setCarregando(false));
+
+    return () => {
+      ativo = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (salaSelecionada && window.innerWidth <= 768) {
@@ -83,35 +55,34 @@ export default function ClassroomsPage() {
     }
   }, [salaSelecionada]);
 
-  const minhasSalas = isProfessor
-    ? salas.filter((sala) => sala.criadoPor === userName)
-    : [];
-
-  const salasDoAluno = !isProfessor
-    ? salas.filter((sala) => salasEstudante.includes(sala.codigo))
-    : [];
-
-  const listaSalas = isProfessor ? minhasSalas : salasDoAluno;
-
-  const tarefasDaSala = salaSelecionada
-    ? tarefas.filter((tarefa) => tarefa.salaId === salaSelecionada.id)
-    : [];
-
-  const atividadesExistentesDisponiveis = salaSelecionada
-    ? tarefas.filter((tarefa) => {
-        const criadaPeloProfessor = tarefa.criadoPor === userName;
-        const naoEstaNestaSala = tarefa.salaId !== salaSelecionada.id;
-
-        return criadaPeloProfessor && naoEstaNestaSala;
-      })
-    : [];
-
-  const atualizarTarefas = (novasTarefas) => {
-    salvarTarefas(novasTarefas);
-    setTarefas(novasTarefas);
+  const carregarAtividadesDaSala = (salaId) => {
+    salasService
+      .listarAtividadesDaSala(salaId)
+      .then(({ atividades }) => setAtividadesDaSala(atividades))
+      .catch((e) => setErro(e.message));
   };
 
-  const handleCriarSala = (e) => {
+  useEffect(() => {
+    if (!salaSelecionada) {
+      setAtividadesDaSala([]);
+      return;
+    }
+
+    carregarAtividadesDaSala(salaSelecionada.id);
+    setMostrarAtividadesExistentes(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [salaSelecionada]);
+
+  const idsNaSalaAtual = useMemo(
+    () => new Set(atividadesDaSala.map((a) => String(a.id))),
+    [atividadesDaSala]
+  );
+
+  const atividadesExistentesDisponiveis = atividadesDoProfessor.filter(
+    (atividade) => !idsNaSalaAtual.has(String(atividade.id))
+  );
+
+  const handleCriarSala = async (e) => {
     e.preventDefault();
 
     const nome = nomeSala.trim();
@@ -121,26 +92,22 @@ export default function ClassroomsPage() {
       return;
     }
 
-    const novaSala = {
-      id: Date.now().toString(),
-      nome,
-      codigo: gerarCodigo(),
-      criadoPor: userName,
-    };
+    try {
+      const { sala } = await salasService.criarSala(nome);
 
-    const novasSalas = [...salas, novaSala];
+      setSalas((prev) => [sala, ...prev]);
+      setSalaSelecionada(sala);
+      setNomeSala('');
+      setErro('');
+      setSucesso(`Sala "${nome}" criada! Código: ${sala.codigo}`);
 
-    salvarSalas(novasSalas);
-    setSalas(novasSalas);
-    setSalaSelecionada(novaSala);
-    setNomeSala('');
-    setErro('');
-    setSucesso(`Sala "${nome}" criada! Código: ${novaSala.codigo}`);
-
-    setTimeout(() => setSucesso(''), 4000);
+      setTimeout(() => setSucesso(''), 4000);
+    } catch (erroCriar) {
+      setErro(erroCriar.message);
+    }
   };
 
-  const handleEntrarComCodigo = (e) => {
+  const handleEntrarComCodigo = async (e) => {
     e.preventDefault();
 
     const codigo = codigoInput.trim();
@@ -150,72 +117,64 @@ export default function ClassroomsPage() {
       return;
     }
 
-    const sala = salas.find((s) => s.codigo === codigo);
+    try {
+      const { sala } = await salasService.entrarNaSala(codigo);
 
-    if (!sala) {
-      setErro('Código inválido. Verifique e tente novamente.');
-      return;
-    }
-
-    if (salasEstudante.includes(codigo)) {
-      setErro('Você já está nessa sala.');
+      setSalas((prev) => (prev.some((s) => s.id === sala.id) ? prev : [sala, ...prev]));
       setSalaSelecionada(sala);
-      return;
+      setCodigoInput('');
+      setErro('');
+      setSucesso(`Você entrou na sala "${sala.nome}"!`);
+
+      setTimeout(() => setSucesso(''), 4000);
+    } catch (erroEntrar) {
+      setErro(erroEntrar.message);
     }
-
-    const novosCodigos = [...salasEstudante, codigo];
-
-    salvarSalasEstudante(userName, novosCodigos);
-    setSalasEstudante(novosCodigos);
-    setSalaSelecionada(sala);
-    setCodigoInput('');
-    setErro('');
-    setSucesso(`Você entrou na sala "${sala.nome}"!`);
-
-    setTimeout(() => setSucesso(''), 4000);
   };
 
-  const handleVincularAtividadeExistente = async (tarefaId) => {
+  const handleAbrirAtividadesExistentes = () => {
+    const abrir = !mostrarAtividadesExistentes;
+    setMostrarAtividadesExistentes(abrir);
+
+    if (abrir) {
+      atividadesService
+        .listarAtividades()
+        .then(({ atividades }) => setAtividadesDoProfessor(atividades))
+        .catch((e) => setErro(e.message));
+    }
+  };
+
+  const handleVincularAtividadeExistente = async (atividadeId) => {
     if (!salaSelecionada) return;
 
-    const novasTarefas = tarefas.map((tarefa) => {
-      if (String(tarefa.id) !== String(tarefaId)) return tarefa;
+    try {
+      await salasService.vincularAtividade(salaSelecionada.id, atividadeId);
+      carregarAtividadesDaSala(salaSelecionada.id);
+      setMostrarAtividadesExistentes(false);
+      setSucesso('Atividade adicionada à sala com sucesso!');
 
-      return {
-        ...tarefa,
-        salaId: salaSelecionada.id,
-        salaNome: salaSelecionada.nome,
-        salaCodigo: salaSelecionada.codigo,
-      };
-    });
+      await showLumiNotification(
+        'Nova atividade no LumiEduca! 🦊',
+        `Uma atividade foi adicionada à sala ${salaSelecionada.nome}.`
+      );
 
-    atualizarTarefas(novasTarefas);
-    setMostrarAtividadesExistentes(false);
-    setSucesso('Atividade adicionada à sala com sucesso!');
-
-    await showLumiNotification(
-      'Nova atividade no LumiEduca! 🦊',
-      `Uma atividade foi adicionada à sala ${salaSelecionada.nome}.`
-    );
-
-    setTimeout(() => setSucesso(''), 4000);
+      setTimeout(() => setSucesso(''), 4000);
+    } catch (erroVincular) {
+      setErro(erroVincular.message);
+    }
   };
 
-  const handleRemoverAtividadeDaSala = (tarefaId) => {
-    const novasTarefas = tarefas.map((tarefa) => {
-      if (String(tarefa.id) !== String(tarefaId)) return tarefa;
+  const handleRemoverAtividadeDaSala = async (atividadeId) => {
+    if (!salaSelecionada) return;
 
-      return {
-        ...tarefa,
-        salaId: null,
-        salaNome: 'Geral',
-        salaCodigo: null,
-      };
-    });
-
-    atualizarTarefas(novasTarefas);
-    setSucesso('Atividade removida desta sala.');
-    setTimeout(() => setSucesso(''), 4000);
+    try {
+      await salasService.desvincularAtividade(salaSelecionada.id, atividadeId);
+      carregarAtividadesDaSala(salaSelecionada.id);
+      setSucesso('Atividade removida desta sala.');
+      setTimeout(() => setSucesso(''), 4000);
+    } catch (erroRemover) {
+      setErro(erroRemover.message);
+    }
   };
 
   return (
@@ -266,22 +225,21 @@ export default function ClassroomsPage() {
           {sucesso && <p className="classrooms-success">{sucesso}</p>}
 
           <div className="classrooms-sidebar-list">
-            {listaSalas.length === 0 ? (
+            {carregando ? (
+              <p className="classrooms-empty">Carregando salas...</p>
+            ) : salas.length === 0 ? (
               <p className="classrooms-empty">
                 {isProfessor ? 'Nenhuma sala criada.' : 'Nenhuma sala ainda.'}
               </p>
             ) : (
-              listaSalas.map((sala) => (
+              salas.map((sala) => (
                 <button
                   key={sala.id}
                   type="button"
                   className={`classrooms-sidebar-item ${
                     salaSelecionada?.id === sala.id ? 'active' : ''
                   }`}
-                  onClick={() => {
-                    setSalaSelecionada(sala);
-                    setMostrarAtividadesExistentes(false);
-                  }}
+                  onClick={() => setSalaSelecionada(sala)}
                 >
                   <span className="classrooms-sidebar-item-name">{sala.nome}</span>
 
@@ -319,7 +277,7 @@ export default function ClassroomsPage() {
                     <button
                       type="button"
                       className="classrooms-btn secondary"
-                      onClick={() => setMostrarAtividadesExistentes((prev) => !prev)}
+                      onClick={handleAbrirAtividadesExistentes}
                     >
                       {mostrarAtividadesExistentes
                         ? 'Fechar atividades'
@@ -344,18 +302,17 @@ export default function ClassroomsPage() {
                     </p>
                   ) : (
                     <div className="classrooms-existing-list">
-                      {atividadesExistentesDisponiveis.map((tarefa) => (
-                        <div key={tarefa.id} className="classrooms-existing-card">
+                      {atividadesExistentesDisponiveis.map((atividade) => (
+                        <div key={atividade.id} className="classrooms-existing-card">
                           <div>
-                            <strong>{tarefa.nomeAtividade || tarefa.pergunta}</strong>
-                            <p>{tarefa.pergunta}</p>
-                            <small>Sala atual: {tarefa.salaNome || 'Geral'}</small>
+                            <strong>{atividade.nome}</strong>
+                            <p>{atividade.totalQuestoes} questão(ões)</p>
                           </div>
 
                           <button
                             type="button"
                             className="classrooms-btn primary"
-                            onClick={() => handleVincularAtividadeExistente(tarefa.id)}
+                            onClick={() => handleVincularAtividadeExistente(atividade.id)}
                           >
                             Adicionar
                           </button>
@@ -367,10 +324,10 @@ export default function ClassroomsPage() {
               )}
 
               <div className="classrooms-activities">
-                {tarefasDaSala.length === 0 ? (
+                {atividadesDaSala.length === 0 ? (
                   <p className="classrooms-empty">Nenhuma atividade vinculada ainda.</p>
                 ) : (
-                  tarefasDaSala.map((atv) => {
+                  atividadesDaSala.map((atv) => {
                     const estaPendente = !tarefasConcluidas.some(
                       (c) => String(c.idTarefa) === String(atv.id)
                     );
@@ -385,7 +342,7 @@ export default function ClassroomsPage() {
                           if (!isProfessor) {
                             navigate('/tarefas-recebidas', {
                               state: {
-                                salaCodigo: salaSelecionada.codigo,
+                                salaId: salaSelecionada.id,
                                 tarefaId: atv.id,
                                 modoRevisao: !estaPendente,
                               },
@@ -394,9 +351,7 @@ export default function ClassroomsPage() {
                         }}
                       >
                         <div className="classrooms-activity-header">
-                          <span className="classrooms-activity-title">
-                            {atv.nomeAtividade || atv.pergunta}
-                          </span>
+                          <span className="classrooms-activity-title">{atv.nome}</span>
 
                           {!isProfessor && estaPendente && (
                             <span className="resolver-badge">▶️ Resolver</span>
@@ -407,7 +362,9 @@ export default function ClassroomsPage() {
                           )}
                         </div>
 
-                        <p className="classrooms-activity-desc">{atv.pergunta}</p>
+                        <p className="classrooms-activity-desc">
+                          {atv.totalQuestoes} questão(ões) • criado por {atv.criadoPor}
+                        </p>
 
                         {isProfessor && (
                           <div className="classrooms-activity-actions">

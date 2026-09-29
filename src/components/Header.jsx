@@ -71,6 +71,7 @@ export default function Header({ pontos = 0 }) {
   };
 
   const handleLogout = () => {
+    localStorage.removeItem('token');
     localStorage.removeItem('userType');
     localStorage.removeItem('userName');
     window.location.href = '/login';

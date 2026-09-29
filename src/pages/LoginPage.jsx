@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import '../styles/login.css';
 import lumiLogo from '../assets/images/lumi-logo.png';
 import lumiLogin from '../assets/images/lumi-login.png';
+import { login } from '../services/authService';
 
 export default function LoginPage() {
   const [selectedProfile, setSelectedProfile] = useState('professor');
@@ -9,65 +10,43 @@ export default function LoginPage() {
   const [senha, setSenha] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-
-    const SENHA_PROF = process.env.REACT_APP_SENHA_PROFESSOR;
-    const SENHA_ALUNO = process.env.REACT_APP_SENHA_ESTUDANTE;
-
-    const usuarioNormalizado = usuario.trim().toLowerCase();
 
     if (!selectedProfile) {
       setErrorMessage('Selecione se você é professor ou aluno para continuar.');
       return;
     }
 
-    if (!SENHA_PROF || !SENHA_ALUNO) {
-      setErrorMessage(
-        'As senhas de acesso não foram configuradas corretamente no ambiente.'
+    setIsLoading(true);
+    setErrorMessage('');
+
+    try {
+      const { token, usuario: usuarioLogado } = await login(
+        usuario.trim(),
+        senha
       );
-      return;
-    }
 
-    if (selectedProfile === 'professor') {
-      const professorPadraoValido =
-        usuarioNormalizado === 'professor' && senha === SENHA_PROF;
+      const tipoEsperado = selectedProfile === 'professor' ? 'professor' : 'aluno';
 
-      const professorTesteValido =
-        usuarioNormalizado === 'joao_lucas' && senha === SENHA_PROF;
-
-      if (professorPadraoValido || professorTesteValido) {
-        localStorage.setItem('userType', 'professor');
-        localStorage.setItem(
-          'userName',
-          professorTesteValido ? 'João_Lucas' : 'Professor'
-        );
-        window.location.href = '/';
+      if (usuarioLogado.tipo !== tipoEsperado) {
+        setErrorMessage('Essas credenciais não correspondem ao perfil selecionado.');
         return;
       }
 
-      setErrorMessage('Credenciais de professor inválidas.');
-      return;
-    }
-
-    if (selectedProfile === 'aluno') {
-      const alunoComEnvValido = senha === SENHA_ALUNO && usuario.trim() !== '';
-
-      const alunoTesteValido =
-        usuarioNormalizado === 'adriel_azevedo' && senha === SENHA_ALUNO;
-
-      if (alunoComEnvValido || alunoTesteValido) {
-        localStorage.setItem('userType', 'estudante');
-        localStorage.setItem(
-          'userName',
-          alunoTesteValido ? 'Adriel_Azevedo' : usuario.trim()
-        );
-        window.location.href = '/';
-        return;
-      }
-
-      setErrorMessage('Nome de usuário ou senha de aluno inválidos.');
+      localStorage.setItem('token', token);
+      localStorage.setItem(
+        'userType',
+        usuarioLogado.tipo === 'professor' ? 'professor' : 'estudante'
+      );
+      localStorage.setItem('userName', usuarioLogado.nome);
+      window.location.href = '/';
+    } catch (erro) {
+      setErrorMessage(erro.message || 'Não foi possível entrar. Tente novamente.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -202,8 +181,8 @@ export default function LoginPage() {
 
               {errorMessage && <p className="login-error">{errorMessage}</p>}
 
-              <button type="submit" className="login-submit">
-                Entrar
+              <button type="submit" className="login-submit" disabled={isLoading}>
+                {isLoading ? 'Entrando...' : 'Entrar'}
               </button>
             </form>
           </div>
