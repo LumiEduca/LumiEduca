@@ -31,15 +31,15 @@ model Usuario {
 }
 
 model Sala {
-  id           String      @id @default(uuid())
-  nome         String
-  codigo       String      @unique
-  professorId  String
-  professor    Usuario     @relation("SalasDoProfessor", fields: [professorId], references: [id])
-  criadaEm     DateTime    @default(now())
+  id             String          @id @default(uuid())
+  nome           String
+  codigo         String          @unique
+  professorId    String
+  professor      Usuario         @relation("SalasDoProfessor", fields: [professorId], references: [id])
+  criadaEm       DateTime        @default(now())
 
-  matriculas   Matricula[]
-  atividades   Atividade[]
+  matriculas     Matricula[]
+  salaAtividades SalaAtividade[]
 
   @@map("salas")
 }
@@ -57,18 +57,17 @@ model Matricula {
 }
 
 model Atividade {
-  id            String      @id @default(uuid())
-  titulo        String
-  materia       String
-  salaId        String
-  sala          Sala        @relation(fields: [salaId], references: [id])
-  professorId   String
-  professor     Usuario     @relation("AtividadesDoProfessor", fields: [professorId], references: [id])
-  prazo         DateTime?
-  criadaEm      DateTime    @default(now())
+  id             String          @id @default(uuid())
+  titulo         String
+  materia        String
+  professorId    String
+  professor      Usuario         @relation("AtividadesDoProfessor", fields: [professorId], references: [id])
+  prazo          DateTime?
+  criadaEm       DateTime        @default(now())
 
-  questoes      Questao[]
-  progresso     Progresso[]
+  questoes       Questao[]
+  progresso      Progresso[]
+  salaAtividades SalaAtividade[]
 
   @@map("atividades")
 }
@@ -121,4 +120,16 @@ model Notificacao {
 
   @@index([usuarioId, criadaEm])
   @@map("notificacoes")
+}
+
+model SalaAtividade {
+  id          String    @id @default(uuid())
+  salaId      String
+  sala        Sala      @relation(fields: [salaId], references: [id], onDelete: Cascade)
+  atividadeId String
+  atividade   Atividade @relation(fields: [atividadeId], references: [id], onDelete: Cascade)
+  criadaEm    DateTime  @default(now())
+
+  @@unique([salaId, atividadeId])
+  @@map("sala_atividades")
 }
