@@ -26,6 +26,7 @@ model Usuario {
   progresso     Progresso[]
   tokens        NotificacaoToken[]
   notificacoes  Notificacao[]
+  respostas     Resposta[]
 
   @@map("usuarios")
 }
@@ -80,6 +81,7 @@ model Questao {
   opcoes         Json
   respostaCorreta String
   ordem          Int       @default(0)
+  respostas     Resposta[]
 
   @@map("questoes")
 }
@@ -132,4 +134,18 @@ model SalaAtividade {
 
   @@unique([salaId, atividadeId])
   @@map("sala_atividades")
+}
+
+model Resposta {
+  id           String   @id @default(uuid())
+  alunoId      String
+  aluno        Usuario  @relation(fields: [alunoId], references: [id])
+  questaoId    String
+  questao      Questao  @relation(fields: [questaoId], references: [id])
+  resposta     String
+  correta      Boolean
+  respondidaEm DateTime @default(now())
+
+  @@unique([alunoId, questaoId])
+  @@map("respostas")
 }
