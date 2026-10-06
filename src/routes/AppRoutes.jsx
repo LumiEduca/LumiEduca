@@ -5,6 +5,7 @@ import HomePage from '../pages/HomePage';
 import LearningPathPage from '../pages/LearningPathPage';
 import QuestionPage from '../pages/QuestionPage';
 import LoginPage from '../pages/LoginPage';
+import RegisterPage from '../pages/RegisterPage';
 import CreateTaskPage from '../pages/CreateTaskPage';
 import ReceivedTasksPage from '../pages/ReceivedTasksPage';
 import TeacherReportPage from '../pages/TeacherReportPage';
@@ -29,6 +30,11 @@ export default function AppRoutes({
       <Route
         path="/login"
         element={!isAuthenticated ? <LoginPage /> : <Navigate to="/" replace />}
+      />
+
+      <Route
+        path="/cadastro"
+        element={!isAuthenticated ? <RegisterPage /> : <Navigate to="/" replace />}
       />
 
       <Route
