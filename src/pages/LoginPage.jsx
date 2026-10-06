@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import '../styles/login.css';
+import '../styles/register.css';
 import lumiLogo from '../assets/images/lumi-logo.png';
 import lumiLogin from '../assets/images/lumi-login.png';
 
@@ -194,6 +196,10 @@ export default function LoginPage() {
                 Entrar
               </button>
             </form>
+
+            <p className="auth-switch">
+              Não tem cadastro ainda? <Link to="/cadastro">Faça agora</Link>
+            </p>
           </div>
         </section>
       </main>

@@ -1,0 +1,70 @@
+/* Arquivo: src/styles/register.css
+   Complementa o login.css: a tela de cadastro reaproveita as classes do login.
+   Aqui ficam só as peças novas (dicas dos campos, link de alternar login/cadastro). */
+
+.register-hint {
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: #66738a;
+}
+
+/* Dica solta, logo abaixo dos dois campos de senha */
+.register-hint-standalone {
+  margin-top: -0.6rem;
+}
+
+.login-submit:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.login-submit:disabled:hover {
+  background: #ff8c00;
+  transform: none;
+}
+
+/* Link "Não tem cadastro ainda? Faça agora" / "Já tem conta? Entrar" */
+.auth-switch {
+  margin: 1.4rem 0 0;
+  text-align: center;
+  font-size: 1rem;
+  color: #66738a;
+}
+
+.auth-switch a {
+  color: #ff8c00;
+  font-weight: 700;
+  text-decoration: none;
+  margin-left: 0.2rem;
+}
+
+.auth-switch a:hover {
+  color: #e67700;
+  text-decoration: underline;
+}
+
+.auth-switch a:focus-visible {
+  outline: 3px solid rgba(52, 152, 219, 0.35);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* O título da tela de cadastro é mais longo que o do login: fica um pouco menor.
+   Só vale para quem tem a classe register-title, então o login não muda. */
+.login-title.register-title {
+  font-size: 4.2rem;
+  overflow-wrap: break-word;
+}
+
+@media (max-width: 1200px) {
+  .login-title.register-title {
+    font-size: 3.6rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .login-title.register-title {
+    font-size: 2.6rem;
+  }
+}
