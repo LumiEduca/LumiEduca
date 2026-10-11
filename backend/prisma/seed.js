@@ -3,6 +3,12 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import pg from 'pg';
 import bcrypt from 'bcryptjs';
 
+// 1. Trava de segurança: impede rodar o seed em produção acidentalmente
+if (process.env.NODE_ENV === 'production') {
+  console.error('⚠️ Execução de seed bloqueada em ambiente de produção!');
+  process.exit(1);
+}
+
 const connectionString = process.env.DATABASE_URL;
 const pool = new pg.Pool({ connectionString });
 const adapter = new PrismaPg(pool);
@@ -11,36 +17,37 @@ const prisma = new PrismaClient({ adapter });
 async function main() {
   console.log('🌱 Iniciando o seed...');
 
-  const senhaProfessorHash = await bcrypt.hash('prof123', 10);
-  const senhaAlunoHash = await bcrypt.hash('aluno123', 10);
+  // 2. Lê a senha do .env ou usa fallback local
+  const rawPassword = process.env.SEED_PASSWORD || 'senha_local_123';
+  const senhaHash = await bcrypt.hash(rawPassword, 10);
 
-  // 1. Professor
+  // 3. Professor (nomes alterados para não dar conflito)
   const professor = await prisma.usuario.upsert({
-    where: { usuario: 'joao_lucas' },
+    where: { usuario: 'professor_seed' },
     update: {},
     create: {
-      nome: 'João Lucas',
-      usuario: 'joao_lucas',
-      senhaHash: senhaProfessorHash,
+      nome: 'Professor Teste',
+      usuario: 'professor_seed',
+      senhaHash: senhaHash,
       tipo: 'PROFESSOR',
     },
   });
   console.log('✅ Professor garantido.');
 
-  // 2. Aluno
+  // 4. Aluno (nomes alterados)
   const aluno = await prisma.usuario.upsert({
-    where: { usuario: 'adriel_azevedo' },
+    where: { usuario: 'aluno_seed' },
     update: {},
     create: {
-      nome: 'Adriel Azevedo',
-      usuario: 'adriel_azevedo',
-      senhaHash: senhaAlunoHash,
+      nome: 'Aluno Teste',
+      usuario: 'aluno_seed',
+      senhaHash: senhaHash,
       tipo: 'ALUNO',
     },
   });
   console.log('✅ Aluno garantido.');
 
-  // 3. Sala
+  // 5. Sala
   const sala = await prisma.sala.upsert({
     where: { codigo: 'LUMI-101' },
     update: {},
@@ -52,7 +59,7 @@ async function main() {
   });
   console.log('✅ Sala criada.');
 
-  // 4. Matrícula
+  // 6. Matrícula
   await prisma.matricula.upsert({
     where: {
       alunoId_salaId: {
@@ -68,7 +75,7 @@ async function main() {
   });
   console.log('✅ Aluno matriculado na sala.');
 
-  // 5. Atividade (Sem a conexão direta com a sala)
+  // 7. Atividade
   const atividadeIdFixa = 'seed-atividade-001';
   const atividade = await prisma.atividade.upsert({
     where: { id: atividadeIdFixa },
@@ -83,7 +90,7 @@ async function main() {
   });
   console.log('✅ Atividade criada.');
 
-  // 6. Associar Atividade à Sala (Via tabela pivô SalaAtividade correta)
+  // 8. Associar Atividade à Sala
   await prisma.salaAtividade.upsert({
     where: {
       salaId_atividadeId: {
@@ -99,14 +106,14 @@ async function main() {
   });
   console.log('✅ Atividade vinculada à sala.');
 
-  // 7. Questões
+  // 9. Questões (sem JSON.stringify, direto no array)
   await prisma.questao.upsert({
     where: { id: 'seed-questao-001' },
     update: {},
     create: {
       id: 'seed-questao-001',
       enunciado: 'Qual destas estruturas é um laço de repetição?',
-      opcoes: JSON.stringify(["if/else", "while", "switch", "try/catch"]),
+      opcoes: ["if/else", "while", "switch", "try/catch"], // Correção aqui
       respostaCorreta: 'while',
       ordem: 1,
       atividade: { connect: { id: atividade.id } },
@@ -119,7 +126,7 @@ async function main() {
     create: {
       id: 'seed-questao-002',
       enunciado: 'Qual é o tipo de variável que armazena verdadeiro ou falso?',
-      opcoes: JSON.stringify(["String", "Integer", "Boolean", "Float"]),
+      opcoes: ["String", "Integer", "Boolean", "Float"], // Correção aqui
       respostaCorreta: 'Boolean',
       ordem: 2,
       atividade: { connect: { id: atividade.id } },
