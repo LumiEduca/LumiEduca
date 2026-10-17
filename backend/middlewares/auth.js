@@ -1,6 +1,8 @@
-import jwt from "jsonwebtoken";
 import { ApiError } from "./errorHandler.js";
 import prisma from "../config/prismaClient.js";
+import { lerToken } from "../config/jwt.js";
+
+const ERROS_DO_TOKEN = ["JsonWebTokenError", "TokenExpiredError", "NotBeforeError"];
 
 export const verificarToken = async (req, res, next) => {
   try {
@@ -9,27 +11,33 @@ export const verificarToken = async (req, res, next) => {
       throw new ApiError(401, "Token não fornecido");
     }
 
-    const token = authHeader.split(" ")[1];
+    const token = authHeader.slice(7).trim();
 
     let decoded;
     try {
-      decoded = jwt.verify(token, process.env.JWT_SECRET);
-    } catch {
+      decoded = lerToken(token);
+    } catch (error) {
+      if (ERROS_DO_TOKEN.includes(error.name)) {
+        throw new ApiError(401, "Token inválido ou expirado");
+      }
+      throw error;
+    }
+
+    if (typeof decoded.id !== "string") {
       throw new ApiError(401, "Token inválido ou expirado");
     }
 
-    // Busca o usuário para garantir que ele ainda existe
+    // Garante que o usuário ainda existe e que o tipo do token bate com o do banco
     const user = await prisma.usuario.findUnique({
       where: { id: decoded.id },
+      omit: { senhaHash: true },
     });
 
-    if (!user) {
-      throw new ApiError(401, "Usuário não encontrado");
+    if (!user || user.tipo !== decoded.tipo) {
+      throw new ApiError(401, "Token inválido ou expirado");
     }
 
-    const { senhaHash, ...usuarioSemSenha } = user;
-    req.usuario = usuarioSemSenha; // Disponibiliza para as próximas rotas
-
+    req.usuario = user;
     next();
   } catch (error) {
     next(error);
