@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import prisma from "../config/prismaClient.js";
 import { salaRepository } from "../repositories/salaRepository.js";
 import { ApiError } from "../middlewares/errorHandler.js";
 
@@ -106,7 +107,13 @@ export const removerSala = async (req, res, next) => {
       throw new ApiError(403, "Apenas o professor dono pode remover a sala");
     }
 
-    await salaRepository.remover(sala.id);
+    // Matrículas e associações com atividades saem junto, tudo ou nada
+    await prisma.$transaction([
+      prisma.matricula.deleteMany({ where: { salaId: sala.id } }),
+      prisma.salaAtividade.deleteMany({ where: { salaId: sala.id } }),
+      prisma.sala.delete({ where: { id: sala.id } }),
+    ]);
+
     res.status(204).send();
   } catch (err) {
     next(err);
