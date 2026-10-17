@@ -20,3 +20,11 @@ export const limiteLogin = rateLimit({
 });
 
 export const limiteCadastro = rateLimit({ ...base, windowMs: 60 * 60 * 1000, limit: 5 });
+
+// Adivinhar código de sala: só as tentativas que falham contam
+export const limiteEntrarSala = rateLimit({
+  ...base,
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  skipSuccessfulRequests: true,
+});
