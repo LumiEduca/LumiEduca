@@ -8,6 +8,7 @@ import lumiLogin from '../assets/images/lumi-login.png';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
+// Mesmas regras do backend (schemas/authSchemas.js)
 function validarFormulario({ nome, usuario, senha, confirmarSenha }) {
   if (nome.trim().length < 2 || nome.trim().length > 100) {
     return 'O nome deve ter entre 2 e 100 caracteres.';
@@ -15,8 +16,12 @@ function validarFormulario({ nome, usuario, senha, confirmarSenha }) {
   if (!/^[A-Za-z0-9._]{3,30}$/.test(usuario.trim())) {
     return 'O usuário deve ter de 3 a 30 caracteres, usando apenas letras, números, ponto ou underline.';
   }
-  if (senha.length < 6 || senha.length > 72) {
-    return 'A senha deve ter entre 6 e 72 caracteres.';
+  if (senha.length < 8) {
+    return 'A senha deve ter pelo menos 8 caracteres.';
+  }
+  // O limite do bcrypt é de 72 bytes (acentos e emojis ocupam mais de 1 byte)
+  if (new TextEncoder().encode(senha).length > 72) {
+    return 'A senha é longa demais (máximo de 72 caracteres).';
   }
   if (senha !== confirmarSenha) {
     return 'As senhas não conferem.';
@@ -24,6 +29,7 @@ function validarFormulario({ nome, usuario, senha, confirmarSenha }) {
   return null;
 }
 
+// Fica fora do componente principal para o campo não perder o foco a cada letra digitada
 function PasswordField({ id, label, placeholder, value, onChange, autoComplete }) {
   const [visible, setVisible] = useState(false);
 
@@ -266,7 +272,7 @@ export default function RegisterPage() {
               />
 
               <span className="register-hint register-hint-standalone">
-                A senha precisa ter pelo menos 6 caracteres.
+                A senha precisa ter pelo menos 8 caracteres.
               </span>
 
               {errorMessage && (
