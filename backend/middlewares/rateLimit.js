@@ -28,3 +28,11 @@ export const limiteEntrarSala = rateLimit({
   limit: 10,
   skipSuccessfulRequests: true,
 });
+
+// Disparo de notificações: por professor
+export const limiteDisparo = rateLimit({
+  ...base,
+  windowMs: 60 * 60 * 1000,
+  limit: 10,
+  keyGenerator: (req) => req.usuario.id,
+});
