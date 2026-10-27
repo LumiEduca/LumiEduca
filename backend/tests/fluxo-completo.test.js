@@ -15,7 +15,7 @@ describe('Fluxo Completo E2E (Jornada Professor e Aluno)', () => {
     await prisma.$disconnect();
   });
 
-  it('1. Deve registrar um Professor com sucesso', async () => {
+  it('1. Deve registrar um Professor com sucesso (201)', async () => {
     const hash = Math.random().toString(36).substring(2, 7);
     const res = await request(app)
       .post('/api/v1/auth/register/professor')
@@ -26,7 +26,7 @@ describe('Fluxo Completo E2E (Jornada Professor e Aluno)', () => {
     tokenProf = res.body.token;
   });
 
-  it('2. Deve registrar um Aluno com sucesso', async () => {
+  it('2. Deve registrar um Aluno com sucesso (201)', async () => {
     const hash = Math.random().toString(36).substring(2, 7);
     const res = await request(app)
       .post('/api/v1/auth/register/aluno')
@@ -38,7 +38,7 @@ describe('Fluxo Completo E2E (Jornada Professor e Aluno)', () => {
     alunoId = res.body.usuario.id;
   });
 
-  it('3. Professor deve conseguir criar uma Sala', async () => {
+  it('3. Professor deve conseguir criar uma Sala (201)', async () => {
     const res = await request(app)
       .post('/api/v1/salas')
       .set('Authorization', `Bearer ${tokenProf}`)
@@ -51,16 +51,17 @@ describe('Fluxo Completo E2E (Jornada Professor e Aluno)', () => {
     codigoSala = res.body.codigo;
   });
 
-  it('4. Aluno deve conseguir entrar na Sala usando o código', async () => {
+  it('4. Aluno deve conseguir entrar na Sala usando o código (200)', async () => {
     const res = await request(app)
       .post('/api/v1/salas/entrar')
       .set('Authorization', `Bearer ${tokenAluno}`)
       .send({ codigo: codigoSala });
 
-    expect([200, 201]).toContain(res.status);
+    // Status exato exigido pelo revisor
+    expect(res.status).toBe(200);
   });
 
-  it('5. Professor deve criar uma Atividade e vinculá-la à Sala', async () => {
+  it('5. Professor deve criar uma Atividade (201) e vinculá-la à Sala (201)', async () => {
     // Cria atividade
     const resAtiv = await request(app)
       .post('/api/v1/atividades')
@@ -84,10 +85,11 @@ describe('Fluxo Completo E2E (Jornada Professor e Aluno)', () => {
       .set('Authorization', `Bearer ${tokenProf}`)
       .send({ idAtividade: atividadeId });
 
-    expect([200, 201]).toContain(resVinculo.status);
+    // Status exato exigido
+    expect(resVinculo.status).toBe(201);
   });
 
-  it('6. Aluno deve conseguir responder à questão da atividade', async () => {
+  it('6. Aluno deve conseguir responder à questão da atividade com sucesso (201)', async () => {
     const res = await request(app)
       .post('/api/v1/progresso/responder')
       .set('Authorization', `Bearer ${tokenAluno}`)
@@ -96,10 +98,12 @@ describe('Fluxo Completo E2E (Jornada Professor e Aluno)', () => {
         resposta: '1'
       });
 
-    expect([200, 201]).toContain(res.status);
+    // Status exato e validação de negócio básica
+    expect(res.status).toBe(201);
+    expect(res.body.correta).toBe(true);
   });
 
-  it('7. Aluno deve conseguir consultar sua trilha de aprendizado', async () => {
+  it('7. Aluno deve conseguir consultar sua trilha de aprendizado (200)', async () => {
     const res = await request(app)
       .get('/api/v1/progresso/trilha')
       .set('Authorization', `Bearer ${tokenAluno}`);
@@ -107,11 +111,13 @@ describe('Fluxo Completo E2E (Jornada Professor e Aluno)', () => {
     expect(res.status).toBe(200);
   });
 
-  it('8. Professor deve conseguir consultar o progresso geral do aluno', async () => {
+  it('8. Professor deve conseguir consultar o progresso geral do aluno (200)', async () => {
     const res = await request(app)
       .get(`/api/v1/progresso/aluno/${alunoId}`)
       .set('Authorization', `Bearer ${tokenProf}`);
 
-    expect([200, 403, 404]).toContain(res.status);
+    // Se é o professor da sala consultando o aluno da sala, TEM que ser 200. Sem espaço para 403 ou 404!
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveProperty('totalPontos');
   });
 });
