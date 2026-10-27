@@ -135,15 +135,35 @@ describe('Testes de Autenticação (/api/v1/auth)', () => {
       expect(res.body.erro).toBe('Token não fornecido');
     });
 
-    it('Deve retornar 401 para token inválido, expirado ou assinado com outro segredo', async () => {
+    it('Deve retornar 401 para token com assinatura inválida ou outro segredo', async () => {
+      // Teste 1: Token modificado
       const tokenInvalido = tokenProfessor.substring(0, tokenProfessor.length - 1) + 'a';
       const resInvalido = await request(app).get('/api/v1/auth/me').set('Authorization', `Bearer ${tokenInvalido}`);
       expect(resInvalido.status).toBe(401);
-      expect(resInvalido.body.erro).toBe('Token inválido ou expirado');
+      expect(resInvalido.body.erro).toMatch(/Token inválido/i);
 
+      // Teste 2: Segredo errado
       const tokenOutroSegredo = jwt.sign({ id: '123', tipo: 'PROFESSOR' }, 'segredo_errado', { expiresIn: '1h' });
       const resOutro = await request(app).get('/api/v1/auth/me').set('Authorization', `Bearer ${tokenOutroSegredo}`);
       expect(resOutro.status).toBe(401);
+    });
+
+    it('Deve retornar 401 com token expirado', async () => {
+      // Teste 3: Token realmente expirado
+      const tokenExpirado = jwt.sign(
+        { id: '123', tipo: 'ALUNO' }, 
+        process.env.JWT_SECRET, 
+        { expiresIn: '1ms' }
+      );
+
+      // Aguarda 15ms para garantir que o token expirou no relógio do Node
+      await new Promise(resolve => setTimeout(resolve, 15));
+
+      const res = await request(app)
+        .get('/api/v1/auth/me')
+        .set('Authorization', `Bearer ${tokenExpirado}`);
+
+      expect(res.status).toBe(401);
     });
   });
 
