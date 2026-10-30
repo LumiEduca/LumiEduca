@@ -58,26 +58,59 @@ describe('Testes de Progresso (/api/v1/progresso)', () => {
   });
 
   describe('POST /responder', () => {
-    it('Deve bloquear aluno de fora da sala (403), questão inexistente (404) e validações (400)', async () => {
-      const resFora = await request(app).post('/api/v1/progresso/responder').set('Authorization', `Bearer ${tokenAlunoFora}`).send({ questaoId, resposta: '1' });
-      expect(resFora.status).toBe(403);
-
-      const resInex = await request(app).post('/api/v1/progresso/responder').set('Authorization', `Bearer ${tokenAlunoDentro}`).send({ questaoId: '00000000-0000-0000-0000-000000000000', resposta: '1' });
-      expect(resInex.status).toBe(404);
-
-      const resVazio = await request(app).post('/api/v1/progresso/responder').set('Authorization', `Bearer ${tokenAlunoDentro}`).send({});
-      expect(resVazio.status).toBe(400);
+    const responder = (token, body) => {
+      const req = request(app).post('/api/v1/progresso/responder');
+      if (token) req.set('Authorization', `Bearer ${token}`);
+      return req.send(body);
+    };
+  
+    it('Deve retornar 401 sem token', async () => {
+      const res = await responder(null, { questaoId, resposta: '1' });
+      expect(res.status).toBe(401);
     });
-
+  
+    it('Deve retornar 403 se um professor tentar responder', async () => {
+      const res = await responder(tokenProfDono, { questaoId, resposta: '1' });
+      expect(res.status).toBe(403);
+    });
+  
+    it('Deve retornar 403 para aluno de fora da sala', async () => {
+      const res = await responder(tokenAlunoFora, { questaoId, resposta: '1' });
+      expect(res.status).toBe(403);
+    });
+  
+    it('Deve retornar 404 para questão inexistente', async () => {
+      const res = await responder(tokenAlunoDentro, {
+        questaoId: '00000000-0000-0000-0000-000000000000',
+        resposta: '1'
+      });
+      expect(res.status).toBe(404);
+    });
+  
+    it('Deve retornar 400 para corpo vazio', async () => {
+      const res = await responder(tokenAlunoDentro, {});
+      expect(res.status).toBe(400);
+    });
+  
+    it('Deve retornar 400 para questaoId como objeto', async () => {
+      const res = await responder(tokenAlunoDentro, { questaoId: { obj: true }, resposta: '1' });
+      expect(res.status).toBe(400);
+    });
+  
+    it('Deve retornar 400 para resposta como objeto', async () => {
+      const res = await responder(tokenAlunoDentro, { questaoId, resposta: { obj: true } });
+      expect(res.status).toBe(400);
+    });
+  
     it('Aluno da sala deve responder corretamente recebendo 201, correta: true e pontosGanhos: 10', async () => {
-      const res = await request(app).post('/api/v1/progresso/responder').set('Authorization', `Bearer ${tokenAlunoDentro}`).send({ questaoId, resposta: '1' });
+      const res = await responder(tokenAlunoDentro, { questaoId, resposta: '1' });
       expect(res.status).toBe(201);
       expect(res.body.correta).toBe(true);
       expect(res.body.pontosGanhos).toBe(10);
     });
-
+  
     it('Deve impedir que o aluno responda a mesma questão duas vezes (409)', async () => {
-      const res = await request(app).post('/api/v1/progresso/responder').set('Authorization', `Bearer ${tokenAlunoDentro}`).send({ questaoId, resposta: '1' });
+      const res = await responder(tokenAlunoDentro, { questaoId, resposta: '1' });
       expect(res.status).toBe(409);
     });
   });
