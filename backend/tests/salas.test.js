@@ -11,7 +11,6 @@ describe('Testes de Salas (/api/v1/salas)', () => {
 
     // Helper para criar usuários e capturar tokens via endpoint real
     const criarUser = async (tipo, sufixo) => {
-      // Usa um sufixo aleatório curto (ex: prof_a1b2c) para garantir unicidade em até 30 chars
       const hashCurto = Math.random().toString(36).substring(2, 7); 
       const nomeUsuario = `${tipo.substring(0, 4)}_${sufixo}_${hashCurto}`;
 
@@ -60,15 +59,15 @@ describe('Testes de Salas (/api/v1/salas)', () => {
       const resSemToken = await request(app).post('/api/v1/salas').send({ nome: 'Sala' });
       expect(resSemToken.status).toBe(401);
 
-      const reqDono = request(app).post('/api/v1/salas').set('Authorization', `Bearer ${tokenProfDono}`);
+      const auth = `Bearer ${tokenProfDono}`;
       
-      const resVazio = await reqDono.send({});
+      const resVazio = await request(app).post('/api/v1/salas').set('Authorization', auth).send({});
       expect(resVazio.status).toBe(400);
 
-      const resObjeto = await reqDono.send({ nome: { invalido: true } });
+      const resObjeto = await request(app).post('/api/v1/salas').set('Authorization', auth).send({ nome: { invalido: true } });
       expect(resObjeto.status).toBe(400);
 
-      const resLongo = await reqDono.send({ nome: 'A'.repeat(101) });
+      const resLongo = await request(app).post('/api/v1/salas').set('Authorization', auth).send({ nome: 'A'.repeat(101) });
       expect(resLongo.status).toBe(400);
     });
   });
