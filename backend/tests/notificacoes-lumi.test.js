@@ -11,9 +11,21 @@ jest.unstable_mockModule('../services/lumiService.js', () => ({
 // 2. Importação dinâmica do app (para que ele use o mock)
 const { default: app } = await import('../app.js');
 
+// Token push falso: único e com mais de 20 caracteres
+const tokenPushFalso = (sufixo) =>
+  `ExponentPushToken[${sufixo}-${Date.now()}-${Math.random().toString(36).substring(2, 12)}]`;
+
 describe('Testes de Notificações e Lumi (/api/v1/notificacoes e /api/v1/lumi)', () => {
   let tokenProfDono, tokenProfOutro, tokenAlunoDentro, tokenAlunoFora;
   let salaId;
+
+  const registrarToken = async (jwtToken, pushToken) => {
+    const res = await request(app)
+      .post('/api/v1/notificacoes/token')
+      .set('Authorization', `Bearer ${jwtToken}`)
+      .send({ token: pushToken });
+    if (res.status !== 200) throw new Error(`Falha ao registrar token: ${JSON.stringify(res.body)}`);
+  };
 
   beforeAll(async () => {
     await limparDados();
@@ -22,7 +34,8 @@ describe('Testes de Notificações e Lumi (/api/v1/notificacoes e /api/v1/lumi)'
       const hash = Math.random().toString(36).substring(2, 7);
       const res = await request(app)
         .post(`/api/v1/auth/register/${tipo}`)
-        .send({ nome: `User ${sufixo}`, usuario: `${tipo.substring(0,4)}_${sufixo}_${hash}`, senha: 'password123' });
+        .send({ nome: `User ${sufixo}`, usuario: `${tipo.substring(0, 4)}_${sufixo}_${hash}`, senha: 'password123' });
+      if (res.status !== 201) throw new Error(`Falha no setup (${tipo}): ${JSON.stringify(res.body)}`);
       return res.body.token;
     };
 
@@ -42,60 +55,100 @@ describe('Testes de Notificações e Lumi (/api/v1/notificacoes e /api/v1/lumi)'
   });
 
   describe('Notificações (/api/v1/notificacoes)', () => {
-    it('POST /token - Deve validar autenticação (401), body vazio (400) e registrar token com sucesso (200)', async () => {
-      expect((await request(app).post('/api/v1/notificacoes/token').send({ token: 'abc' })).status).toBe(401);
-      expect((await request(app).post('/api/v1/notificacoes/token').set('Authorization', `Bearer ${tokenAlunoDentro}`).send({})).status).toBe(400);
+    it('POST /token - Deve exigir autenticação (401), rejeitar token inválido (400) e registrar token válido (200)', async () => {
+      const semAuth = await request(app).post('/api/v1/notificacoes/token').send({ token: tokenPushFalso('x') });
+      expect(semAuth.status).toBe(401);
 
-      const res = await request(app).post('/api/v1/notificacoes/token').set('Authorization', `Bearer ${tokenAlunoDentro}`).send({ token: 'ExponentPushToken[1234567890123456789012]' });
-      if (res.status === 400) {
-        await request(app).post('/api/v1/notificacoes/token').set('Authorization', `Bearer ${tokenAlunoDentro}`).send({ tokenPush: 'ExponentPushToken[1234567890123456789012]' });
-      }
+      const auth = `Bearer ${tokenAlunoDentro}`;
+
+      const resVazio = await request(app).post('/api/v1/notificacoes/token').set('Authorization', auth).send({});
+      expect(resVazio.status).toBe(400);
+
+      const resCurto = await request(app).post('/api/v1/notificacoes/token').set('Authorization', auth).send({ token: 'abc' });
+      expect(resCurto.status).toBe(400);
+
+      // Este token fica registrado para o AlunoDentro e é contado no teste de disparo
+      const resValido = await request(app).post('/api/v1/notificacoes/token').set('Authorization', auth).send({ token: tokenPushFalso('dentro') });
+      expect(resValido.status).toBe(200);
     });
 
-    it('POST /disparar - Deve bloquear aluno (403), validar payload vazio (400) e bloquear professor de fora (403)', async () => {
-      // Testando as duas nomenclaturas comuns no validador para garantir que o payload passa
-      const payloadValido = { salaId, titulo: 'Aviso Importante', mensagem: 'Mensagem', title: 'Aviso Importante', body: 'Mensagem' };
+    describe('POST /disparar - validações', () => {
+      const payloadValido = () => ({ title: 'Aviso Importante', body: 'Mensagem', salaId });
 
-      const resAluno = await request(app).post('/api/v1/notificacoes/disparar').set('Authorization', `Bearer ${tokenAlunoDentro}`).send(payloadValido);
-      expect(resAluno.status).toBe(403);
+      it('Deve bloquear aluno (403)', async () => {
+        const res = await request(app)
+          .post('/api/v1/notificacoes/disparar')
+          .set('Authorization', `Bearer ${tokenAlunoDentro}`)
+          .send(payloadValido());
+        expect(res.status).toBe(403);
+      });
 
-      expect((await request(app).post('/api/v1/notificacoes/disparar').set('Authorization', `Bearer ${tokenProfDono}`).send({})).status).toBe(400);
+      it('Deve retornar 400 para payload vazio', async () => {
+        const res = await request(app)
+          .post('/api/v1/notificacoes/disparar')
+          .set('Authorization', `Bearer ${tokenProfDono}`)
+          .send({});
+        expect(res.status).toBe(400);
+      });
 
-      const resProfOutro = await request(app).post('/api/v1/notificacoes/disparar').set('Authorization', `Bearer ${tokenProfOutro}`).send(payloadValido);
-      expect(resProfOutro.status).toBe(403);
+      it('Deve retornar 400 para title com 101 caracteres', async () => {
+        const res = await request(app)
+          .post('/api/v1/notificacoes/disparar')
+          .set('Authorization', `Bearer ${tokenProfDono}`)
+          .send({ ...payloadValido(), title: 'A'.repeat(101) });
+        expect(res.status).toBe(400);
+      });
+
+      it('Deve retornar 400 para body com 501 caracteres', async () => {
+        const res = await request(app)
+          .post('/api/v1/notificacoes/disparar')
+          .set('Authorization', `Bearer ${tokenProfDono}`)
+          .send({ ...payloadValido(), body: 'A'.repeat(501) });
+        expect(res.status).toBe(400);
+      });
+
+      it('Deve retornar 403 ao tentar notificar sala de OUTRO professor', async () => {
+        // ProfOutro tenta disparar para a sala do ProfDono
+        const res = await request(app)
+          .post('/api/v1/notificacoes/disparar')
+          .set('Authorization', `Bearer ${tokenProfOutro}`)
+          .send(payloadValido());
+        expect(res.status).toBe(403);
+        expect(res.body.erro).toBe('Você só pode notificar alunos das suas salas');
+      });
     });
 
-    it('POST /disparar - Teste principal: deve enviar notificação apenas para o aluno da sala (enviadas = 1)', async () => {
-      // 1. Cria um aluno virgem exclusivamente para este teste
+    it('POST /disparar - Teste principal: notifica apenas os 2 alunos matriculados (enviadas = 2, destinatarios = 2)', async () => {
+      // 1. Cria um segundo aluno e matricula na sala
       const hash = Math.random().toString(36).substring(2, 7);
-      const resReg = await request(app).post('/api/v1/auth/register/aluno').send({ nome: `Aluno Teste`, usuario: `aluno_t_${hash}`, senha: 'password123' });
+      const resReg = await request(app)
+        .post('/api/v1/auth/register/aluno')
+        .send({ nome: 'Aluno Novo', usuario: `aluno_novo_${hash}`, senha: 'password123' });
+      expect(resReg.status).toBe(201);
       const tokenAlunoNovo = resReg.body.token;
 
-      // 2. Busca os detalhes da sala usando o Professor Dono para pegar o código, e matricula o aluno
       const salaData = await request(app).get(`/api/v1/salas/${salaId}`).set('Authorization', `Bearer ${tokenProfDono}`);
-      await request(app).post('/api/v1/salas/entrar').set('Authorization', `Bearer ${tokenAlunoNovo}`).send({ codigo: salaData.body.codigo }); 
+      const resEntrar = await request(app)
+        .post('/api/v1/salas/entrar')
+        .set('Authorization', `Bearer ${tokenAlunoNovo}`)
+        .send({ codigo: salaData.body.codigo });
+      expect(resEntrar.status).toBe(200);
 
-      const setupToken = async (tokenAuth, pushToken) => {
-        let resTk = await request(app).post('/api/v1/notificacoes/token').set('Authorization', `Bearer ${tokenAuth}`).send({ token: pushToken });
-        if (resTk.status === 400) {
-          resTk = await request(app).post('/api/v1/notificacoes/token').set('Authorization', `Bearer ${tokenAuth}`).send({ tokenPush: pushToken });
-        }
-        if (resTk.status !== 200) throw new Error(`Falha ao registrar: ${JSON.stringify(resTk.body)}`);
-      };
+      // 2. Registra tokens únicos para o aluno novo e para quem NÃO deve receber
+      //    (o AlunoDentro já registrou o dele no teste de POST /token)
+      await registrarToken(tokenAlunoNovo, tokenPushFalso('novo'));
+      await registrarToken(tokenAlunoFora, tokenPushFalso('fora'));
+      await registrarToken(tokenProfOutro, tokenPushFalso('profoutro'));
 
-      // 3. Cadastra o token ÚNICO apenas para esse novo aluno
-      await setupToken(tokenAlunoNovo, 'ExponentPushToken[9999999999999999999999]');
-
-      // 4. Dispara a notificação para a sala
+      // 3. Dispara para a sala
       const res = await request(app)
         .post('/api/v1/notificacoes/disparar')
         .set('Authorization', `Bearer ${tokenProfDono}`)
-        .send({ salaId, titulo: 'Aviso da Prova', mensagem: 'Teremos prova amanhã', title: 'Aviso da Prova', body: 'Teremos prova amanhã' });
-      
-      if (res.status !== 200) throw new Error(`O /disparar falhou: ${JSON.stringify(res.body)}`);
-      
+        .send({ title: 'Aviso da Prova', body: 'Teremos prova amanhã', salaId });
+
       expect(res.status).toBe(200);
-      expect(res.body.enviadas).toBe(2); // (1 token do AlunoDentro + 1 token do AlunoNovo)
+      expect(res.body.enviadas).toBe(2);
+      expect(res.body.destinatarios).toBe(2);
     });
 
     it('GET /historico - Aluno da sala vê os avisos, aluno de fora vê array vazio', async () => {
@@ -105,7 +158,7 @@ describe('Testes de Notificações e Lumi (/api/v1/notificacoes e /api/v1/lumi)'
 
       const resFora = await request(app).get(`/api/v1/notificacoes/historico?salaId=${salaId}`).set('Authorization', `Bearer ${tokenAlunoFora}`);
       expect(resFora.status).toBe(200);
-      expect(resFora.body.dados).toEqual([]); 
+      expect(resFora.body.dados).toEqual([]);
     });
   });
 
@@ -122,7 +175,7 @@ describe('Testes de Notificações e Lumi (/api/v1/notificacoes e /api/v1/lumi)'
 
     it('POST /dica - deve validar pergunta com mais de 1000 caracteres e opções que não são array (400)', async () => {
       const auth = `Bearer ${tokenAlunoDentro}`;
-      
+
       const resLonga = await request(app).post('/api/v1/lumi/dica').set('Authorization', auth).send({ pergunta: 'A'.repeat(1001), opcoes: ['A', 'B'] });
       expect(resLonga.status).toBe(400);
 
@@ -135,13 +188,12 @@ describe('Testes de Notificações e Lumi (/api/v1/notificacoes e /api/v1/lumi)'
         .post('/api/v1/lumi/dica')
         .set('Authorization', `Bearer ${tokenAlunoDentro}`)
         .send({ pergunta: 'Como resolvo esta equação?', opcoes: ['A', 'B'] });
-      
+
       expect(res.status).toBe(200);
       expect(res.body.dica).toBe('ok');
     });
 
     it('POST /dica - deve retornar 503 caso o serviço de IA lance uma falha (Error)', async () => {
-      // Puxamos a função mockada e forçamos ela a dar erro apenas nesta chamada
       const lumiService = await import('../services/lumiService.js');
       lumiService.gerarDica.mockRejectedValueOnce(new Error('Falha na API da IA'));
 
@@ -149,7 +201,7 @@ describe('Testes de Notificações e Lumi (/api/v1/notificacoes e /api/v1/lumi)'
         .post('/api/v1/lumi/dica')
         .set('Authorization', `Bearer ${tokenAlunoDentro}`)
         .send({ pergunta: 'Como resolvo?', opcoes: ['A', 'B'] });
-      
+
       expect(res.status).toBe(503);
     });
   });
