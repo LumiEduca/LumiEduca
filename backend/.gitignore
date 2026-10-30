@@ -5,6 +5,7 @@ node_modules/
 .env
 .env.*
 !.env.example
+!.env.test.example
 .env.test
 
 # Logs
@@ -12,6 +13,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+saida-testes.txt
 
 # Build
 dist/
