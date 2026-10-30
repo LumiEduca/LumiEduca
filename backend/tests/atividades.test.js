@@ -143,15 +143,38 @@ describe('Testes de Atividades (/api/v1/atividades e /salas/:id/atividades)', ()
 
   describe('GET /api/v1/salas/:id/atividades (Visualização por Sala)', () => {
     it('Professor dono vê as atividades da sala com a respostaCorreta exposta', async () => {
-      const res = await request(app).get(`/api/v1/salas/${salaId}/atividades`).set('Authorization', `Bearer ${tokenProfDono}`);
+      const res = await request(app)
+        .get(`/api/v1/salas/${salaId}/atividades`)
+        .set('Authorization', `Bearer ${tokenProfDono}`); 
+
       expect(res.status).toBe(200);
       expect(res.body[0].questoes[0]).toHaveProperty('respostaCorreta');
-    });
+    }); 
 
     it('Aluno matriculado vê as atividades mas a respostaCorreta é filtrada da API', async () => {
-      const res = await request(app).get(`/api/v1/salas/${salaId}/atividades`).set('Authorization', `Bearer ${tokenAlunoDentro}`);
+      const res = await request(app)
+        .get(`/api/v1/salas/${salaId}/atividades`)
+        .set('Authorization', `Bearer ${tokenAlunoDentro}`);  
+
       expect(res.status).toBe(200);
-      expect(res.body[0].questoes[0]).not.toHaveProperty('respostaCorreta');
+      expect(res.body.length).toBeGreaterThan(0); // garante que o teste não é vazio
+      expect(JSON.stringify(res.body)).not.toMatch(/respostaCorreta/);
+    }); 
+
+    it('Aluno de fora recebe 403', async () => {
+      const res = await request(app)
+        .get(`/api/v1/salas/${salaId}/atividades`)
+        .set('Authorization', `Bearer ${tokenAlunoFora}`);  
+
+      expect(res.status).toBe(403);
+    }); 
+
+    it('Professor de fora recebe 403', async () => {
+      const res = await request(app)
+        .get(`/api/v1/salas/${salaId}/atividades`)
+        .set('Authorization', `Bearer ${tokenProfOutro}`);  
+
+      expect(res.status).toBe(403);
     });
   });
 
