@@ -36,11 +36,10 @@ describe('Testes de Autenticação (/api/v1/auth)', () => {
       expect(res.status).toBe(201);
       expect(res.body).toHaveProperty('token');
       
-      // Valida o usuário dentro do objeto retornado
       expect(res.body.usuario).toHaveProperty('usuario', professorBase.usuario);
       expect(res.body.usuario).not.toHaveProperty('senhaHash');
       
-      tokenProfessor = res.body.token; // Salva para testes futuros
+      tokenProfessor = res.body.token;
     });
 
     it('Deve retornar 409 ao tentar registrar usuário já existente', async () => {
@@ -109,7 +108,7 @@ describe('Testes de Autenticação (/api/v1/auth)', () => {
       expect(resSenhaErrada.body.erro).toBe(msgEsperada);
 
       const resTipoTrocado = await request(app)
-        .post('/api/v1/auth/login/aluno') // Professor tentando logar na rota de aluno
+        .post('/api/v1/auth/login/aluno')
         .send({ usuario: professorBase.usuario, senha: professorBase.senha });
       expect(resTipoTrocado.status).toBe(401);
       expect(resTipoTrocado.body.erro).toBe(msgEsperada);
@@ -124,7 +123,6 @@ describe('Testes de Autenticação (/api/v1/auth)', () => {
 
       expect(res.status).toBe(200);
       
-      // Valida as propriedades dentro do objeto 'usuario' retornado
       expect(res.body.usuario).toHaveProperty('usuario', professorBase.usuario);
       expect(res.body.usuario).not.toHaveProperty('senhaHash');
     });
@@ -135,38 +133,33 @@ describe('Testes de Autenticação (/api/v1/auth)', () => {
       expect(res.body.erro).toBe('Token não fornecido');
     });
 
-    it('Deve retornar 401 para token com assinatura inválida ou outro segredo', async () => {
-      // Teste 1: Token modificado
-      const tokenInvalido = tokenProfessor.substring(0, tokenProfessor.length - 1) + 'a';
-      const resInvalido = await request(app).get('/api/v1/auth/me').set('Authorization', `Bearer ${tokenInvalido}`);
-      expect(resInvalido.status).toBe(401);
-      expect(resInvalido.body.erro).toMatch(/Token inválido/i);
-
-      // Teste 2: Segredo errado
-      const tokenOutroSegredo = jwt.sign({ id: '123', tipo: 'PROFESSOR' }, 'segredo_errado', { expiresIn: '1h' });
-      const resOutro = await request(app).get('/api/v1/auth/me').set('Authorization', `Bearer ${tokenOutroSegredo}`);
-      expect(resOutro.status).toBe(401);
-    });
-
-    it('Deve retornar 401 com token expirado', async () => {
-      // Teste 3: Token realmente expirado
-      const tokenExpirado = jwt.sign(
-        { id: '123', tipo: 'ALUNO' }, 
-        process.env.JWT_SECRET, 
-        { expiresIn: '1ms' }
-      );
-
-      // Aguarda 15ms para garantir que o token expirou no relógio do Node
-      await new Promise(resolve => setTimeout(resolve, 15));
+    it('Deve retornar 401 para token assinado com outro segredo', async () => {
+      const { id } = jwt.decode(tokenProfessor);
+      const token = jwt.sign({ id, tipo: 'PROFESSOR' }, 'segredo_errado', { expiresIn: '1h' });
 
       const res = await request(app)
         .get('/api/v1/auth/me')
-        .set('Authorization', `Bearer ${tokenExpirado}`);
+        .set('Authorization', `Bearer ${token}`);
 
       expect(res.status).toBe(401);
+      expect(res.body.erro).toBe('Token inválido ou expirado');
     });
-  });
 
+    it('Deve retornar 401 com token expirado', async () => {
+      const { id } = jwt.decode(tokenProfessor);
+      const token = jwt.sign(
+        { id, tipo: 'PROFESSOR', exp: Math.floor(Date.now() / 1000) - 10 },
+        process.env.JWT_SECRET
+      );
+    
+      const res = await request(app)
+        .get('/api/v1/auth/me')
+        .set('Authorization', `Bearer ${token}`);
+    
+      expect(res.status).toBe(401);
+      expect(res.body.erro).toBe('Token inválido ou expirado');
+    });
+ });
   describe('Testes Estruturais e de Segurança', () => {
     it('Deve retornar 404 e JSON estruturado para rota inexistente', async () => {
       const res = await request(app).get('/api/v1/auth/rota-fantasma');
