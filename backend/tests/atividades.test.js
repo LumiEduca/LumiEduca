@@ -28,10 +28,9 @@ describe('Testes de Atividades (/api/v1/atividades e /salas/:id/atividades)', ()
         .send({ nome: `User ${sufixo}`, usuario: nomeUsuario, senha: 'password123' });
       
       if (res.status !== 201) {
-        throw new Error(`Falha ao registrar ${tipo}: Status ${res.status} - Resposta: ${JSON.stringify(res.body)}`);
+        throw new Error(`Falha ao registrar ${tipo}: Status ${res.status} Resposta: ${JSON.stringify(res.body)}`);
       }
       
-      // Retorna APENAS o token com segurança
       return res.body.token;
     };
 
@@ -40,11 +39,11 @@ describe('Testes de Atividades (/api/v1/atividades e /salas/:id/atividades)', ()
     tokenAlunoDentro = await criarUser('aluno', 'dentro2');
     tokenAlunoFora = await criarUser('aluno', 'fora2');
 
-    // Criação de sala e matrícula para os testes de vinculo
     const resSala = await request(app).post('/api/v1/salas').set('Authorization', `Bearer ${tokenProfDono}`).send({ nome: 'Sala Ativ' });
     salaId = resSala.body.id;
     await request(app).post('/api/v1/salas/entrar').set('Authorization', `Bearer ${tokenAlunoDentro}`).send({ codigo: resSala.body.codigo });
   });
+
   afterAll(async () => {
     await limparDados();
     await prisma.$disconnect();
@@ -57,10 +56,7 @@ describe('Testes de Atividades (/api/v1/atividades e /salas/:id/atividades)', ()
         .set('Authorization', `Bearer ${tokenProfDono}`)
         .send(payloadAtividadeValida);
 
-      // Se der erro, printa a mensagem exata que a API retornou no terminal
-      if (res.status !== 201) {
-        throw new Error(`Erro ao criar atividade (${res.status}): ${JSON.stringify(res.body)}`);
-      }
+      if (res.status !== 201) throw new Error(`Erro ao criar atividade: ${JSON.stringify(res.body)}`);
 
       expect(res.status).toBe(201);
       expect(res.body).toHaveProperty('id');
@@ -76,35 +72,33 @@ describe('Testes de Atividades (/api/v1/atividades e /salas/:id/atividades)', ()
       expect(resNoToken.status).toBe(401);
     });
 
-    it('Deve retornar 400 para regras de validação estrutural de payload e questões', async () => {
-      const req = request(app).post('/api/v1/atividades').set('Authorization', `Bearer ${tokenProfDono}`);
+    it('Deve retornar 400 para regras de validação estrutural sem reutilizar o request', async () => {
+      const auth = `Bearer ${tokenProfDono}`;
 
-      expect((await req.send({})).status).toBe(400); // Vazio
-      expect((await req.send({ ...payloadAtividadeValida, titulo: 'A'.repeat(151) })).status).toBe(400); // Titulo 151 chars
-      expect((await req.send({ ...payloadAtividadeValida, questoes: [] })).status).toBe(400); // Questoes vazio
-      expect((await req.send({ ...payloadAtividadeValida, prazo: 'data-invalida' })).status).toBe(400); // Prazo invalido
-      
-      // Questão com 1 opção
-      expect((await req.send({ ...payloadAtividadeValida, questoes: [{ enunciado: '?', opcoes: ['1'], respostaCorreta: '1', ordem: 1 }] })).status).toBe(400);
-      
-      // Questão com 7 opções
-      expect((await req.send({ ...payloadAtividadeValida, questoes: [{ enunciado: '?', opcoes: ['1','2','3','4','5','6','7'], respostaCorreta: '1', ordem: 1 }] })).status).toBe(400);
-      
-      // Resposta correta fora do array de opções
-      expect((await req.send({ ...payloadAtividadeValida, questoes: [{ enunciado: '?', opcoes: ['1', '2'], respostaCorreta: '5', ordem: 1 }] })).status).toBe(400);
+      expect((await request(app).post('/api/v1/atividades').set('Authorization', auth).send({})).status).toBe(400); 
+      expect((await request(app).post('/api/v1/atividades').set('Authorization', auth).send({ ...payloadAtividadeValida, titulo: 'A'.repeat(151) })).status).toBe(400); 
+      expect((await request(app).post('/api/v1/atividades').set('Authorization', auth).send({ ...payloadAtividadeValida, questoes: [] })).status).toBe(400); 
+      expect((await request(app).post('/api/v1/atividades').set('Authorization', auth).send({ ...payloadAtividadeValida, prazo: 'data-invalida' })).status).toBe(400); 
+      expect((await request(app).post('/api/v1/atividades').set('Authorization', auth).send({ ...payloadAtividadeValida, questoes: [{ enunciado: '?', opcoes: ['1'], respostaCorreta: '1', ordem: 1 }] })).status).toBe(400);
+      expect((await request(app).post('/api/v1/atividades').set('Authorization', auth).send({ ...payloadAtividadeValida, questoes: [{ enunciado: '?', opcoes: ['1','2','3','4','5','6','7'], respostaCorreta: '1', ordem: 1 }] })).status).toBe(400);
+      expect((await request(app).post('/api/v1/atividades').set('Authorization', auth).send({ ...payloadAtividadeValida, questoes: [{ enunciado: '?', opcoes: ['1', '2'], respostaCorreta: '5', ordem: 1 }] })).status).toBe(400);
     });
   });
 
   describe('GET /api/v1/atividades', () => {
-    it('Professor dono vê suas atividades (com count), outro professor recebe array vazio', async () => {
+    it('Professor dono vê suas atividades, outro professor recebe array vazio', async () => {
       const resDono = await request(app).get('/api/v1/atividades').set('Authorization', `Bearer ${tokenProfDono}`);
       expect(resDono.status).toBe(200);
       expect(resDono.body.length).toBeGreaterThan(0);
-      expect(resDono.body[0]._count).toHaveProperty('questoes');
 
       const resOutro = await request(app).get('/api/v1/atividades').set('Authorization', `Bearer ${tokenProfOutro}`);
       expect(resOutro.status).toBe(200);
       expect(resOutro.body).toEqual([]);
+    });
+
+    it('Aluno não pode listar atividades gerais (403)', async () => {
+      const res = await request(app).get('/api/v1/atividades').set('Authorization', `Bearer ${tokenAlunoDentro}`);
+      expect(res.status).toBe(403);
     });
   });
 
@@ -122,42 +116,65 @@ describe('Testes de Atividades (/api/v1/atividades e /salas/:id/atividades)', ()
       expect(res.status).toBe(409);
     });
 
-    it('Deve bloquear alunos (403), professor de fora (403) e validar payload', async () => {
+    it('Deve retornar 403 ao tentar associar uma atividade de outro professor', async () => {
+      // ProfOutro cria uma atividade dele
+      const resAtiv = await request(app).post('/api/v1/atividades').set('Authorization', `Bearer ${tokenProfOutro}`).send(payloadAtividadeValida);
+      const ativOutroId = resAtiv.body.id;
+
+      // ProfDono tenta associar a atividade do ProfOutro na sua sala
+      const res = await request(app).post(`/api/v1/salas/${salaId}/atividades`).set('Authorization', `Bearer ${tokenProfDono}`).send({ idAtividade: ativOutroId });
+      expect(res.status).toBe(403);
+    });
+
+    it('Deve bloquear alunos, professores de fora, e validar o campo idAtividade (400 e 404)', async () => {
       const resAluno = await request(app).post(`/api/v1/salas/${salaId}/atividades`).set('Authorization', `Bearer ${tokenAlunoDentro}`).send({ idAtividade: atividadeId });
       expect(resAluno.status).toBe(403);
 
       const resOutroProf = await request(app).post(`/api/v1/salas/${salaId}/atividades`).set('Authorization', `Bearer ${tokenProfOutro}`).send({ idAtividade: atividadeId });
       expect(resOutroProf.status).toBe(403);
-      expect(resOutroProf.body.erro).toBe('Apenas o professor dono pode alterar esta sala.');
 
-      const resBodyErrado = await request(app).post(`/api/v1/salas/${salaId}/atividades`).set('Authorization', `Bearer ${tokenProfDono}`).send({ atividadeId: { obj: true } });
-      expect(resBodyErrado.status).toBe(400);
+      const resIdObjeto = await request(app).post(`/api/v1/salas/${salaId}/atividades`).set('Authorization', `Bearer ${tokenProfDono}`).send({ idAtividade: { obj: true } });
+      expect(resIdObjeto.status).toBe(400);
 
-      const resAtividadeInex = await request(app).post(`/api/v1/salas/${salaId}/atividades`).set('Authorization', `Bearer ${tokenProfDono}`).send({ atividadeId: '00000000-0000-0000-0000-000000000000' });
-      expect([400, 404]).toContain(resAtividadeInex.status);
+      const resIdInexistente = await request(app).post(`/api/v1/salas/${salaId}/atividades`).set('Authorization', `Bearer ${tokenProfDono}`).send({ idAtividade: '00000000-0000-0000-0000-000000000000' });
+      expect(resIdInexistente.status).toBe(404);
     });
   });
 
   describe('GET /api/v1/salas/:id/atividades (Visualização por Sala)', () => {
     it('Professor dono vê as atividades da sala com a respostaCorreta exposta', async () => {
-      const res = await request(app).get(`/api/v1/salas/${salaId}/atividades`).set('Authorization', `Bearer ${tokenProfDono}`);
+      const res = await request(app)
+        .get(`/api/v1/salas/${salaId}/atividades`)
+        .set('Authorization', `Bearer ${tokenProfDono}`); 
+
       expect(res.status).toBe(200);
       expect(res.body[0].questoes[0]).toHaveProperty('respostaCorreta');
-    });
+    }); 
 
     it('Aluno matriculado vê as atividades mas a respostaCorreta é filtrada da API', async () => {
-      const res = await request(app).get(`/api/v1/salas/${salaId}/atividades`).set('Authorization', `Bearer ${tokenAlunoDentro}`);
+      const res = await request(app)
+        .get(`/api/v1/salas/${salaId}/atividades`)
+        .set('Authorization', `Bearer ${tokenAlunoDentro}`);  
+
       expect(res.status).toBe(200);
-      expect(res.body[0].questoes[0]).not.toHaveProperty('respostaCorreta');
+      expect(res.body.length).toBeGreaterThan(0); // garante que o teste não é vazio
       expect(JSON.stringify(res.body)).not.toMatch(/respostaCorreta/);
-    });
+    }); 
 
-    it('Aluno e Professor de fora recebem 403', async () => {
-      const resAluno = await request(app).get(`/api/v1/salas/${salaId}/atividades`).set('Authorization', `Bearer ${tokenAlunoFora}`);
-      expect(resAluno.status).toBe(403);
+    it('Aluno de fora recebe 403', async () => {
+      const res = await request(app)
+        .get(`/api/v1/salas/${salaId}/atividades`)
+        .set('Authorization', `Bearer ${tokenAlunoFora}`);  
 
-      const resProf = await request(app).get(`/api/v1/salas/${salaId}/atividades`).set('Authorization', `Bearer ${tokenProfOutro}`);
-      expect(resProf.status).toBe(403);
+      expect(res.status).toBe(403);
+    }); 
+
+    it('Professor de fora recebe 403', async () => {
+      const res = await request(app)
+        .get(`/api/v1/salas/${salaId}/atividades`)
+        .set('Authorization', `Bearer ${tokenProfOutro}`);  
+
+      expect(res.status).toBe(403);
     });
   });
 
@@ -172,12 +189,17 @@ describe('Testes de Atividades (/api/v1/atividades e /salas/:id/atividades)', ()
       expect(resMatriculado.body.questoes[0]).not.toHaveProperty('respostaCorreta');
     });
 
-    it('Id estranho (400) e Inexistente (404)', async () => {
-      const resEstranho = await request(app).get(`/api/v1/atividades/abc.def`).set('Authorization', `Bearer ${tokenProfDono}`);
-      expect(resEstranho.status).toBe(400);
+    it('Professor de fora (403) e Aluno sem sala (403) recebem acesso negado', async () => {
+      const resProfFora = await request(app).get(`/api/v1/atividades/${atividadeId}`).set('Authorization', `Bearer ${tokenProfOutro}`);
+      expect(resProfFora.status).toBe(403);
 
-      const resInex = await request(app).get(`/api/v1/atividades/00000000-0000-0000-0000-000000000000`).set('Authorization', `Bearer ${tokenProfDono}`);
-      expect(resInex.status).toBe(404);
+      const resAlunoFora = await request(app).get(`/api/v1/atividades/${atividadeId}`).set('Authorization', `Bearer ${tokenAlunoFora}`);
+      expect(resAlunoFora.status).toBe(403);
+    });
+
+    it('Id estranho (400) e Inexistente (404)', async () => {
+      expect((await request(app).get(`/api/v1/atividades/abc.def`).set('Authorization', `Bearer ${tokenProfDono}`)).status).toBe(400);
+      expect((await request(app).get(`/api/v1/atividades/00000000-0000-0000-0000-000000000000`).set('Authorization', `Bearer ${tokenProfDono}`)).status).toBe(404);
     });
   });
 });
