@@ -26,9 +26,7 @@ const origens = (process.env.FRONTEND_URL || "")
 
 app.use(
   cors({
-    origin: process.env.NODE_ENV === "test" 
-      ? "*" // No ambiente de testes, permite para validação dos headers, mas mantém a regra fechada para prod/dev
-      : (origens.length ? origens : process.env.NODE_ENV === "production" ? false : true),
+    origin: origens.length ? origens : process.env.NODE_ENV === "production" ? false : true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
     maxAge: 600,
