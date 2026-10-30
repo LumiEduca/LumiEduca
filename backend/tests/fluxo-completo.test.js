@@ -73,8 +73,7 @@ describe('Fluxo Completo E2E (Jornada Professor e Aluno)', () => {
         questoes: [
           { enunciado: 'Quanto é 5 x 5?', opcoes: ['20', '25', '30'], respostaCorreta: '1', ordem: 1 }
         ]
-      });
-
+  });
     expect(resAtiv.status).toBe(201);
     atividadeId = resAtiv.body.id;
     questaoId = resAtiv.body.questoes[0].id;
@@ -87,6 +86,16 @@ describe('Fluxo Completo E2E (Jornada Professor e Aluno)', () => {
 
     // Status exato exigido
     expect(resVinculo.status).toBe(201);
+  });
+
+  it('5b. Aluno deve ver a atividade da sala sem respostaCorreta', async () => {
+    const res = await request(app)
+      .get(`/api/v1/salas/${salaId}/atividades`)
+      .set('Authorization', `Bearer ${tokenAluno}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.length).toBeGreaterThan(0);
+    expect(JSON.stringify(res.body)).not.toMatch(/respostaCorreta/);
   });
 
   it('6. Aluno deve conseguir responder à questão da atividade com sucesso (201)', async () => {
@@ -116,8 +125,16 @@ describe('Fluxo Completo E2E (Jornada Professor e Aluno)', () => {
       .get(`/api/v1/progresso/aluno/${alunoId}`)
       .set('Authorization', `Bearer ${tokenProf}`);
 
-    // Se é o professor da sala consultando o aluno da sala, TEM que ser 200. Sem espaço para 403 ou 404!
     expect(res.status).toBe(200);
     expect(res.body).toHaveProperty('totalPontos');
+    expect(res.body.totalPontos).toBe(10);
+    });
+
+  it('9. Professor deve conseguir deletar a sala (204)', async () => {
+  const res = await request(app)
+    .delete(`/api/v1/salas/${salaId}`)
+    .set('Authorization', `Bearer ${tokenProf}`);
+
+  expect(res.status).toBe(204);
   });
 });
