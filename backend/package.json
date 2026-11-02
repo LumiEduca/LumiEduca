@@ -4,7 +4,7 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "test": "cross-env NODE_OPTIONS=--experimental-vm-modules npx dotenv-cli -e .env.test -- jest --forceExit",
+    "test": "cross-env NODE_OPTIONS=--experimental-vm-modules npx dotenv-cli -e .env.test -- jest --forceExit --runInBand --testTimeout=30000",
     "start": "node server.js",
     "postinstall": "prisma generate"
   },
