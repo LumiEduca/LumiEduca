@@ -38,8 +38,12 @@ export const getMe = async (req, res, next) => {
 };
 
 export const refreshToken = async (req, res, next) => {
-  // Implementação futura ou básica dependendo da estratégia de refresh (ex: token longo no DB ou apenas reemissão)
-  res.status(200).json({ mensagem: "Rota de refresh a ser implementada com base na estratégia de sessão." });
+  try {
+    const resultado = authService.renovarToken(req.usuario, req.tokenPayload);
+    res.status(200).json(resultado);
+  } catch (error) {
+    next(error);
+  }
 };
 
 export const registrarProfessor = async (req, res, next) => {

@@ -36,3 +36,11 @@ export const limiteDisparo = rateLimit({
   limit: 10,
   keyGenerator: (req) => req.usuario.id,
 });
+
+// Renovação de token: por usuário (precisa vir depois do verificarToken)
+export const limiteRefresh = rateLimit({
+  ...base,
+  windowMs: 15 * 60 * 1000,
+  limit: 30,
+  keyGenerator: (req) => req.usuario.id,
+});
