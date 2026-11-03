@@ -38,6 +38,7 @@ export const verificarToken = async (req, res, next) => {
     }
 
     req.usuario = user;
+    req.tokenPayload = decoded; // usado pelo /auth/refresh
     next();
   } catch (error) {
     next(error);

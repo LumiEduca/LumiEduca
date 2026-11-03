@@ -9,7 +9,7 @@ import {
 } from "../controllers/authController.js";
 import { verificarToken } from "../middlewares/auth.js";
 import { validar } from "../middlewares/validar.js";
-import { limiteLogin, limiteCadastro } from "../middlewares/rateLimit.js";
+import { limiteLogin, limiteCadastro, limiteRefresh } from "../middlewares/rateLimit.js";
 import { loginSchema, cadastroSchema } from "../schemas/authSchemas.js";
 
 const router = Router();
@@ -19,9 +19,10 @@ router.post("/login/professor", limiteLogin, validar(loginSchema), loginProfesso
 router.post("/login/aluno", limiteLogin, validar(loginSchema), loginAluno);
 router.post("/register/professor", limiteCadastro, validar(cadastroSchema), registrarProfessor);
 router.post("/register/aluno", limiteCadastro, validar(cadastroSchema), registrarAluno);
-router.post("/refresh", refreshToken); // será protegida na fase 3
 
 // Rotas protegidas
 router.get("/me", verificarToken, getMe);
+router.get("/me", verificarToken, getMe);
+router.post("/refresh", verificarToken, limiteRefresh, refreshToken);
 
 export default router;
