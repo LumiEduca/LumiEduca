@@ -4,6 +4,7 @@ import '../styles/login.css';
 import '../styles/register.css';
 import lumiLogo from '../assets/images/lumi-logo.png';
 import lumiLogin from '../assets/images/lumi-login.png';
+import API_BASE_URL from '../services/apiConfig';
 
 export default function LoginPage() {
   const [selectedProfile, setSelectedProfile] = useState('professor');
@@ -28,7 +29,7 @@ export default function LoginPage() {
         : '/api/v1/auth/login/aluno';
 
       // Dispara a requisição HTTP para o backend
-      const response = await fetch(`http://localhost:5000${endpoint}`, {
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
