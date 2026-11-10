@@ -1,31 +1,35 @@
-// Arquivo: src/pages/RegisterPage.jsx
+
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import '../styles/login.css';
 import '../styles/register.css';
 import lumiLogo from '../assets/images/lumi-logo.png';
 import lumiLogin from '../assets/images/lumi-login.png';
-
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+import API_BASE_URL from '../services/apiConfig';
 
 // Mesmas regras do backend (schemas/authSchemas.js)
 function validarFormulario({ nome, usuario, senha, confirmarSenha }) {
   if (nome.trim().length < 2 || nome.trim().length > 100) {
     return 'O nome deve ter entre 2 e 100 caracteres.';
   }
+
   if (!/^[A-Za-z0-9._]{3,30}$/.test(usuario.trim())) {
     return 'O usuário deve ter de 3 a 30 caracteres, usando apenas letras, números, ponto ou underline.';
   }
+
   if (senha.length < 8) {
     return 'A senha deve ter pelo menos 8 caracteres.';
   }
+
   // O limite do bcrypt é de 72 bytes (acentos e emojis ocupam mais de 1 byte)
   if (new TextEncoder().encode(senha).length > 72) {
     return 'A senha é longa demais (máximo de 72 caracteres).';
   }
+
   if (senha !== confirmarSenha) {
     return 'As senhas não conferem.';
   }
+
   return null;
 }
 
@@ -58,14 +62,32 @@ function PasswordField({ id, label, placeholder, value, onChange, autoComplete }
         >
           {visible ? (
             // OLHO FECHADO
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg
+              viewBox="0 0 24 24"
+              width="20"
+              height="20"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
               <path d="M17.94 17.94A10.94 10.94 0 0 1 12 19C7 19 2.73 15.11 1 12c.72-1.29 1.68-2.49 2.83-3.54" />
               <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
               <path d="M1 1l22 22" />
             </svg>
           ) : (
             // OLHO ABERTO
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg
+              viewBox="0 0 24 24"
+              width="20"
+              height="20"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
               <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" />
               <circle cx="12" cy="12" r="3" />
             </svg>
@@ -89,7 +111,13 @@ export default function RegisterPage() {
     e.preventDefault();
     setErrorMessage('');
 
-    const erroValidacao = validarFormulario({ nome, usuario, senha, confirmarSenha });
+    const erroValidacao = validarFormulario({
+      nome,
+      usuario,
+      senha,
+      confirmarSenha,
+    });
+
     if (erroValidacao) {
       setErrorMessage(erroValidacao);
       return;
@@ -103,7 +131,7 @@ export default function RegisterPage() {
           ? '/api/v1/auth/register/professor'
           : '/api/v1/auth/register/aluno';
 
-      const response = await fetch(`${API_URL}${endpoint}`, {
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -129,10 +157,13 @@ export default function RegisterPage() {
       window.location.href = '/';
     } catch (error) {
       if (error.message === 'Failed to fetch') {
-        setErrorMessage('Não foi possível conectar ao servidor. Verifique se a API está rodando.');
+        setErrorMessage(
+          'Não foi possível conectar ao servidor. Verifique se a API está rodando.'
+        );
       } else {
         setErrorMessage(error.message);
       }
+
       setIsSubmitting(false);
     }
   };
@@ -144,7 +175,11 @@ export default function RegisterPage() {
       <main className="login-main">
         <section className="login-hero">
           <div className="login-brand">
-            <img src={lumiLogo} alt="Ícone LumiEduca" className="login-brand-icon" />
+            <img
+              src={lumiLogo}
+              alt="Ícone LumiEduca"
+              className="login-brand-icon"
+            />
 
             <div className="login-brand-text">
               <span className="login-brand-lumi">Lumi</span>
@@ -152,7 +187,9 @@ export default function RegisterPage() {
             </div>
           </div>
 
-          <h1 className="login-title register-title">Comece sua jornada no LumiEduca</h1>
+          <h1 className="login-title register-title">
+            Comece sua jornada no LumiEduca
+          </h1>
 
           <p className="login-subtitle">
             Crie sua conta em poucos passos e comece a aprender, explorar e se divertir.
@@ -177,7 +214,9 @@ export default function RegisterPage() {
 
             <form onSubmit={handleRegister} className="login-form" noValidate>
               <div className="login-profile-selector">
-                <span className="login-label">Selecione seu tipo de perfil:</span>
+                <span className="login-label">
+                  Selecione seu tipo de perfil:
+                </span>
 
                 <div className="login-profile-options">
                   <button
@@ -242,8 +281,9 @@ export default function RegisterPage() {
                 />
 
                 <span className="register-hint">
-                  De 3 a 30 caracteres: letras, números, ponto ou underline. Você vai usar esse
-                  mesmo usuário para entrar, com as mesmas letras maiúsculas e minúsculas.
+                  De 3 a 30 caracteres: letras, números, ponto ou underline.
+                  Você vai usar esse mesmo usuário para entrar, com as mesmas
+                  letras maiúsculas e minúsculas.
                 </span>
               </div>
 
@@ -281,7 +321,11 @@ export default function RegisterPage() {
                 </p>
               )}
 
-              <button type="submit" className="login-submit" disabled={isSubmitting}>
+              <button
+                type="submit"
+                className="login-submit"
+                disabled={isSubmitting}
+              >
                 {isSubmitting ? 'Criando conta...' : 'Criar conta'}
               </button>
             </form>

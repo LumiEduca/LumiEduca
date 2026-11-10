@@ -1,9 +1,6 @@
 // A chave da Gemini NÃO fica mais aqui. Toda a chamada à IA passa pelo backend
 // (rota protegida /api/v1/lumi/dica), que guarda a GEMINI_API_KEY.
-
-// IMPORTANTE (produção/Vercel): defina REACT_APP_API_URL com a URL pública do
-// backend. Sem isso, o fallback abaixo (http://localhost:5000) só funciona em dev.
-const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
+import API_BASE_URL from './apiConfig';
 
 const MENSAGEM_ERRO_PADRAO =
   "Ops! O Lumi precisou dar uma corridinha na floresta e não conseguiu responder agora. 🦊 Tente clicar no botão novamente em alguns segundos!";
