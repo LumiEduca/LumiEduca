@@ -1,3 +1,5 @@
+// TODO: substituir mock por firebase-admin real (módulo push-notifications)
+
 const admin = {
   messaging() {
     return {
