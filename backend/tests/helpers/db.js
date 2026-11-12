@@ -15,6 +15,7 @@ export const prisma = new PrismaClient({ adapter });
 
 export const limparDados = async () => {
   // A ordem de deleção é crucial para não ferir as foreign keys
+  await prisma.avaliacaoDemo.deleteMany();
   await prisma.resposta.deleteMany();
   await prisma.progresso.deleteMany();
   await prisma.notificacao.deleteMany();
