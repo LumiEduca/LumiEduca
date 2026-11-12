@@ -9,6 +9,7 @@ import lumiRoutes from "./routes/lumiRoutes.js";
 import salaRoutes from "./routes/salaRoutes.js";
 import progressoRoutes from "./routes/progressoRoutes.js";
 import atividadeRoutes from "./routes/atividadeRoutes.js";
+import avaliacaoDemoRoutes from "./routes/avaliacaoDemoRoutes.js";
 
 const app = express();
 
@@ -44,6 +45,7 @@ app.use("/api/v1/lumi", lumiRoutes);
 app.use("/api/v1/salas", salaRoutes);
 app.use("/api/v1/progresso", progressoRoutes);
 app.use("/api/v1/atividades", atividadeRoutes);
+app.use("/api/v1/demos", avaliacaoDemoRoutes);
 
 app.get("/", (req, res) => {
   res.send("LumiEduca Backend Online");

@@ -44,3 +44,11 @@ export const limiteRefresh = rateLimit({
   limit: 30,
   keyGenerator: (req) => req.usuario.id,
 });
+
+// Avaliações das demos (públicas): folgado, pois na feira vários aparelhos
+// compartilham o mesmo IP de Wi-Fi
+export const limiteAvaliacaoDemo = rateLimit({
+  ...base,
+  windowMs: 15 * 60 * 1000,
+  limit: 120,
+});
