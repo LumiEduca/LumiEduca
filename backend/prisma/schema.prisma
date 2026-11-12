@@ -149,3 +149,13 @@ model Resposta {
   @@unique([alunoId, questaoId])
   @@map("respostas")
 }
+
+model AvaliacaoDemo {
+  id       String   @id @default(uuid())
+  jogo     String
+  nota     Int
+  criadaEm DateTime @default(now())
+
+  @@index([jogo, criadaEm])
+  @@map("avaliacoes_demo")
+}

@@ -10,6 +10,10 @@ import CreateTaskPage from '../pages/CreateTaskPage';
 import ReceivedTasksPage from '../pages/ReceivedTasksPage';
 import TeacherReportPage from '../pages/TeacherReportPage';
 import ClassroomsPage from '../pages/ClassroomsPage';
+import DemosHubPage from '../pages/demos/DemosHubPage';
+import CacaPalavrasPage from '../pages/demos/CacaPalavrasPage';
+import JogoMemoriaPage from '../pages/demos/JogoMemoriaPage';
+import QuizRelampagoPage from '../pages/demos/QuizRelampagoPage';
 
 export default function AppRoutes({
   userType,
@@ -36,6 +40,12 @@ export default function AppRoutes({
         path="/cadastro"
         element={!isAuthenticated ? <RegisterPage /> : <Navigate to="/" replace />}
       />
+
+      {/* Demonstrações públicas (sem login) */}
+      <Route path="/demos" element={<DemosHubPage />} />
+      <Route path="/demos/caca-palavras" element={<CacaPalavrasPage />} />
+      <Route path="/demos/memoria" element={<JogoMemoriaPage />} />
+      <Route path="/demos/quiz" element={<QuizRelampagoPage />} />
 
       <Route
         path="/criar-tarefa"

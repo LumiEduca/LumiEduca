@@ -64,6 +64,21 @@ export default function LoginPage() {
   };
   return (
     <div className="page-wrapper login-page">
+      <Link to="/demos" className="login-demo-btn" aria-label="Experimente as demonstrações de jogos">
+        <span className="login-demo-icone">
+          <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="2" y="6" width="20" height="12" rx="6" />
+            <path d="M7 10v4M5 12h4" />
+            <circle cx="16" cy="11" r="1" />
+            <circle cx="18" cy="13" r="1" />
+          </svg>
+        </span>
+        <span className="login-demo-texto">
+          <strong>Experimente agora!</strong>
+          <small>Jogos rápidos, sem login e sem cadastro</small>
+        </span>
+      </Link>
+
       <main className="login-main">
         <section className="login-hero">
           <div className="login-brand">
