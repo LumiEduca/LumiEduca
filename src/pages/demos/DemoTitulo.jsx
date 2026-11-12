@@ -7,7 +7,6 @@ export default function DemoTitulo({ etiqueta, antes, destaque, sub }) {
       <h1 className="demo-tit-h1">
         {antes} <span>{destaque}</span>
       </h1>
-      <div className="demo-tit-linha"><i /><b /><i /></div>
       {sub && <p className="demo-tit-sub">{sub}</p>}
     </div>
   );

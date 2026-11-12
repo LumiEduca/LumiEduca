@@ -14,20 +14,17 @@
 .demo-btn-claro{background:#f1f3f8;color:var(--azul);padding:10px 20px;font-size:.95rem;border:1px solid #e1e6f0}
 
 /* título */
-.demo-tit{text-align:center;margin:4px 0 18px}
-.demo-tit-etiqueta{display:inline-block;background:#fff3e0;color:#e67700;border:1px solid rgba(255,140,0,.3);border-radius:999px;padding:5px 16px;font-size:.8rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase}
-.demo-tit-h1{font-family:Georgia,'Times New Roman',serif;font-size:clamp(2.2rem,5vw,3.8rem);line-height:1.05;margin:10px 0 8px;letter-spacing:-.02em;color:var(--azul)}
+.demo-tit{text-align:center;margin:4px 0 16px}
+.demo-tit-etiqueta{display:inline-block;background:#fff3e0;color:#e67700;border:1px solid rgba(255,140,0,.3);border-radius:999px;padding:4px 14px;font-size:.75rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
+.demo-tit-h1{font-family:Georgia,'Times New Roman',serif;font-size:clamp(1.8rem,3.6vw,2.8rem);line-height:1.1;margin:8px 0 4px;letter-spacing:-.02em;color:var(--azul)}
 .demo-tit-h1 span{color:var(--laranja)}
-.demo-tit-linha{display:flex;justify-content:center;align-items:center;gap:6px}
-.demo-tit-linha i{width:26px;height:5px;border-radius:99px;background:rgba(255,140,0,.35)}
-.demo-tit-linha b{width:64px;height:5px;border-radius:99px;background:var(--laranja)}
-.demo-tit-sub{margin:12px 0 0;font-size:1.15rem;color:#4a5872}
+.demo-tit-sub{margin:6px 0 0;font-size:1.05rem;color:#4a5872}
 
-/* Lumi parado (só um "pop" curto ao trocar de pose) */
-.demo-lumi{display:flex;flex-direction:column;align-items:center;gap:10px}
+/* Lumi parado, com o balão ao lado */
+.demo-lumi{display:flex;flex-direction:row;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap}
 .demo-lumi-img{height:clamp(110px,18vh,170px);animation:lumi-pop .4s ease-out}
-.demo-lumi-balao{position:relative;background:#fff;border:2px solid #ffe0b8;border-radius:18px;padding:10px 18px;font-weight:700;text-align:center;box-shadow:0 6px 16px rgba(30,45,80,.08);max-width:290px}
-.demo-lumi-balao::before{content:'';position:absolute;top:-9px;left:50%;width:14px;height:14px;background:#fff;border-left:2px solid #ffe0b8;border-top:2px solid #ffe0b8;transform:translateX(-50%) rotate(45deg)}
+.demo-lumi-balao{position:relative;background:#fff;border:2px solid #ffe0b8;border-radius:18px;padding:10px 18px;font-weight:700;text-align:left;box-shadow:0 6px 16px rgba(30,45,80,.08);max-width:240px}
+.demo-lumi-balao::before{content:'';position:absolute;top:50%;left:-9px;width:14px;height:14px;background:#fff;border-left:2px solid #ffe0b8;border-bottom:2px solid #ffe0b8;transform:translateY(-50%) rotate(45deg)}
 @keyframes lumi-pop{0%{transform:scale(.94)}60%{transform:scale(1.04)}100%{transform:scale(1)}}
 
 /* hub */
