@@ -64,6 +64,14 @@ export default function LoginPage() {
   };
   return (
     <div className="page-wrapper login-page">
+      <Link to="/demos" className="login-demo-btn" aria-label="Experimente as demonstrações de jogos">
+        <span className="login-demo-icone">🎮</span>
+        <span className="login-demo-texto">
+          <strong>Experimente agora!</strong>
+          <small>Jogos rápidos, sem login e sem cadastro</small>
+        </span>
+      </Link>
+
       <main className="login-main">
         <section className="login-hero">
           <div className="login-brand">
