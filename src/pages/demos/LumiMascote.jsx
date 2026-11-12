@@ -11,7 +11,7 @@ export default function LumiMascote({ mensagem, humor = 'feliz' }) {
   const src = POSES[humor] || POSES.feliz;
   return (
     <div className="demo-lumi">
-      <img src={src} alt="Lumi" className={`demo-lumi-img humor-${humor}`} />
+      <img key={humor} src={src} alt="Lumi" className="demo-lumi-img" />
       {mensagem && <div className="demo-lumi-balao">{mensagem}</div>}
     </div>
   );

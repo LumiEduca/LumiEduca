@@ -1,12 +1,14 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import DemoLayout from './DemoLayout';
 import LumiMascote from './LumiMascote';
+import DemoTitulo from './DemoTitulo';
 import AvaliacaoEstrelas from './AvaliacaoEstrelas';
 
 const TAM = 10;
 const PALAVRAS = ['LIVRO', 'LEITURA', 'POEMA', 'CONTO', 'LUMI', 'FABULA'];
 const DIRS = [[0, 1], [1, 0], [1, 1]];
 const LETRAS = 'ABCDEFGHIJLMNOPQRSTUVX';
+const MSG_INICIAL = 'Segure e arraste sobre as letras da palavra!';
 
 function gerar() {
   while (true) {
@@ -36,80 +38,127 @@ function gerar() {
   }
 }
 
+// Caminho reto (8 direções) do início até a célula sob o dedo
+function caminho(l0, c0, l, c) {
+  const dl = l - l0;
+  const dc = c - c0;
+  if (dl === 0 && dc === 0) return [[l0, c0]];
+  const passo = Math.PI / 4;
+  const ang = Math.round(Math.atan2(dl, dc) / passo) * passo;
+  const sl = Math.round(Math.sin(ang));
+  const sc = Math.round(Math.cos(ang));
+  const n = Math.max(Math.abs(dl), Math.abs(dc)) + 1;
+  const out = [];
+  for (let i = 0; i < n; i++) {
+    const ll = l0 + sl * i;
+    const cc = c0 + sc * i;
+    if (ll < 0 || cc < 0 || ll >= TAM || cc >= TAM) break;
+    out.push([ll, cc]);
+  }
+  return out;
+}
+
+function celulaEm(x, y) {
+  const el = document.elementFromPoint(x, y);
+  const b = el && el.closest('[data-l]');
+  return b ? [Number(b.dataset.l), Number(b.dataset.c)] : null;
+}
+
 export default function CacaPalavrasPage() {
   const [grade, setGrade] = useState(gerar);
   const [achadas, setAchadas] = useState({});
-  const [inicio, setInicio] = useState(null);
-  const [msg, setMsg] = useState('Toque na primeira letra e depois na última!');
+  const [sel, setSel] = useState([]);
+  const [msg, setMsg] = useState(MSG_INICIAL);
   const [humor, setHumor] = useState('feliz');
+  const origem = useRef(null);
+  const selRef = useRef([]);
 
   const total = Object.keys(achadas).length;
   const fim = total === PALAVRAS.length;
 
   const corDaCelula = {};
   PALAVRAS.forEach((p, i) => (achadas[p] || []).forEach((k) => { corDaCelula[k] = i; }));
+  const selSet = new Set(sel.map(([l, c]) => `${l}-${c}`));
 
-  const clicar = (l, c) => {
+  const atualizarSel = (p) => { selRef.current = p; setSel(p); };
+
+  const aoPressionar = (e) => {
     if (fim) return;
-    if (!inicio) { setInicio([l, c]); return; }
-    const [l0, c0] = inicio;
-    if (l0 === l && c0 === c) { setInicio(null); return; }
-    const dl = l - l0;
-    const dc = c - c0;
-    if (!(dl === 0 || dc === 0 || Math.abs(dl) === Math.abs(dc))) { setInicio([l, c]); return; }
+    const cel = celulaEm(e.clientX, e.clientY);
+    if (!cel) return;
+    e.currentTarget.setPointerCapture(e.pointerId);
+    origem.current = cel;
+    atualizarSel([cel]);
+  };
 
-    const n = Math.max(Math.abs(dl), Math.abs(dc)) + 1;
-    const sl = Math.sign(dl);
-    const sc = Math.sign(dc);
-    const cels = [];
-    let txt = '';
-    for (let i = 0; i < n; i++) {
-      cels.push(`${l0 + sl * i}-${c0 + sc * i}`);
-      txt += grade[l0 + sl * i][c0 + sc * i];
-    }
+  const aoMover = (e) => {
+    if (!origem.current) return;
+    const cel = celulaEm(e.clientX, e.clientY);
+    if (!cel) return;
+    atualizarSel(caminho(origem.current[0], origem.current[1], cel[0], cel[1]));
+  };
+
+  const aoSoltar = () => {
+    if (!origem.current) return;
+    const p = selRef.current;
+    origem.current = null;
+    atualizarSel([]);
+    if (p.length < 2) return;
+
+    const txt = p.map(([l, c]) => grade[l][c]).join('');
     const rev = [...txt].reverse().join('');
-    const achou = PALAVRAS.find((p) => !achadas[p] && (p === txt || p === rev));
+    const achou = PALAVRAS.find((w) => !achadas[w] && (w === txt || w === rev));
 
     if (achou) {
-      setAchadas((a) => ({ ...a, [achou]: cels }));
+      setAchadas((a) => ({ ...a, [achou]: p.map(([l, c]) => `${l}-${c}`) }));
       const resta = PALAVRAS.length - total - 1;
-      setMsg(resta === 0 ? 'Você achou todas! Parabéns! 🎉' : `Isso! Achou ${achou}! Faltam ${resta}.`);
+      setMsg(resta === 0 ? 'Você achou todas! Parabéns!' : `Isso! Achou ${achou}! Faltam ${resta}.`);
       setHumor('comemorando');
     } else {
       setMsg('Quase! Tente de novo, você consegue!');
       setHumor('incentivando');
     }
-    setInicio(null);
-    setTimeout(() => setHumor('feliz'), 1200);
+    setTimeout(() => setHumor('feliz'), 1400);
+  };
+
+  const cancelar = () => {
+    origem.current = null;
+    atualizarSel([]);
   };
 
   const reiniciar = () => {
     setGrade(gerar());
     setAchadas({});
-    setInicio(null);
+    atualizarSel([]);
     setHumor('feliz');
     setMsg('Novo tabuleiro! Vamos lá!');
   };
 
   return (
     <DemoLayout>
-      <h1 className="demo-titulo">Caça-<span>palavras</span></h1>
+      <DemoTitulo etiqueta="Brincadeira" antes="Caça-" destaque="palavras" sub="Arraste o dedo sobre as letras para ligar a palavra." />
       <div className="cp-area">
-        <div className="cp-grade" style={{ gridTemplateColumns: `repeat(${TAM}, var(--cell))` }}>
+        <div
+          className="cp-grade"
+          style={{ gridTemplateColumns: `repeat(${TAM}, var(--cell))` }}
+          onPointerDown={aoPressionar}
+          onPointerMove={aoMover}
+          onPointerUp={aoSoltar}
+          onPointerCancel={cancelar}
+        >
           {grade.map((linha, l) =>
             linha.map((letra, c) => {
               const k = `${l}-${c}`;
               const cor = corDaCelula[k];
-              const sel = inicio && inicio[0] === l && inicio[1] === c;
               return (
-                <button
+                <div
                   key={k}
-                  type="button"
-                  className={`cp-celula ${cor !== undefined ? `achada cor-${cor}` : ''} ${sel ? 'sel' : ''}`}
-                  onClick={() => clicar(l, c)}
+                  data-l={l}
+                  data-c={c}
+                  className={`cp-celula ${cor !== undefined ? `achada cor-${cor}` : ''} ${selSet.has(k) ? 'sel' : ''}`}
                 >
                   {letra}
-                </button>
+                </div>
               );
             })
           )}

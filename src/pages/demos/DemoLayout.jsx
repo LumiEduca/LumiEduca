@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import lumiLogo from '../../assets/images/lumi-logo.png';
 import './demos.css';
 
-export default function DemoLayout({ children, voltarPara = '/demos', voltarTexto = '← Outros jogos' }) {
+export default function DemoLayout({ children, voltarPara = '/demos', voltarTexto = 'Outros jogos' }) {
   const [telaCheia, setTelaCheia] = useState(false);
 
   useEffect(() => {
@@ -27,7 +27,7 @@ export default function DemoLayout({ children, voltarPara = '/demos', voltarText
         <div className="demo-header-acoes">
           <Link to={voltarPara} className="demo-btn demo-btn-claro">{voltarTexto}</Link>
           <button type="button" className="demo-btn demo-btn-claro" onClick={alternar}>
-            {telaCheia ? '⤢ Sair da tela cheia' : '⛶ Tela cheia'}
+            {telaCheia ? 'Sair da tela cheia' : 'Tela cheia'}
           </button>
         </div>
       </header>

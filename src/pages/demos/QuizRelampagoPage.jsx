@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import DemoLayout from './DemoLayout';
 import LumiMascote from './LumiMascote';
+import DemoTitulo from './DemoTitulo';
 import AvaliacaoEstrelas from './AvaliacaoEstrelas';
 
 const BANCO = [
@@ -69,25 +70,25 @@ export default function QuizRelampagoPage() {
       ? 'feliz'
       : escolha === q.c ? 'comemorando' : 'incentivando';
   const msg = fim
-    ? `Fim! Você fez ${pontos} pontos! 🎉`
+    ? `Fim! Você fez ${pontos} pontos!`
     : escolha === null
-      ? (seq >= 2 ? `🔥 Sequência de ${seq} acertos!` : 'Vamos lá, rápido!')
-      : escolha === q.c ? 'Acertou! 🎉' : 'Ops! Na próxima você consegue!';
+      ? (seq >= 2 ? `Sequência de ${seq} acertos!` : 'Vamos lá, rápido!')
+      : escolha === q.c ? 'Acertou!' : 'Ops! Na próxima você consegue!';
 
   return (
     <DemoLayout>
-      <h1 className="demo-titulo">Quiz <span>Relâmpago</span></h1>
+      <DemoTitulo etiqueta="Brincadeira" antes="Quiz" destaque="Relâmpago" sub="Acertou em sequência? Ganha pontos extras!" />
       <div className="quiz-area">
         <aside className="cp-lateral">
           <LumiMascote humor={humor} mensagem={msg} />
-          <div className="quiz-placar">⭐ {pontos} pontos</div>
+          <div className="quiz-placar">{pontos} pontos</div>
         </aside>
 
         {!fim && (
           <div className="quiz-caixa">
             <div className="quiz-topo">
-              <span>Pergunta {idx + 1}/{perguntas.length}</span>
-              <span className={tempo <= 5 ? 'quiz-tempo urgente' : 'quiz-tempo'}>⏱ {tempo}s</span>
+              <span>Pergunta {idx + 1} de {perguntas.length}</span>
+              <span className={tempo <= 5 ? 'quiz-tempo urgente' : 'quiz-tempo'}>{tempo}s</span>
             </div>
             <div className="quiz-barra"><div style={{ width: `${(tempo / TEMPO) * 100}%` }} /></div>
             <h2 className="quiz-pergunta">{q.p}</h2>
