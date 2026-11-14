@@ -16,23 +16,19 @@ firebase.initializeApp({
 // Mensagens com "notification" são exibidas pelo próprio navegador em segundo plano.
 firebase.messaging();
 
+const DESTINO = "/tarefas-recebidas";
+
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
   event.waitUntil(
     clients.matchAll({ type: "window", includeUncontrolled: true }).then((lista) => {
       for (const c of lista) {
-        if ("focus" in c) return c.focus();
+        if ("focus" in c) {
+          if ("navigate" in c) c.navigate(DESTINO);
+          return c.focus();
+        }
       }
-      return clients.openWindow("/");
+      return clients.openWindow(DESTINO);
     })
   );
-});
-
-const messaging = firebase.messaging();
-
-messaging.onBackgroundMessage((payload) => {
-  self.registration.showNotification(payload.notification.title, {
-    body: payload.notification.body,
-    icon: "/logo192.png",
-  });
 });

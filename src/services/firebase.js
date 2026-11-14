@@ -1,7 +1,5 @@
-import { initializeApp } from "firebase/app";
-import { getMessaging } from "firebase/messaging";
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { getMessaging, getToken, isSupported } from "firebase/messaging";
+import { getMessaging, getToken, isSupported, onMessage } from "firebase/messaging";
 import API_BASE_URL from "./apiConfig";
 
 const config = {
@@ -18,16 +16,22 @@ const ESCOPO_SW = "/firebase-cloud-messaging-push-scope";
 const configurado = () =>
   Object.values(config).every(Boolean) && Boolean(VAPID_KEY);
 
+const obterApp = () => (getApps().length ? getApp() : initializeApp(config));
+
 // Registra o token deste navegador no back (POST /api/v1/notificacoes/token).
 // Nunca lança erro: devolve { ok, motivo } e o app segue normalmente.
-export async function ativarPush(tokenJwt) {
+// pedirPermissao=false: só renova o token se o usuário já tiver permitido.
+export async function ativarPush(tokenJwt, { pedirPermissao = true } = {}) {
   try {
     if (!tokenJwt) return { ok: false, motivo: "sem-login" };
     if (!configurado()) return { ok: false, motivo: "sem-config" };
     if (!(await isSupported())) return { ok: false, motivo: "nao-suportado" };
 
     let permissao = Notification.permission;
-    if (permissao === "default") permissao = await Notification.requestPermission();
+    if (permissao === "default" && pedirPermissao) {
+      permissao = await Notification.requestPermission();
+    }
+    if (permissao === "default") return { ok: false, motivo: "permissao-pendente" };
     if (permissao !== "granted") return { ok: false, motivo: "permissao-negada" };
 
     const query = new URLSearchParams(config).toString();
@@ -36,8 +40,7 @@ export async function ativarPush(tokenJwt) {
       { scope: ESCOPO_SW }
     );
 
-    const app = getApps().length ? getApp() : initializeApp(config);
-    const token = await getToken(getMessaging(app), {
+    const token = await getToken(getMessaging(obterApp()), {
       vapidKey: VAPID_KEY,
       serviceWorkerRegistration: registro,
     });
@@ -57,7 +60,16 @@ export async function ativarPush(tokenJwt) {
     return { ok: false, motivo: "erro" };
   }
 }
-const firebaseConfig = { /* cola aqui */ };
 
-const app = initializeApp(firebaseConfig);
-export const messaging = getMessaging(app);
+// Mensagens recebidas com o app aberto e em foco. Devolve a função para parar de ouvir.
+export async function ouvirMensagens(aoReceber) {
+  try {
+    if (!configurado() || !(await isSupported())) return () => {};
+    return onMessage(getMessaging(obterApp()), (payload) =>
+      aoReceber(payload?.notification || {})
+    );
+  } catch (error) {
+    console.error("Falha ao ouvir mensagens push:", error?.code || error?.message);
+    return () => {};
+  }
+}
