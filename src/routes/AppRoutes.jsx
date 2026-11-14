@@ -14,6 +14,7 @@ import DemosHubPage from '../pages/demos/DemosHubPage';
 import CacaPalavrasPage from '../pages/demos/CacaPalavrasPage';
 import JogoMemoriaPage from '../pages/demos/JogoMemoriaPage';
 import QuizRelampagoPage from '../pages/demos/QuizRelampagoPage';
+import ProfilePage from '../pages/ProfilePage';
 
 export default function AppRoutes({
   userType,
@@ -103,6 +104,11 @@ export default function AppRoutes({
             <Navigate to="/login" replace />
           )
         }
+      />
+
+      <Route
+        path="/perfil"
+        element={isAuthenticated ? <ProfilePage /> : <Navigate to="/login" replace />}
       />
 
       <Route

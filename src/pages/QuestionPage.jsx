@@ -480,7 +480,7 @@ export default function QuestionPage({ setPontos, concluidas, setConcluidas }) {
                 </button>
               </div>
 
-              <div className="lumi-hint-content">
+                <div className="lumi-hint-content" role="status">
                 {carregandoDica ? (
                   <p className="typing-text">Pensando em uma dica...</p>
                 ) : (
@@ -494,6 +494,7 @@ export default function QuestionPage({ setPontos, concluidas, setConcluidas }) {
 
           {correcaoAtual && (
             <div
+              role="status"
               className={`question-feedback-box ${
                 correcaoAtual.acertou ? 'correct' : 'wrong'
               }`}
@@ -503,7 +504,11 @@ export default function QuestionPage({ setPontos, concluidas, setConcluidas }) {
             </div>
           )}
 
-          {erroMensagem && <p className="question-error-message">{erroMensagem}</p>}
+          {erroMensagem && (
+            <p className="question-error-message" role="alert">
+              {erroMensagem}
+            </p>
+          )}
 
           <div className="question-actions question-actions-with-hint">
             {!correcaoAtual && (
@@ -520,6 +525,7 @@ export default function QuestionPage({ setPontos, concluidas, setConcluidas }) {
             <button
               type="button"
               className={`question-next-button ${!correcaoAtual ? 'disabled' : ''}`}
+              aria-disabled={!correcaoAtual}
               onClick={handleAvancar}
             >
               {ultimaQuestao ? 'Finalizar fase 🏁' : 'Próxima pergunta ➜'}
