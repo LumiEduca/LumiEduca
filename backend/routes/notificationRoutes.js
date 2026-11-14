@@ -1,6 +1,7 @@
 import express from "express";
 import {
   saveToken,
+  removeToken,
   sendToAll,
   getHistorico,
   contarNaoLidas,
@@ -17,6 +18,7 @@ import { tokenSchema, disparoSchema } from "../schemas/notificacaoSchemas.js";
 const router = express.Router();
 
 router.post("/token", verificarToken, validar(tokenSchema), saveToken);
+router.delete("/token", verificarToken, validar(tokenSchema), removeToken);
 router.post(
   "/disparar",
   verificarToken,

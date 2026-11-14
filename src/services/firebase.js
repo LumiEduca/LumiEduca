@@ -1,5 +1,11 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { getMessaging, getToken, isSupported, onMessage } from "firebase/messaging";
+import {
+  getMessaging,
+  getToken,
+  deleteToken,
+  isSupported,
+  onMessage,
+} from "firebase/messaging";
 import API_BASE_URL from "./apiConfig";
 
 const config = {
@@ -57,6 +63,41 @@ export async function ativarPush(tokenJwt, { pedirPermissao = true } = {}) {
     return res.ok ? { ok: true } : { ok: false, motivo: "api-recusou" };
   } catch (error) {
     console.error("Falha ao ativar notificações push:", error?.code || error?.message);
+    return { ok: false, motivo: "erro" };
+  }
+}
+
+// Logout: desvincula o token deste navegador do usuário (DELETE no back)
+// e invalida o token no Firebase. Nunca lança erro.
+export async function desativarPush(tokenJwt) {
+  try {
+    if (!tokenJwt || !configurado()) return { ok: false, motivo: "sem-config" };
+    if (!(await isSupported())) return { ok: false, motivo: "nao-suportado" };
+    if (Notification.permission !== "granted") return { ok: false, motivo: "sem-permissao" };
+
+    const registro = await navigator.serviceWorker.getRegistration(ESCOPO_SW);
+    if (!registro) return { ok: false, motivo: "sem-registro" };
+
+    const messaging = getMessaging(obterApp());
+    const token = await getToken(messaging, {
+      vapidKey: VAPID_KEY,
+      serviceWorkerRegistration: registro,
+    });
+    if (!token) return { ok: false, motivo: "sem-token" };
+
+    await fetch(`${API_BASE_URL}/api/v1/notificacoes/token`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${tokenJwt}`,
+      },
+      body: JSON.stringify({ token }),
+    });
+
+    await deleteToken(messaging);
+    return { ok: true };
+  } catch (error) {
+    console.error("Falha ao desativar notificações push:", error?.code || error?.message);
     return { ok: false, motivo: "erro" };
   }
 }
