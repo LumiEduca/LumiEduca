@@ -1,0 +1,48 @@
+/* Tudo sob .app-a11y: as páginas /demos ficam de fora (ver App.jsx) */
+
+/* Foco visível para teclado (não aparece em clique de mouse) */
+.app-a11y :focus-visible {
+  outline: 3px solid #1f2f4d;
+  outline-offset: 2px;
+}
+
+.app-a11y input:focus-visible,
+.app-a11y select:focus-visible,
+.app-a11y textarea:focus-visible {
+  outline: 3px solid #1f2f4d;
+  outline-offset: 1px;
+}
+
+/* Sobre fundos laranja (rodapé) o contorno escuro continua visível; sobre fundos escuros, o claro */
+.app-a11y .lumi-modal-btn:focus-visible {
+  outline-color: #1f2f4d;
+}
+
+/* Texto só para leitor de tela */
+.app-a11y .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Respeita quem pediu menos movimento */
+@media (prefers-reduced-motion: reduce) {
+  .app-a11y *,
+  .app-a11y *::before,
+  .app-a11y *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .app-a11y button:hover {
+    transform: none;
+  }
+}

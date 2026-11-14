@@ -148,7 +148,7 @@ export default function HomePage() {
                     className="trail-subject-btn math-btn"
                     onClick={() => navigate('/trilha/matematica')}
                   >
-                    <span className="trail-subject-icon">🔢</span>
+                    <span className="trail-subject-icon" aria-hidden="true">🔢</span>
                     <div className="trail-subject-info">
                       <strong>Matemática</strong>
                       <span>Explorar trilha</span>
@@ -160,7 +160,7 @@ export default function HomePage() {
                     className="trail-subject-btn portuguese-btn"
                     onClick={() => navigate('/trilha/portugues')}
                   >
-                    <span className="trail-subject-icon">📚</span>
+                    <span className="trail-subject-icon" aria-hidden="true">📚</span>
                     <div className="trail-subject-info">
                       <strong>Língua Portuguesa</strong>
                       <span>Explorar trilha</span>
@@ -294,7 +294,7 @@ export default function HomePage() {
                       className="trail-subject-btn math-btn"
                       onClick={() => navigate('/trilha/matematica')}
                     >
-                      <span className="trail-subject-icon">🔢</span>
+                      <span className="trail-subject-icon" aria-hidden="true">🔢</span>
                       <div className="trail-subject-info">
                         <strong>Matemática</strong>
                         <span>Acessar trilha</span>
@@ -306,7 +306,7 @@ export default function HomePage() {
                       className="trail-subject-btn portuguese-btn"
                       onClick={() => navigate('/trilha/portugues')}
                     >
-                      <span className="trail-subject-icon">📚</span>
+                      <span className="trail-subject-icon" aria-hidden="true">📚</span>
                       <div className="trail-subject-info">
                         <strong>Português</strong>
                         <span>Acessar trilha</span>

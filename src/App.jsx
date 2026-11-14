@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
+import './styles/accessibility.css';
 import Header from './components/Header';
 import AppRoutes from './routes/AppRoutes';
 import toast, { Toaster } from 'react-hot-toast';
@@ -7,6 +9,9 @@ import { ativarPush, ouvirMensagens } from './services/firebase';
 
 function App() {
   const [isLoading, setIsLoading] = useState(true);
+
+  const { pathname } = useLocation();
+  const escopoA11y = !pathname.startsWith('/demos');
 
   const userName = localStorage.getItem('userName') || 'visitante';
   const userType = localStorage.getItem('userType');
@@ -94,7 +99,10 @@ function App() {
   }
 
   return (
-    <div style={{ backgroundColor: '#f5f5f5', minHeight: '100vh' }}>
+    <div
+      className={escopoA11y ? 'app-a11y' : undefined}
+      style={{ backgroundColor: '#f5f5f5', minHeight: '100vh' }}
+    >
       <Toaster />
 
       {userType && <Header pontos={pontos} />}
