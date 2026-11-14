@@ -32,3 +32,30 @@ export const cadastroSchema = z.object({
     .min(8, "A senha deve ter pelo menos 8 caracteres")
     .refine(senhaMaxima, "A senha é longa demais (máximo de 72 caracteres)"),
 });
+
+export const MSG_TROCA_SENHA =
+  "Não foi possível alterar a senha. Verifique os dados informados.";
+
+export const atualizarPerfilSchema = z.object({
+  nome: z
+    .string({ error: "Nome deve ter entre 2 e 100 caracteres" })
+    .trim()
+    .min(2, "Nome deve ter entre 2 e 100 caracteres")
+    .max(100, "Nome deve ter entre 2 e 100 caracteres"),
+});
+
+export const trocarSenhaSchema = z
+  .object({
+    senhaAtual: z
+      .string({ error: MSG_TROCA_SENHA })
+      .min(1, MSG_TROCA_SENHA)
+      .refine(senhaMaxima, MSG_TROCA_SENHA),
+    novaSenha: z
+      .string({ error: MSG_TROCA_SENHA })
+      .min(8, MSG_TROCA_SENHA)
+      .refine(senhaMaxima, MSG_TROCA_SENHA),
+  })
+  .refine((d) => d.senhaAtual !== d.novaSenha, {
+    message: MSG_TROCA_SENHA,
+    path: ["novaSenha"],
+  });
