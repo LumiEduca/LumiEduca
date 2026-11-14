@@ -6,6 +6,7 @@ import AppRoutes from './routes/AppRoutes';
 import toast, { Toaster } from 'react-hot-toast';
 import lumiLogo from './assets/images/lumi-logo.png';
 import { ativarPush, ouvirMensagens } from './services/firebase';
+import './styles/accessibility-contrast.css';
 
 function App() {
   const [isLoading, setIsLoading] = useState(true);
