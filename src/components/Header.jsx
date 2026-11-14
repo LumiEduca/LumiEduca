@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import '../styles/header.css';
 import logoLumi from '../assets/images/lumi-logo.png';
 import Modal from './UI/Modal';
+import NotificationBell from './NotificationBell';
 import usePushNotifications from './usePushNotifications';
 
 export default function Header({ pontos = 0 }) {
@@ -71,6 +72,7 @@ export default function Header({ pontos = 0 }) {
   };
 
   const handleLogout = () => {
+    localStorage.removeItem('token');
     localStorage.removeItem('userType');
     localStorage.removeItem('userName');
     window.location.href = '/login';
@@ -180,6 +182,8 @@ export default function Header({ pontos = 0 }) {
                 </button>
               )}
             </nav>
+
+            <NotificationBell />
 
             <div className="header-score">
               <span className="score-icon">{isProfessor ? '🌟∞' : '🌟'}</span>
