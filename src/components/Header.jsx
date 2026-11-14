@@ -197,6 +197,15 @@ export default function Header({ pontos = 0 }) {
 
             <NotificationBell />
 
+            <button
+              type="button"
+              className="header-nav-chip header-desktop-only"
+              onClick={() => navigate('/perfil')}
+              aria-current={isActive('/perfil') ? 'page' : undefined}
+            >
+              👤 Perfil
+            </button>
+
             <div className="header-score">
               <span className="score-icon">{isProfessor ? '🌟∞' : '🌟'}</span>
               <span className="score-value">{isProfessor ? 'Gestão' : pontos}</span>
@@ -274,6 +283,16 @@ export default function Header({ pontos = 0 }) {
                   🏫 Minhas salas
                 </button>
               )}
+
+              <button
+                type="button"
+                onClick={() => {
+                  navigate('/perfil');
+                  closeMenu();
+                }}
+              >
+                👤 Meu perfil
+              </button>
 
               <hr />
 
