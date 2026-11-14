@@ -1,7 +1,32 @@
-importScripts("https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js");
-importScripts("https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-compat.js");
+/* eslint-disable no-undef */
+importScripts("https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js");
+importScripts("https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js");
 
-firebase.initializeApp({ /* mesmo config */ });
+const params = new URL(self.location.href).searchParams;
+
+firebase.initializeApp({
+  apiKey: params.get("apiKey"),
+  authDomain: params.get("authDomain"),
+  projectId: params.get("projectId"),
+  storageBucket: params.get("storageBucket"),
+  messagingSenderId: params.get("messagingSenderId"),
+  appId: params.get("appId"),
+});
+
+// Mensagens com "notification" são exibidas pelo próprio navegador em segundo plano.
+firebase.messaging();
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  event.waitUntil(
+    clients.matchAll({ type: "window", includeUncontrolled: true }).then((lista) => {
+      for (const c of lista) {
+        if ("focus" in c) return c.focus();
+      }
+      return clients.openWindow("/");
+    })
+  );
+});
 
 const messaging = firebase.messaging();
 
