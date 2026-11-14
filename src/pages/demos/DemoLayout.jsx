@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import lumiLogo from '../../assets/images/lumi-logo.png';
+import { enviarPendentes } from '../../services/avaliacoesDemo';
 import './demos.css';
 
 export default function DemoLayout({ children, voltarPara = '/demos', voltarTexto = 'Outros jogos' }) {
@@ -10,6 +11,12 @@ export default function DemoLayout({ children, voltarPara = '/demos', voltarText
     const f = () => setTelaCheia(Boolean(document.fullscreenElement));
     document.addEventListener('fullscreenchange', f);
     return () => document.removeEventListener('fullscreenchange', f);
+  }, []);
+
+  useEffect(() => {
+    enviarPendentes();
+    window.addEventListener('online', enviarPendentes);
+    return () => window.removeEventListener('online', enviarPendentes);
   }, []);
 
   const alternar = () => {
