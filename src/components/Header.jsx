@@ -3,7 +3,9 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import '../styles/header.css';
 import logoLumi from '../assets/images/lumi-logo.png';
 import Modal from './UI/Modal';
+import NotificationBell from './NotificationBell';
 import usePushNotifications from './usePushNotifications';
+import { desativarPush } from '../services/firebase';
 
 export default function Header({ pontos = 0 }) {
   const navigate = useNavigate();
@@ -70,7 +72,19 @@ export default function Header({ pontos = 0 }) {
     closeMenu();
   };
 
-  const handleLogout = () => {
+    const handleLogout = async () => {
+    const jwt = localStorage.getItem('token');
+
+    try {
+      await Promise.race([
+        desativarPush(jwt),
+        new Promise((resolve) => setTimeout(resolve, 3000)),
+      ]);
+    } catch {
+      // O logout nunca pode falhar por causa do push
+    }
+
+    localStorage.removeItem('token');
     localStorage.removeItem('userType');
     localStorage.removeItem('userName');
     window.location.href = '/login';
@@ -180,6 +194,8 @@ export default function Header({ pontos = 0 }) {
                 </button>
               )}
             </nav>
+
+            <NotificationBell />
 
             <div className="header-score">
               <span className="score-icon">{isProfessor ? '🌟∞' : '🌟'}</span>
