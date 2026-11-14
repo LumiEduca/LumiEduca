@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import LumiMascote from './LumiMascote';
+import { registrarAvaliacao } from '../../services/avaliacoesDemo';
 
 const ROTULOS = ['', 'Poxa, pode melhorar!', 'Mais ou menos', 'Legal!', 'Muito legal!', 'Incrível!'];
 
@@ -18,13 +19,7 @@ export default function AvaliacaoEstrelas({ jogo, onJogarNovamente }) {
   const enviar = (n) => {
     setNota(n);
     setEnviada(true);
-    try {
-      const lista = JSON.parse(localStorage.getItem('lumi_demo_avaliacoes') || '[]');
-      lista.push({ jogo, nota: n, data: new Date().toISOString() });
-      localStorage.setItem('lumi_demo_avaliacoes', JSON.stringify(lista));
-    } catch {
-      /* sem armazenamento: ignora */
-    }
+    registrarAvaliacao(jogo, n);
   };
 
   const ativa = hover || nota;
