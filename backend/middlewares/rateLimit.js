@@ -52,3 +52,11 @@ export const limiteAvaliacaoDemo = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 120,
 });
+
+// Cron de lembretes: só tentativas que falham contam (chave errada)
+export const limiteCron = rateLimit({
+  ...base,
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  skipSuccessfulRequests: true,
+});
