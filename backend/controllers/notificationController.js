@@ -103,3 +103,59 @@ export const getHistorico = async (req, res, next) => {
     next(error);
   }
 };
+
+// GET /nao-lidas/contagem - Quantidade de notificações não lidas do usuário logado
+export const contarNaoLidas = async (req, res, next) => {
+  try {
+    const total = await prisma.notificacao.count({
+      where: { usuarioId: req.usuario.id, lida: false },
+    });
+    res.status(200).json({ sucesso: true, total });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// PATCH /:id/lida - Marca UMA notificação como lida (só o dono)
+export const marcarComoLida = async (req, res, next) => {
+  try {
+    const existente = await prisma.notificacao.findFirst({
+      where: { id: req.params.id, usuarioId: req.usuario.id },
+      select: { id: true },
+    });
+    if (!existente) throw new ApiError(404, "Notificação não encontrada");
+
+    const dados = await prisma.notificacao.update({
+      where: { id: existente.id },
+      data: { lida: true },
+    });
+    res.status(200).json({ sucesso: true, dados });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// PATCH /lidas - Marca TODAS as notificações do usuário logado como lidas
+export const marcarTodasComoLidas = async (req, res, next) => {
+  try {
+    const resultado = await prisma.notificacao.updateMany({
+      where: { usuarioId: req.usuario.id, lida: false },
+      data: { lida: true },
+    });
+    res.status(200).json({ sucesso: true, atualizadas: resultado.count });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// DELETE /token - Desvincula o token do dispositivo do usuário logado (logout)
+export const removeToken = async (req, res, next) => {
+  try {
+    const resultado = await prisma.notificacaoToken.deleteMany({
+      where: { token: req.body.token, usuarioId: req.usuario.id },
+    });
+    res.status(200).json({ sucesso: true, removidos: resultado.count });
+  } catch (error) {
+    next(error);
+  }
+};

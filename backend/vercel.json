@@ -5,5 +5,11 @@
       "source": "/(.*)",
       "destination": "/api/index.js"
     }
+  ],
+  "crons": [
+    {
+      "path": "/api/v1/notificacoes/cron/lembretes",
+      "schedule": "0 11 * * *"
+    }
   ]
 }

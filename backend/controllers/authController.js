@@ -69,3 +69,22 @@ export const registrarAluno = async (req, res, next) => {
     next(error);
   }
 };
+
+export const atualizarMe = async (req, res, next) => {
+  try {
+    const usuario = await authService.atualizarNome(req.usuario.id, req.body.nome);
+    res.status(200).json({ usuario });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const trocarSenha = async (req, res, next) => {
+  try {
+    const { senhaAtual, novaSenha } = req.body;
+    await authService.trocarSenha(req.usuario.id, senhaAtual, novaSenha);
+    res.status(200).json({ sucesso: true, mensagem: "Senha alterada com sucesso" });
+  } catch (error) {
+    next(error);
+  }
+};

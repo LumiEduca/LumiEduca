@@ -1,0 +1,200 @@
+/* Contraste, tamanhos de fonte e alvos de toque.
+   Tudo sob .app-a11y: as páginas /demos ficam de fora (ver App.jsx). */
+
+.app-a11y {
+  --a11y-orange: #a85200;
+  --a11y-orange-dark: #8f4600;
+  --a11y-orange-large: #d86f00;
+  --a11y-blue: #2271a8;
+  --a11y-blue-dark: #1a5f8f;
+  --a11y-gray: #596579;
+
+  /* Remapeia os tokens de variables.css */
+  --color-primary: var(--a11y-orange);
+  --color-primary-dark: var(--a11y-orange-dark);
+  --color-secondary: var(--a11y-blue);
+  --color-secondary-dark: var(--a11y-blue-dark);
+  --color-success: #1e7e45;
+  --color-danger: #c0392b;
+  --color-danger-dark: #a5281b;
+  --color-text-light: var(--a11y-gray);
+  --color-text-muted: #6b7280;
+}
+
+/* ---------- Fundos laranja com texto branco ---------- */
+.app-a11y .app-footer,
+.app-a11y .login-footer,
+.app-a11y .student-footer {
+  background: var(--a11y-orange);
+  border-top-color: var(--a11y-orange-dark);
+}
+
+.app-a11y .math-btn {
+  background: var(--a11y-orange);
+}
+
+.app-a11y .portuguese-btn {
+  background: var(--a11y-blue);
+}
+
+.app-a11y .profile-option.active {
+  background: var(--a11y-orange);
+  border-color: var(--a11y-orange);
+}
+
+.app-a11y .login-submit,
+.app-a11y .login-submit:disabled:hover {
+  background: var(--a11y-orange);
+}
+
+.app-a11y .login-submit:hover:not(:disabled) {
+  background: var(--a11y-orange-dark);
+}
+
+/* ---------- Laranja usado como texto ---------- */
+
+/* Logo: isento de contraste, mantém a cor original da marca */
+.app-a11y .brand-lumi,
+.app-a11y .login-brand-lumi {
+  color: #ff8c00;
+}
+
+/* Títulos grandes (3:1 basta): laranja mais próximo da marca */
+.app-a11y .login-title,
+.app-a11y .student-title {
+  color: var(--a11y-orange-large);
+}
+
+/* Texto pequeno: laranja escuro (4,5:1) */
+.app-a11y .login-demo-texto strong,
+.app-a11y .auth-switch a {
+  color: var(--a11y-orange);
+}
+
+.app-a11y .auth-switch a:hover {
+  color: var(--a11y-orange-dark);
+}
+
+/* ---------- Azul usado como texto ou fundo ---------- */
+.app-a11y .secondary-tag,
+.app-a11y .professor-summary-label,
+.app-a11y .professor-home .student-hero-badge {
+  color: var(--a11y-blue-dark);
+}
+
+.app-a11y .professor-home .student-subtitle {
+  color: var(--a11y-blue);
+}
+
+/* ---------- Header ---------- */
+.app-a11y .header-nav-chip {
+  color: var(--a11y-blue-dark);
+}
+
+.app-a11y .header-nav-chip.active {
+  background: var(--a11y-blue);
+  color: #fff;
+}
+
+.app-a11y .install-btn {
+  background: var(--a11y-blue);
+  box-shadow: 0 4px 0 var(--a11y-blue-dark);
+}
+
+.app-a11y .install-btn:hover {
+  background: var(--a11y-blue-dark);
+}
+
+.app-a11y .install-btn:active {
+  box-shadow: 0 2px 0 var(--a11y-blue-dark);
+}
+
+.app-a11y .logout-btn {
+  background: #c0392b;
+}
+
+.app-a11y .logout-btn:hover {
+  background: #a5281b;
+}
+
+.app-a11y .logout-btn-mobile {
+  background: #c0392b !important;
+}
+
+.app-a11y .install-btn-mobile {
+  color: var(--a11y-blue-dark) !important;
+}
+
+/* ---------- Cinzas e placeholder ---------- */
+.app-a11y .question-progress,
+.app-a11y .custom-trail-note {
+  color: var(--a11y-gray);
+}
+
+.app-a11y .login-field input::placeholder {
+  color: #6b7280;
+}
+
+/* ---------- Questão: botão desabilitado e dica ---------- */
+.app-a11y .question-next-button.disabled {
+  background: #d7dce5;
+  color: #475569;
+}
+
+.app-a11y .lumi-hint-header span {
+  color: #a04000;
+}
+
+.app-a11y .close-hint {
+  color: var(--a11y-orange-dark);
+}
+
+/* ---------- Tamanhos de fonte mínimos (0,875rem) ---------- */
+.app-a11y .trail-tag,
+.app-a11y .professor-summary-label,
+.app-a11y .register-hint,
+.app-a11y .login-demo-texto small,
+.app-a11y .bell-item-date,
+.app-a11y .trail-subject-info span {
+  font-size: 0.875rem;
+}
+
+.app-a11y .question-badge {
+  font-size: 0.9rem;
+}
+
+/* ---------- Alvos de toque de pelo menos 44px ---------- */
+.app-a11y .header-nav-chip,
+.app-a11y .header-btn,
+.app-a11y .bell-btn,
+.app-a11y .bell-link,
+.app-a11y .close-hint,
+.app-a11y .password-toggle-button {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+.app-a11y .password-toggle-button {
+  right: 6px;
+}
+
+.app-a11y .close-hint {
+  width: 44px;
+  height: 44px;
+}
+
+/* ---------- Responsividade e zoom de texto ---------- */
+.app-a11y .student-title,
+.app-a11y .login-title,
+.app-a11y .question-title,
+.app-a11y .trail-title,
+.app-a11y .profile-title {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 400px) {
+  .app-a11y .header-right-side {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+}
