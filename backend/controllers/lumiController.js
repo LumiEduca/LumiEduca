@@ -23,7 +23,10 @@ function textoOpcional(valor, campo, max) {
   const texto = valor.trim();
 
   if (texto.length > max) {
-    throw new ApiError(400, `O campo '${campo}' deve ter no máximo ${max} caracteres.`);
+    throw new ApiError(
+      400,
+      `O campo '${campo}' deve ter no máximo ${max} caracteres.`,
+    );
   }
 
   return texto || undefined;
@@ -33,11 +36,17 @@ function validarCorpo(corpo) {
   const { pergunta, opcoes, nomeAtividade, contexto, questaoId } = corpo;
 
   if (typeof pergunta !== "string" || !pergunta.trim()) {
-    throw new ApiError(400, "O campo 'pergunta' é obrigatório e deve ser um texto.");
+    throw new ApiError(
+      400,
+      "O campo 'pergunta' é obrigatório e deve ser um texto.",
+    );
   }
 
   if (pergunta.trim().length > LIMITES.pergunta) {
-    throw new ApiError(400, `O campo 'pergunta' deve ter no máximo ${LIMITES.pergunta} caracteres.`);
+    throw new ApiError(
+      400,
+      `O campo 'pergunta' deve ter no máximo ${LIMITES.pergunta} caracteres.`,
+    );
   }
 
   let opcoesValidas;
@@ -48,7 +57,10 @@ function validarCorpo(corpo) {
     }
 
     if (opcoes.length > LIMITES.opcoesItens) {
-      throw new ApiError(400, `O campo 'opcoes' aceita no máximo ${LIMITES.opcoesItens} itens.`);
+      throw new ApiError(
+        400,
+        `O campo 'opcoes' aceita no máximo ${LIMITES.opcoesItens} itens.`,
+      );
     }
 
     opcoesValidas = opcoes.map((opcao) => {
@@ -61,7 +73,7 @@ function validarCorpo(corpo) {
       if (texto.length > LIMITES.opcaoTamanho) {
         throw new ApiError(
           400,
-          `Cada item de 'opcoes' deve ter no máximo ${LIMITES.opcaoTamanho} caracteres.`
+          `Cada item de 'opcoes' deve ter no máximo ${LIMITES.opcaoTamanho} caracteres.`,
         );
       }
 
@@ -72,7 +84,11 @@ function validarCorpo(corpo) {
   return {
     pergunta: pergunta.trim(),
     opcoes: opcoesValidas,
-    nomeAtividade: textoOpcional(nomeAtividade, "nomeAtividade", LIMITES.nomeAtividade),
+    nomeAtividade: textoOpcional(
+      nomeAtividade,
+      "nomeAtividade",
+      LIMITES.nomeAtividade,
+    ),
     contexto: textoOpcional(contexto, "contexto", LIMITES.contexto),
     questaoId: textoOpcional(questaoId, "questaoId", LIMITES.questaoId),
   };
@@ -95,8 +111,15 @@ export const dica = async (req, res, next) => {
     }
 
     // Falhas da Gemini/inesperadas: detalhe só no log, mensagem genérica para o cliente.
-    console.error("[lumi] Falha ao gerar dica:", error);
-    next(new ApiError(503, "O Lumi está indisponível no momento. Tente novamente em instantes."));
+    // Só a mensagem vai para o log (nunca o objeto inteiro). O cliente recebe texto genérico.
+    console.error("[lumi] Falha ao gerar dica:", error.message);
+    const statusHttp = error?.statusHttp === 502 ? 502 : 503;
+    next(
+      new ApiError(
+        statusHttp,
+        "O Lumi está indisponível no momento. Tente novamente em instantes.",
+      ),
+    );
   }
 };
 
