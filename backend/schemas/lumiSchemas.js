@@ -60,3 +60,22 @@ export const questoesGeradasSchema = z.object({
     .min(1, "O Gemini não devolveu nenhuma questão.")
     .max(LIMITE_QUESTOES_GERADAS, "O Gemini devolveu questões demais."),
 });
+
+// ---------- ENTRADA: POST /lumi/explicar-erro ----------
+// Mesmo formato de POST /progresso/responder: resposta = índice da opção marcada.
+export const explicarErroSchema = z.object({
+  questaoId: z
+    .string({ error: "O campo 'questaoId' é obrigatório." })
+    .regex(/^[A-Za-z0-9_-]{1,64}$/, "O campo 'questaoId' é inválido."),
+  resposta: z.union(
+    [
+      z
+        .string()
+        .trim()
+        .min(1, "O campo 'resposta' é obrigatório.")
+        .max(300, "O campo 'resposta' deve ter no máximo 300 caracteres."),
+      z.number().int().min(0).max(1000),
+    ],
+    { error: "O campo 'resposta' é obrigatório." },
+  ),
+});
