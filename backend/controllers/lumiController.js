@@ -1,4 +1,8 @@
-import { gerarDica, verificarStatus } from "../services/lumiService.js";
+import {
+  gerarDica,
+  gerarQuestoes,
+  verificarStatus,
+} from "../services/lumiService.js";
 import { ApiError } from "../middlewares/errorHandler.js";
 
 // Limites de tamanho: protegem o custo de tokens da Gemini.
@@ -134,5 +138,31 @@ export const status = async (req, res) => {
   } catch (error) {
     console.error("[lumi] Falha ao verificar status:", error);
     res.json({ disponivel: false });
+  }
+};
+
+/**
+ * POST /api/v1/lumi/gerar-questoes
+ * Só professor. NÃO salva nada: o professor revisa e salva por POST /atividades.
+ * O corpo já chega validado pelo gerarQuestoesSchema (ver lumiRoutes.js).
+ */
+export const gerarQuestoesProfessor = async (req, res, next) => {
+  try {
+    const resultado = await gerarQuestoes(req.body);
+    res.json(resultado);
+  } catch (error) {
+    if (error instanceof ApiError) {
+      return next(error);
+    }
+
+    // Detalhe só no log (mensagem, nunca o objeto inteiro). O cliente recebe texto genérico.
+    console.error("[lumi] Falha ao gerar questões:", error.message);
+    const statusHttp = error?.statusHttp === 502 ? 502 : 503;
+    next(
+      new ApiError(
+        statusHttp,
+        "Não foi possível gerar as questões agora. Tente novamente em instantes.",
+      ),
+    );
   }
 };
