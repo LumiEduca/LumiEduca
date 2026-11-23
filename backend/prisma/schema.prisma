@@ -27,6 +27,7 @@ model Usuario {
   tokens        NotificacaoToken[]
   notificacoes  Notificacao[]
   respostas     Resposta[]
+  dicasLumi     LumiDica[]
 
   @@map("usuarios")
 }
@@ -82,6 +83,7 @@ model Questao {
   respostaCorreta String
   ordem          Int       @default(0)
   respostas     Resposta[]
+  dicasLumi     LumiDica[]
 
   @@map("questoes")
 }
@@ -158,4 +160,18 @@ model AvaliacaoDemo {
 
   @@index([jogo, criadaEm])
   @@map("avaliacoes_demo")
+}
+
+model LumiDica {
+  id         String   @id @default(uuid())
+  alunoId    String
+  aluno      Usuario  @relation(fields: [alunoId], references: [id], onDelete: Cascade)
+  questaoId  String?
+  questao    Questao? @relation(fields: [questaoId], references: [id], onDelete: SetNull)
+  pergunta   String
+  resposta   String
+  criadaEm   DateTime @default(now())
+
+  @@index([alunoId, criadaEm])
+  @@map("lumi_dicas")
 }
