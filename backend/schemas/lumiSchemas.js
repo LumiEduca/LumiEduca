@@ -79,3 +79,13 @@ export const explicarErroSchema = z.object({
     { error: "O campo 'resposta' é obrigatório." },
   ),
 });
+
+// ---------- ENTRADA: GET /lumi/historico (query string) ----------
+export const historicoQuerySchema = z.object({
+  limite: z.coerce
+    .number({ error: "O parâmetro 'limite' deve ser um número." })
+    .int("O parâmetro 'limite' deve ser um número inteiro.")
+    .min(1, "O parâmetro 'limite' deve ser pelo menos 1.")
+    .max(50, "O parâmetro 'limite' deve ser no máximo 50.")
+    .default(20),
+});
