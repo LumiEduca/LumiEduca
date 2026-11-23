@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../styles/classrooms.css';
 import { showLumiNotification } from '../services/notificationClient';
+import SalaAlunosRanking from '../components/SalaAlunosRanking';
+import { editarNomeSala } from '../services/salaService';
 
 function gerarCodigo() {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -65,6 +67,8 @@ export default function ClassroomsPage() {
   const [erro, setErro] = useState('');
   const [sucesso, setSucesso] = useState('');
   const [salaSelecionada, setSalaSelecionada] = useState(null);
+  const [editandoNome, setEditandoNome] = useState(false);
+  const [novoNome, setNovoNome] = useState('');
 
   const [mostrarAtividadesExistentes, setMostrarAtividadesExistentes] = useState(false);
 
@@ -218,6 +222,42 @@ export default function ClassroomsPage() {
     setTimeout(() => setSucesso(''), 4000);
   };
 
+  const handleSalvarNome = async (e) => {
+    e.preventDefault();
+
+    const nome = novoNome.trim();
+    if (!nome) {
+      setErro('Informe um nome para a sala.');
+      return;
+    }
+
+    try {
+      await editarNomeSala(salaSelecionada.id, nome);
+
+      const novasSalas = salas.map((s) =>
+        s.id === salaSelecionada.id ? { ...s, nome } : s
+      );
+      salvarSalas(novasSalas);
+      setSalas(novasSalas);
+      setSalaSelecionada({ ...salaSelecionada, nome });
+      setEditandoNome(false);
+      setErro('');
+      setSucesso('Nome da sala atualizado!');
+      setTimeout(() => setSucesso(''), 4000);
+    } catch (err) {
+      setErro(err.message);
+    }
+  };
+
+  const handleAlunoSaiu = (sala) => {
+    const novosCodigos = salasEstudante.filter((c) => c !== sala.codigo);
+    salvarSalasEstudante(userName, novosCodigos);
+    setSalasEstudante(novosCodigos);
+    setSalaSelecionada(null);
+    setSucesso(`Você saiu da sala "${sala.nome}".`);
+    setTimeout(() => setSucesso(''), 4000);
+  };
+
   return (
     <div className="classrooms-shell page-wrapper">
       <div className="classrooms-page">
@@ -281,6 +321,7 @@ export default function ClassroomsPage() {
                   onClick={() => {
                     setSalaSelecionada(sala);
                     setMostrarAtividadesExistentes(false);
+                    setEditandoNome(false);
                   }}
                 >
                   <span className="classrooms-sidebar-item-name">{sala.nome}</span>
@@ -299,7 +340,30 @@ export default function ClassroomsPage() {
             <div className="classrooms-room">
               <div className="classrooms-room-header">
                 <div>
-                  <h1 className="classrooms-room-title">{salaSelecionada.nome}</h1>
+                  {editandoNome ? (
+                    <form onSubmit={handleSalvarNome} className="classrooms-title-edit">
+                      <input
+                        type="text"
+                        className="classrooms-input"
+                        value={novoNome}
+                        onChange={(e) => setNovoNome(e.target.value)}
+                        maxLength={60}
+                        autoFocus
+                      />
+                      <button type="submit" className="classrooms-btn primary small">
+                        Salvar
+                      </button>
+                      <button
+                        type="button"
+                        className="classrooms-btn secondary small"
+                        onClick={() => setEditandoNome(false)}
+                      >
+                        Cancelar
+                      </button>
+                    </form>
+                  ) : (
+                    <h1 className="classrooms-room-title">{salaSelecionada.nome}</h1>
+                  )}
 
                   <p className="classrooms-room-subtitle">
                     Código da sala: <strong>{salaSelecionada.codigo}</strong>
@@ -308,6 +372,17 @@ export default function ClassroomsPage() {
 
                 {isProfessor && (
                   <div className="classrooms-room-header-actions">
+                    <button
+                      type="button"
+                      className="classrooms-btn secondary"
+                      onClick={() => {
+                        setNovoNome(salaSelecionada.nome);
+                        setEditandoNome(true);
+                      }}
+                    >
+                      ✏️ Editar nome
+                    </button>
+
                     <button
                       type="button"
                       className="classrooms-btn primary"
@@ -365,6 +440,13 @@ export default function ClassroomsPage() {
                   )}
                 </section>
               )}
+
+              <SalaAlunosRanking
+                key={salaSelecionada.id}
+                sala={salaSelecionada}
+                isProfessor={isProfessor}
+                onSaiu={handleAlunoSaiu}
+              />
 
               <div className="classrooms-activities">
                 {tarefasDaSala.length === 0 ? (
