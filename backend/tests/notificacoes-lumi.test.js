@@ -6,6 +6,7 @@ import { prisma, limparDados } from "./helpers/db.js";
 jest.unstable_mockModule("../services/lumiService.js", () => ({
   gerarDica: jest.fn().mockResolvedValue({ dica: "ok" }),
   gerarQuestoes: jest.fn().mockResolvedValue({ questoes: [] }),
+  explicarErro: jest.fn().mockResolvedValue({ explicacao: "ok" }),
   verificarStatus: jest.fn().mockResolvedValue({ disponivel: true }),
 }));
 
