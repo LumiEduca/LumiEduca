@@ -2,12 +2,16 @@ import express from "express";
 import rateLimit from "express-rate-limit";
 import {
   dica,
+  explicarErro,
   gerarQuestoesProfessor,
   status,
 } from "../controllers/lumiController.js";
 import { exigirTipo, verificarToken } from "../middlewares/auth.js";
 import { validar } from "../middlewares/validar.js";
-import { gerarQuestoesSchema } from "../schemas/lumiSchemas.js";
+import {
+  explicarErroSchema,
+  gerarQuestoesSchema,
+} from "../schemas/lumiSchemas.js";
 
 const router = express.Router();
 
@@ -67,6 +71,31 @@ const limiteGerarQuestoesPorDia = rateLimit({
   ),
 });
 
+// /explicar-erro — limite por USUÁRIO (cada chamada ao Gemini gasta tokens)
+const limiteExplicarErroPorMinuto = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 10,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  skip: pularNosTestes,
+  keyGenerator: (req) => req.usuario.id,
+  handler: responder429(
+    "Muitas explicações em pouco tempo. Tente novamente em instantes.",
+  ),
+});
+
+const limiteExplicarErroPorDia = rateLimit({
+  windowMs: 24 * 60 * 60 * 1000,
+  limit: 100,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  skip: pularNosTestes,
+  keyGenerator: (req) => req.usuario.id,
+  handler: responder429(
+    "Você atingiu o limite diário de explicações. Volte amanhã!",
+  ),
+});
+
 // /status — limite por IP (chave padrão do express-rate-limit)
 const limiteStatusPorIp = rateLimit({
   windowMs: 60 * 1000,
@@ -97,6 +126,17 @@ router.post(
   limiteGerarQuestoesPorDia,
   validar(gerarQuestoesSchema),
   gerarQuestoesProfessor,
+);
+
+// Só aluno: autentica -> confere o tipo -> limita por usuário -> valida o corpo -> explica
+router.post(
+  "/explicar-erro",
+  verificarToken,
+  exigirTipo("ALUNO"),
+  limiteExplicarErroPorMinuto,
+  limiteExplicarErroPorDia,
+  validar(explicarErroSchema),
+  explicarErro,
 );
 
 export default router;
