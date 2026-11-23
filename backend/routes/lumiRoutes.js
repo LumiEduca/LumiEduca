@@ -4,6 +4,7 @@ import {
   dica,
   explicarErro,
   gerarQuestoesProfessor,
+  historico,
   status,
 } from "../controllers/lumiController.js";
 import { exigirTipo, verificarToken } from "../middlewares/auth.js";
@@ -11,7 +12,9 @@ import { validar } from "../middlewares/validar.js";
 import {
   explicarErroSchema,
   gerarQuestoesSchema,
+  historicoQuerySchema,
 } from "../schemas/lumiSchemas.js";
+import { ApiError } from "../middlewares/errorHandler.js";
 
 const router = express.Router();
 
@@ -137,6 +140,44 @@ router.post(
   limiteExplicarErroPorDia,
   validar(explicarErroSchema),
   explicarErro,
+);
+
+// Valida o ?limite= sem alterar o middleware compartilhado validar.js
+const validarLimiteHistorico = (req, res, next) => {
+  const resultado = historicoQuerySchema.safeParse(req.query ?? {});
+  if (!resultado.success) {
+    return next(
+      new ApiError(
+        400,
+        resultado.error.issues[0]?.message ?? "Parâmetros inválidos",
+      ),
+    );
+  }
+  req.limiteHistorico = resultado.data.limite;
+  next();
+};
+
+// /historico — leitura simples, limite por USUÁRIO
+const limiteHistoricoPorMinuto = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 30,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  skip: pularNosTestes,
+  keyGenerator: (req) => req.usuario.id,
+  handler: responder429(
+    "Muitas consultas em pouco tempo. Tente novamente em instantes.",
+  ),
+});
+
+// Só aluno: autentica -> confere o tipo -> limita por usuário -> valida o limite -> lista
+router.get(
+  "/historico",
+  verificarToken,
+  exigirTipo("ALUNO"),
+  limiteHistoricoPorMinuto,
+  validarLimiteHistorico,
+  historico,
 );
 
 export default router;
