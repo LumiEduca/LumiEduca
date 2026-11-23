@@ -5,6 +5,10 @@ import {
   detalharSala,
   entrarNaSala,
   removerSala,
+  editarSala,
+  removerAluno,
+  sairDaSala,
+  rankingDaSala,
 } from "../controllers/salaController.js";
 import {
   associarAtividade,
@@ -14,7 +18,12 @@ import { verificarToken, exigirTipo } from "../middlewares/auth.js";
 import { validar, validarParams } from "../middlewares/validar.js";
 import { limiteEntrarSala } from "../middlewares/rateLimit.js";
 import { idParamSchema } from "../schemas/comumSchemas.js";
-import { criarSalaSchema, entrarSalaSchema } from "../schemas/salaSchemas.js";
+import {
+  criarSalaSchema,
+  entrarSalaSchema,
+  editarSalaSchema,
+  salaAlunoParamsSchema,
+} from "../schemas/salaSchemas.js";
 
 const router = express.Router();
 
@@ -36,7 +45,30 @@ router.post(
   associarAtividade
 );
 router.get("/:id/atividades", verificarToken, validarParams(idParamSchema), listarAtividadesDaSala);
+router.get("/:id/ranking", verificarToken, validarParams(idParamSchema), rankingDaSala);
 router.get("/:id", verificarToken, validarParams(idParamSchema), detalharSala);
+router.patch(
+  "/:id",
+  verificarToken,
+  exigirTipo("PROFESSOR"),
+  validarParams(idParamSchema),
+  validar(editarSalaSchema),
+  editarSala
+);
+router.delete(
+  "/:id/alunos/:alunoId",
+  verificarToken,
+  exigirTipo("PROFESSOR"),
+  validarParams(salaAlunoParamsSchema),
+  removerAluno
+);
+router.delete(
+  "/:id/sair",
+  verificarToken,
+  exigirTipo("ALUNO"),
+  validarParams(idParamSchema),
+  sairDaSala
+);
 router.delete(
   "/:id",
   verificarToken,
