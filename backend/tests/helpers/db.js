@@ -1,9 +1,11 @@
-import { PrismaClient } from '@prisma/client';
-import { PrismaPg } from '@prisma/adapter-pg';
-import pg from 'pg';
+import { PrismaClient } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
+import pg from "pg";
 
-if (process.env.NODE_ENV !== 'test' || process.env.ALLOW_DB_WIPE !== 'true') {
-  throw new Error('Testes só rodam com NODE_ENV=test e ALLOW_DB_WIPE=true (banco de TESTE).');
+if (process.env.NODE_ENV !== "test" || process.env.ALLOW_DB_WIPE !== "true") {
+  throw new Error(
+    "Testes só rodam com NODE_ENV=test e ALLOW_DB_WIPE=true (banco de TESTE).",
+  );
 }
 
 const connectionString = process.env.DATABASE_URL;
@@ -17,6 +19,7 @@ export const limparDados = async () => {
   // A ordem de deleção é crucial para não ferir as foreign keys
   await prisma.avaliacaoDemo.deleteMany();
   await prisma.resposta.deleteMany();
+  await prisma.lumiDica.deleteMany();
   await prisma.progresso.deleteMany();
   await prisma.notificacao.deleteMany();
   await prisma.notificacaoToken.deleteMany();
