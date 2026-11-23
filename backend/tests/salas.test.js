@@ -6,6 +6,18 @@ describe('Testes de Salas (/api/v1/salas)', () => {
   let tokenProfDono, tokenProfOutro, tokenAlunoDentro, tokenAlunoFora;
   let salaId, salaCodigo;
 
+  // Helpers das rotas novas (editar, remover aluno, sair, ranking)
+  const comToken = (token) => ({ Authorization: `Bearer ${token}` });
+  const idInexistente = '00000000-0000-0000-0000-000000000000';
+
+  const entrarComo = (token) =>
+    request(app).post('/api/v1/salas/entrar').set(comToken(token)).send({ codigo: salaCodigo });
+
+  const matriculasDaSala = async () => {
+    const res = await request(app).get(`/api/v1/salas/${salaId}`).set(comToken(tokenProfDono));
+    return res.body.matriculas;
+  };
+
   beforeAll(async () => {
     await limparDados();
 
@@ -157,6 +169,199 @@ describe('Testes de Salas (/api/v1/salas)', () => {
 
       const fakeId = '00000000-0000-0000-0000-000000000000';
       const resInex = await request(app).get(`/api/v1/salas/${fakeId}`).set('Authorization', `Bearer ${tokenProfDono}`);
+      expect(resInex.status).toBe(404);
+    });
+  });
+
+  // ---------------------------------------------------------------
+  // NOVAS ROTAS (editar nome, remover aluno, sair da sala, ranking)
+  // Ficam antes do DELETE /:id, que apaga a sala no final.
+  // ---------------------------------------------------------------
+
+  describe('PATCH /:id (editar nome)', () => {
+    it('Professor dono edita o nome da sala', async () => {
+      const res = await request(app)
+        .patch(`/api/v1/salas/${salaId}`)
+        .set(comToken(tokenProfDono))
+        .send({ nome: '  Sala Renomeada  ' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.nome).toBe('Sala Renomeada'); // trim aplicado
+      expect(res.body.id).toBe(salaId);
+    });
+
+    it('Outro professor e aluno recebem 403', async () => {
+      const resOutro = await request(app)
+        .patch(`/api/v1/salas/${salaId}`)
+        .set(comToken(tokenProfOutro))
+        .send({ nome: 'Invasão' });
+      expect(resOutro.status).toBe(403);
+
+      const resAluno = await request(app)
+        .patch(`/api/v1/salas/${salaId}`)
+        .set(comToken(tokenAlunoDentro))
+        .send({ nome: 'Invasão' });
+      expect(resAluno.status).toBe(403);
+    });
+
+    it('Deve retornar 401 sem token', async () => {
+      const res = await request(app).patch(`/api/v1/salas/${salaId}`).send({ nome: 'Sem token' });
+      expect(res.status).toBe(401);
+    });
+
+    it('Deve retornar 400 para nome vazio, ausente, objeto ou >100 chars', async () => {
+      const enviar = (corpo) =>
+        request(app).patch(`/api/v1/salas/${salaId}`).set(comToken(tokenProfDono)).send(corpo);
+
+      expect((await enviar({ nome: '   ' })).status).toBe(400);
+      expect((await enviar({})).status).toBe(400);
+      expect((await enviar({ nome: { invalido: true } })).status).toBe(400);
+      expect((await enviar({ nome: 'A'.repeat(101) })).status).toBe(400);
+    });
+
+    it('Deve retornar 404 para sala inexistente', async () => {
+      const res = await request(app)
+        .patch(`/api/v1/salas/${idInexistente}`)
+        .set(comToken(tokenProfDono))
+        .send({ nome: 'Qualquer' });
+      expect(res.status).toBe(404);
+    });
+  });
+
+  describe('DELETE /:id/alunos/:alunoId (professor remove aluno)', () => {
+    it('Professor dono remove um aluno da sala (204) e ele some das matrículas', async () => {
+      const antes = (await matriculasDaSala()).map((m) => m.alunoId);
+      await entrarComo(tokenAlunoFora);
+      const nova = (await matriculasDaSala()).find((m) => !antes.includes(m.alunoId));
+      expect(nova).toBeDefined();
+
+      const res = await request(app)
+        .delete(`/api/v1/salas/${salaId}/alunos/${nova.alunoId}`)
+        .set(comToken(tokenProfDono));
+      expect(res.status).toBe(204);
+
+      const depois = (await matriculasDaSala()).map((m) => m.alunoId);
+      expect(depois).not.toContain(nova.alunoId);
+
+      // O aluno removido perde o acesso à sala
+      const resAluno = await request(app).get(`/api/v1/salas/${salaId}`).set(comToken(tokenAlunoFora));
+      expect(resAluno.status).toBe(403);
+    });
+
+    it('Aluno e outro professor recebem 403', async () => {
+      const [alvo] = await matriculasDaSala();
+
+      const resAluno = await request(app)
+        .delete(`/api/v1/salas/${salaId}/alunos/${alvo.alunoId}`)
+        .set(comToken(tokenAlunoDentro));
+      expect(resAluno.status).toBe(403);
+
+      const resOutro = await request(app)
+        .delete(`/api/v1/salas/${salaId}/alunos/${alvo.alunoId}`)
+        .set(comToken(tokenProfOutro));
+      expect(resOutro.status).toBe(403);
+
+      // Ninguém foi removido
+      const ids = (await matriculasDaSala()).map((m) => m.alunoId);
+      expect(ids).toContain(alvo.alunoId);
+    });
+
+    it('Deve retornar 404 para aluno que não está na sala e para sala inexistente', async () => {
+      const resAluno = await request(app)
+        .delete(`/api/v1/salas/${salaId}/alunos/${idInexistente}`)
+        .set(comToken(tokenProfDono));
+      expect(resAluno.status).toBe(404);
+
+      const resSala = await request(app)
+        .delete(`/api/v1/salas/${idInexistente}/alunos/${idInexistente}`)
+        .set(comToken(tokenProfDono));
+      expect(resSala.status).toBe(404);
+    });
+  });
+
+  describe('DELETE /:id/sair (aluno sai da sala)', () => {
+    it('Aluno matriculado sai da sala (204) e perde o acesso; sair de novo retorna 404', async () => {
+      await entrarComo(tokenAlunoFora);
+
+      const res = await request(app)
+        .delete(`/api/v1/salas/${salaId}/sair`)
+        .set(comToken(tokenAlunoFora));
+      expect(res.status).toBe(204);
+
+      const resDetalhe = await request(app).get(`/api/v1/salas/${salaId}`).set(comToken(tokenAlunoFora));
+      expect(resDetalhe.status).toBe(403);
+
+      const resDeNovo = await request(app)
+        .delete(`/api/v1/salas/${salaId}/sair`)
+        .set(comToken(tokenAlunoFora));
+      expect(resDeNovo.status).toBe(404);
+    });
+
+    it('Professor recebe 403 e sem token recebe 401', async () => {
+      const resProf = await request(app)
+        .delete(`/api/v1/salas/${salaId}/sair`)
+        .set(comToken(tokenProfDono));
+      expect(resProf.status).toBe(403);
+
+      const resSemToken = await request(app).delete(`/api/v1/salas/${salaId}/sair`);
+      expect(resSemToken.status).toBe(401);
+    });
+
+    it('Deve retornar 404 para sala inexistente', async () => {
+      const res = await request(app)
+        .delete(`/api/v1/salas/${idInexistente}/sair`)
+        .set(comToken(tokenAlunoDentro));
+      expect(res.status).toBe(404);
+    });
+  });
+
+  describe('GET /:id/ranking', () => {
+    it('Professor dono vê a turma ordenada por pontos, com posições sequenciais', async () => {
+      const res = await request(app)
+        .get(`/api/v1/salas/${salaId}/ranking`)
+        .set(comToken(tokenProfDono));
+
+      expect(res.status).toBe(200);
+      expect(res.body.sala.id).toBe(salaId);
+      expect(Array.isArray(res.body.ranking)).toBe(true);
+      expect(res.body.ranking.length).toBeGreaterThanOrEqual(1);
+
+      const pontos = res.body.ranking.map((r) => r.pontos);
+      expect(pontos).toEqual([...pontos].sort((a, b) => b - a));
+      res.body.ranking.forEach((r, i) => {
+        expect(r.posicao).toBe(i + 1);
+        expect(r).toHaveProperty('alunoId');
+        expect(r).toHaveProperty('nome');
+      });
+      expect(JSON.stringify(res.body)).not.toMatch(/senhaHash/);
+    });
+
+    it('Aluno matriculado também vê o ranking', async () => {
+      const res = await request(app)
+        .get(`/api/v1/salas/${salaId}/ranking`)
+        .set(comToken(tokenAlunoDentro));
+      expect(res.status).toBe(200);
+    });
+
+    it('Aluno de fora e professor de fora recebem 403', async () => {
+      const resAluno = await request(app)
+        .get(`/api/v1/salas/${salaId}/ranking`)
+        .set(comToken(tokenAlunoFora));
+      expect(resAluno.status).toBe(403);
+
+      const resProf = await request(app)
+        .get(`/api/v1/salas/${salaId}/ranking`)
+        .set(comToken(tokenProfOutro));
+      expect(resProf.status).toBe(403);
+    });
+
+    it('Deve retornar 401 sem token e 404 para sala inexistente', async () => {
+      const resSemToken = await request(app).get(`/api/v1/salas/${salaId}/ranking`);
+      expect(resSemToken.status).toBe(401);
+
+      const resInex = await request(app)
+        .get(`/api/v1/salas/${idInexistente}/ranking`)
+        .set(comToken(tokenProfDono));
       expect(resInex.status).toBe(404);
     });
   });
