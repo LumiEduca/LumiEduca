@@ -4,6 +4,10 @@ import {
   verificarStatus,
 } from "../services/lumiService.js";
 import { explicarErroDoAluno } from "../services/lumiExplicacaoService.js";
+import {
+  listarHistorico,
+  registrarDica,
+} from "../services/lumiHistoricoService.js";
 
 // Limites de tamanho: protegem o custo de tokens da Gemini.
 const LIMITES = {
@@ -107,6 +111,17 @@ export const dica = async (req, res, next) => {
     const dados = validarCorpo(req.body ?? {});
     const resultado = await gerarDica(dados);
 
+    // Só dicas bem-sucedidas entram no histórico, e só de aluno (professor não tem histórico).
+    // Se a gravação falhar, registrarDica só registra no log e a dica é devolvida normalmente.
+    if (req.usuario.tipo === "ALUNO") {
+      await registrarDica({
+        alunoId: req.usuario.id,
+        questaoId: undefined,
+        pergunta: dados.pergunta,
+        resposta: resultado.dica,
+      });
+    }
+
     res.json(resultado);
   } catch (error) {
     // Erros de validação (400) passam com a mensagem original.
@@ -189,6 +204,28 @@ export const explicarErro = async (req, res, next) => {
       new ApiError(
         statusHttp,
         "O Lumi não conseguiu explicar agora. Tente novamente em instantes.",
+      ),
+    );
+  }
+};
+
+/**
+ * GET /api/v1/lumi/historico
+ * Só aluno, e só as dicas dele. O limite já chega validado (ver lumiRoutes.js).
+ */
+export const historico = async (req, res, next) => {
+  try {
+    const resultado = await listarHistorico(
+      req.usuario.id,
+      req.limiteHistorico,
+    );
+    res.json(resultado);
+  } catch (error) {
+    console.error("[lumi] Falha ao listar histórico:", error.message);
+    next(
+      new ApiError(
+        503,
+        "Não foi possível carregar o histórico agora. Tente novamente em instantes.",
       ),
     );
   }
