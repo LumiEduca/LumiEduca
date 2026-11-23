@@ -3,7 +3,7 @@ import {
   gerarQuestoes,
   verificarStatus,
 } from "../services/lumiService.js";
-import { ApiError } from "../middlewares/errorHandler.js";
+import { explicarErroDoAluno } from "../services/lumiExplicacaoService.js";
 
 // Limites de tamanho: protegem o custo de tokens da Gemini.
 const LIMITES = {
@@ -162,6 +162,33 @@ export const gerarQuestoesProfessor = async (req, res, next) => {
       new ApiError(
         statusHttp,
         "Não foi possível gerar as questões agora. Tente novamente em instantes.",
+      ),
+    );
+  }
+};
+
+/**
+ * POST /api/v1/lumi/explicar-erro
+ * Só aluno. A regra (404, 403, 400, acerto sem IA) fica em lumiExplicacaoService.js.
+ * O corpo já chega validado pelo explicarErroSchema (ver lumiRoutes.js).
+ */
+export const explicarErro = async (req, res, next) => {
+  try {
+    const resultado = await explicarErroDoAluno(req.usuario.id, req.body);
+    res.json(resultado);
+  } catch (error) {
+    // 404, 403 e 400 passam com a mensagem original.
+    if (error instanceof ApiError) {
+      return next(error);
+    }
+
+    // Falhas do Gemini: detalhe só no log (mensagem), cliente recebe texto genérico.
+    console.error("[lumi] Falha ao explicar erro:", error.message);
+    const statusHttp = error?.statusHttp === 502 ? 502 : 503;
+    next(
+      new ApiError(
+        statusHttp,
+        "O Lumi não conseguiu explicar agora. Tente novamente em instantes.",
       ),
     );
   }
