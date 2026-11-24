@@ -4,8 +4,8 @@ const admin = {
   messaging() {
     return {
       async send(message) {
-        console.log('Notificação simulada:', message);
-        return 'mock-message-id';
+        console.log("Notificação simulada.");
+        return "mock-message-id";
       },
     };
   },
