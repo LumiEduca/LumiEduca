@@ -1,8 +1,9 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../styles/professor-pages.css';
 import { showLumiNotification } from '../services/notificationClient';
 import Modal from '../components/UI/Modal';
+import { listarSalas } from '../services/salaService';
 
 export default function CreateTaskPage() {
   const navigate = useNavigate();
@@ -21,10 +22,13 @@ export default function CreateTaskPage() {
 
   const userName = localStorage.getItem('userName') || 'Professor';
 
-  const salasProfessor = useMemo(() => {
-    const salas = JSON.parse(localStorage.getItem('salas') || '[]');
-    return salas.filter((sala) => sala.criadoPor === userName);
-  }, [userName]);
+  const [salasProfessor, setSalasProfessor] = useState([]);
+
+  useEffect(() => {
+    listarSalas()
+      .then((lista) => setSalasProfessor(lista))
+      .catch(() => setSalasProfessor([]));
+  }, []);
 
   const closeModal = () => {
     setModal((prev) => ({ ...prev, isOpen: false }));

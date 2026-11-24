@@ -4,6 +4,7 @@ import '../styles/home.css';
 import lumiPointing from '../assets/images/lumi-icon-04.png';
 import lumiTeacher from '../assets/images/lumi-icon-01.png';
 import Modal from '../components/UI/Modal';
+import { entrarNaSala } from '../services/salaService';
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -72,7 +73,7 @@ export default function HomePage() {
     setShowProfessorTrail((prev) => !prev);
   };
 
-  const handleEntrarSalaPelaHome = () => {
+    const handleEntrarSalaPelaHome = async () => {
     const codigo = codigoSala.trim();
 
     if (!codigo) {
@@ -84,26 +85,34 @@ export default function HomePage() {
       return;
     }
 
-    const salas = JSON.parse(localStorage.getItem('salas') || '[]');
-    const sala = salas.find((s) => s.codigo === codigo);
+    try {
+      const resp = await entrarNaSala(codigo);
 
-    if (!sala) {
+      const chave = `salasEstudante_${userName}`;
+      let salasAluno = [];
+      try {
+        salasAluno = JSON.parse(localStorage.getItem(chave) || '[]');
+      } catch {
+        salasAluno = [];
+      }
+      // Mantém só o formato novo: { id, nome, codigo }
+      salasAluno = salasAluno.filter((s) => s && typeof s === 'object' && s.id);
+
+      if (!salasAluno.some((s) => s.id === resp.sala.id)) {
+        localStorage.setItem(
+          chave,
+          JSON.stringify([...salasAluno, { id: resp.sala.id, nome: resp.sala.nome, codigo }])
+        );
+      }
+
+      navigate('/tarefas-recebidas', { state: { salaCodigo: codigo } });
+    } catch (err) {
       setModal({
         isOpen: true,
-        title: 'Sala não encontrada',
-        message: 'Verifique o código informado pelo professor e tente novamente.',
+        title: 'Não foi possível entrar na sala',
+        message: err.message,
       });
-      return;
     }
-
-    const chave = `salasEstudante_${userName}`;
-    const salasAluno = JSON.parse(localStorage.getItem(chave) || '[]');
-
-    if (!salasAluno.includes(codigo)) {
-      localStorage.setItem(chave, JSON.stringify([...salasAluno, codigo]));
-    }
-
-    navigate('/tarefas-recebidas', { state: { salaCodigo: codigo } });
   };
 
   return (

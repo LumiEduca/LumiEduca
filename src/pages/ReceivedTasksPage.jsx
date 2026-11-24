@@ -51,13 +51,16 @@ export default function ReceivedTasksPage({ setPontos }) {
       return;
     }
 
-    const codigosAluno = JSON.parse(
+    const salasAluno = JSON.parse(
       localStorage.getItem(`salasEstudante_${nomeUsuario}`) || '[]'
     );
+    const codigosAluno = salasAluno
+      .map((s) => (s && typeof s === 'object' ? s.codigo : s))
+      .map(String);
 
     let tarefasDoAluno = todas.filter((tarefa) => {
       if (!tarefa.salaCodigo) return true;
-      return codigosAluno.includes(tarefa.salaCodigo);
+      return codigosAluno.includes(String(tarefa.salaCodigo));
     });
 
     if (salaCodigoOrigem) {
