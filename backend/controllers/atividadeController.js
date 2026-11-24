@@ -50,7 +50,9 @@ function validarQuestoes(questoes) {
       respostaCorreta = String(respostaIndex);
     } else if (tipo === "VERDADEIRO_FALSO") {
       opcoes = ["Verdadeiro", "Falso"];
-      const resposta = String(questao.respostaCorreta).toLocaleLowerCase("pt-BR");
+      const resposta = String(questao.respostaCorreta)
+        .trim()
+        .toLocaleLowerCase("pt-BR");
       respostaCorreta = ["true", "verdadeiro"].includes(resposta)
         ? "Verdadeiro"
         : "Falso";

@@ -50,7 +50,9 @@ const questaoSchema = z
     }
 
     if (questao.tipo === "VERDADEIRO_FALSO") {
-      const resposta = String(questao.respostaCorreta).toLocaleLowerCase("pt-BR");
+      const resposta = String(questao.respostaCorreta)
+        .trim()
+        .toLocaleLowerCase("pt-BR");
       if (!["true", "false", "verdadeiro", "falso"].includes(resposta)) {
         ctx.addIssue({
           code: "custom",

@@ -8,6 +8,7 @@ export const responderSchema = z.object({
     [
       z.string().trim().min(1, "questaoId e resposta são obrigatórios").max(300, "A resposta deve ter no máximo 300 caracteres"),
       z.number().int().min(0).max(1000),
+      z.boolean(),
     ],
     { error: "questaoId e resposta são obrigatórios" }
   ),

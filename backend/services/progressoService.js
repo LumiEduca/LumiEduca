@@ -3,7 +3,7 @@ import { ApiError } from "../middlewares/errorHandler.js";
 
 const PONTOS_POR_ACERTO = 10;
 
-function respostaEstaCorreta(questao, resposta) {
+export function respostaEstaCorreta(questao, resposta) {
   const recebida = String(resposta).trim();
   if (questao.tipo === "VERDADEIRO_FALSO") {
     const normalizar = (valor) => {
@@ -98,6 +98,15 @@ export async function responderQuestao(alunoId, { questaoId, resposta }) {
   });
   if (!matricula) {
     throw new ApiError(403, "Esta atividade não está disponível para você");
+  }
+
+  if (questao.tipo === "VERDADEIRO_FALSO") {
+    const respostaNormalizada = String(resposta)
+      .trim()
+      .toLocaleLowerCase("pt-BR");
+    if (!["true", "false", "verdadeiro", "falso"].includes(respostaNormalizada)) {
+      throw new ApiError(400, "A resposta deve ser Verdadeiro ou Falso.");
+    }
   }
 
   const jaRespondeu = await prisma.resposta.findUnique({

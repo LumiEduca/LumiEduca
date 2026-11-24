@@ -1,6 +1,7 @@
 import request from 'supertest';
 import app from '../app.js';
 import { prisma, limparDados } from './helpers/db.js';
+import { respostaEstaCorreta } from '../services/progressoService.js';
 
 describe('Testes de Progresso (/api/v1/progresso)', () => {
   let tokenProfDono, tokenProfOutro, tokenAlunoDentro, tokenAlunoFora;
@@ -195,16 +196,44 @@ describe('Testes de Progresso (/api/v1/progresso)', () => {
       expect(res.body).not.toHaveProperty('respostaCorreta');
     });
 
+    it('Retorna 400 quando a resposta de VERDADEIRO_FALSO não é válida', async () => {
+      const novaQuestaoId = await criarQuestaoEAssociar(
+        'VERDADEIRO_FALSO',
+        'Verdadeiro'
+      );
+      const res = await request(app)
+        .post('/api/v1/progresso/responder')
+        .set('Authorization', `Bearer ${tokenAlunoDentro}`)
+        .send({ questaoId: novaQuestaoId, resposta: 'talvez' });
+
+      expect(res.status).toBe(400);
+    });
+
     it('Corrige LACUNA sem exigir opções e ignora diferença de caixa', async () => {
       const novaQuestaoId = await criarQuestaoEAssociar('LACUNA', 'Brasília');
       const res = await request(app)
         .post('/api/v1/progresso/responder')
         .set('Authorization', `Bearer ${tokenAlunoDentro}`)
-        .send({ questaoId: novaQuestaoId, resposta: 'brasília' });
+        .send({ questaoId: novaQuestaoId, resposta: '  BRASÍLIA  ' });
 
       expect(res.status).toBe(201);
       expect(res.body.correta).toBe(true);
       expect(res.body).not.toHaveProperty('respostaCorreta');
+      expect(
+        respostaEstaCorreta(
+          { tipo: 'LACUNA', respostaCorreta: ' Brasília ' },
+          '  BRASÍLIA  '
+        )
+      ).toBe(true);
+    });
+
+    it('Corrige questões antigas sem tipo como múltipla escolha', () => {
+      expect(
+        respostaEstaCorreta(
+          { respostaCorreta: 'Resposta antiga' },
+          'Resposta antiga'
+        )
+      ).toBe(true);
     });
   });
 
