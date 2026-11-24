@@ -1,3 +1,4 @@
+
 import prisma from "../config/prismaClient.js";
 import { ApiError } from "../middlewares/errorHandler.js";
 
@@ -5,6 +6,7 @@ const PONTOS_POR_ACERTO = 10;
 
 function respostaEstaCorreta(questao, resposta) {
   const recebida = String(resposta).trim();
+
   if (questao.tipo === "VERDADEIRO_FALSO") {
     const normalizar = (valor) => {
       const respostaNormalizada = String(valor).trim().toLocaleLowerCase("pt-BR");
@@ -22,6 +24,21 @@ function respostaEstaCorreta(questao, resposta) {
 
   return recebida === questao.respostaCorreta.trim();
 }
+
+const CATALOGO_CONQUISTAS = {
+  PRIMEIRA_ATIVIDADE: {
+    nome: "Primeira conquista",
+    descricao: "Concluiu sua primeira atividade.",
+  },
+  CINCO_ACERTOS: {
+    nome: "Mente brilhante",
+    descricao: "Acertou cinco questões consecutivas.",
+  },
+  CEM_PONTOS: {
+    nome: "100 pontos",
+    descricao: "Acumulou 100 pontos.",
+  },
+};
 
 function calcularEstrelas(acertos, total, concluida) {
   if (!concluida || total === 0) return 0;
@@ -83,6 +100,36 @@ function somarTotais(fases) {
   };
 }
 
+// Registra uma conquista sem permitir duplicidade
+async function concederConquista(tx, alunoId, codigo) {
+  const dados = CATALOGO_CONQUISTAS[codigo];
+
+  const conquista = await tx.conquista.upsert({
+    where: { codigo },
+    update: {},
+    create: {
+      codigo,
+      nome: dados.nome,
+      descricao: dados.descricao,
+    },
+  });
+
+  const resultado = await tx.usuarioConquista.createMany({
+    data: [{ alunoId, conquistaId: conquista.id }],
+    skipDuplicates: true,
+  });
+
+  // Só retorna quando a conquista foi realmente concedida agora
+
+  if (resultado.count === 0) return null;
+
+  return {
+    codigo: conquista.codigo,
+    nome: conquista.nome,
+    descricao: conquista.descricao,
+  };
+}
+
 export async function responderQuestao(alunoId, { questaoId, resposta }) {
   const questao = await prisma.questao.findUnique({
     where: { id: questaoId },
@@ -136,6 +183,58 @@ export async function responderQuestao(alunoId, { questaoId, resposta }) {
         },
       });
 
+      // Verifica quais conquistas foram desbloqueadas
+      const novasConquistas = [];
+
+      // 1. Primeira atividade concluída
+      const atividadesConcluidas = await tx.progresso.count({
+        where: { alunoId, concluida: true },
+      });
+
+      if (atividadesConcluidas >= 1) {
+        const conquista = await concederConquista(
+          tx,
+          alunoId,
+          "PRIMEIRA_ATIVIDADE"
+        );
+        if (conquista) novasConquistas.push(conquista);
+      }
+
+         // 2. Cinco respostas corretas consecutivas
+      const ultimasRespostas = await tx.resposta.findMany({
+        where: { alunoId },
+        orderBy: [{ respondidaEm: "desc" }, { id: "desc" }],
+        take: 5,
+        select: { correta: true },
+      });
+
+      if (
+        ultimasRespostas.length === 5 &&
+        ultimasRespostas.every((r) => r.correta)
+      ) {
+        const conquista = await concederConquista(
+          tx,
+          alunoId,
+          "CINCO_ACERTOS"
+        );
+
+        if (conquista) novasConquistas.push(conquista);
+      }
+
+      // 3. Cem pontos acumulados em todas as atividades
+      const pontuacaoTotal = await tx.progresso.aggregate({
+        where: { alunoId },
+        _sum: { pontos: true },
+      });
+
+      if ((pontuacaoTotal._sum.pontos ?? 0) >= 100) {
+        const conquista = await concederConquista(
+          tx,
+          alunoId,
+          "CEM_PONTOS"
+        );
+        if (conquista) novasConquistas.push(conquista);
+      }
       return {
         correta,
         pontosGanhos: correta ? PONTOS_POR_ACERTO : 0,
@@ -147,6 +246,7 @@ export async function responderQuestao(alunoId, { questaoId, resposta }) {
           pontos,
           estrelas: calcularEstrelas(acertos, total, concluida),
         },
+        novasConquistas,
       };
     });
   } catch (error) {
