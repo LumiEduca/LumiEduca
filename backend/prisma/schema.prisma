@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
+  provider = "postgresql"
 }
 
 enum TipoUsuario {
@@ -27,6 +27,7 @@ model Usuario {
   tokens        NotificacaoToken[]
   notificacoes  Notificacao[]
   respostas     Resposta[]
+  conquistas    UsuarioConquista[]
 
   @@map("usuarios")
 }
@@ -159,4 +160,28 @@ model AvaliacaoDemo {
 
   @@index([jogo, criadaEm])
   @@map("avaliacoes_demo")
+}
+
+model Conquista {
+  id          String             @id @default(uuid())
+  codigo      String             @unique
+  nome        String
+  descricao   String
+
+  usuarios    UsuarioConquista[]
+
+  @@map("conquistas")
+}
+
+model UsuarioConquista {
+  id          String    @id @default(uuid())
+  alunoId     String
+  aluno       Usuario   @relation(fields: [alunoId], references: [id], onDelete: Cascade)
+  conquistaId String
+  conquista   Conquista @relation(fields: [conquistaId], references: [id], onDelete: Cascade)
+  concedidaEm DateTime  @default(now())
+
+  @@unique([alunoId, conquistaId])
+  @@index([alunoId])
+  @@map("usuario_conquistas")
 }
