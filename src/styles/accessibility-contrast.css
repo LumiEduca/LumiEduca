@@ -1,0 +1,49 @@
+/* Fontes mínimas, alvos de toque e responsividade.
+   As cores voltaram às originais do projeto (variables.css e CSS das páginas).
+   Tudo sob .app-a11y: as páginas /demos ficam de fora (ver App.jsx). */
+
+/* ---------- Tamanhos de fonte mínimos (0,875rem) ---------- */
+.app-a11y .trail-tag,
+.app-a11y .professor-summary-label,
+.app-a11y .register-hint,
+.app-a11y .login-demo-texto small,
+.app-a11y .bell-item-date,
+.app-a11y .trail-subject-info span {
+  font-size: 0.875rem;
+}
+
+/* ---------- Alvos de toque de pelo menos 44px ---------- */
+.app-a11y .header-nav-chip,
+.app-a11y .header-btn,
+.app-a11y .bell-btn,
+.app-a11y .bell-link,
+.app-a11y .close-hint,
+.app-a11y .password-toggle-button {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+.app-a11y .password-toggle-button {
+  right: 6px;
+}
+
+.app-a11y .close-hint {
+  width: 44px;
+  height: 44px;
+}
+
+/* ---------- Responsividade e zoom de texto ---------- */
+.app-a11y .student-title,
+.app-a11y .login-title,
+.app-a11y .question-title,
+.app-a11y .trail-title,
+.app-a11y .profile-title {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 400px) {
+  .app-a11y .header-right-side {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+}

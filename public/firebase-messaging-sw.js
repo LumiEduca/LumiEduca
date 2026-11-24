@@ -1,13 +1,34 @@
-importScripts("https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js");
-importScripts("https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-compat.js");
+/* eslint-disable no-undef */
+importScripts("https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js");
+importScripts("https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js");
 
-firebase.initializeApp({ /* mesmo config */ });
+const params = new URL(self.location.href).searchParams;
 
-const messaging = firebase.messaging();
+firebase.initializeApp({
+  apiKey: params.get("apiKey"),
+  authDomain: params.get("authDomain"),
+  projectId: params.get("projectId"),
+  storageBucket: params.get("storageBucket"),
+  messagingSenderId: params.get("messagingSenderId"),
+  appId: params.get("appId"),
+});
 
-messaging.onBackgroundMessage((payload) => {
-  self.registration.showNotification(payload.notification.title, {
-    body: payload.notification.body,
-    icon: "/logo192.png",
-  });
+// Mensagens com "notification" são exibidas pelo próprio navegador em segundo plano.
+firebase.messaging();
+
+const DESTINO = "/tarefas-recebidas";
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  event.waitUntil(
+    clients.matchAll({ type: "window", includeUncontrolled: true }).then((lista) => {
+      for (const c of lista) {
+        if ("focus" in c) {
+          if ("navigate" in c) c.navigate(DESTINO);
+          return c.focus();
+        }
+      }
+      return clients.openWindow(DESTINO);
+    })
+  );
 });
