@@ -32,6 +32,7 @@ router.get(
   exigirTipo("ALUNO"),
   progressoController.conquistas
 );
+
 router.get(
   "/streak",
   verificarToken,
@@ -45,5 +46,6 @@ router.get(
   validarParams(idParamSchema),
   progressoController.relatorioDaSala
 );
+
 
 export default router;
