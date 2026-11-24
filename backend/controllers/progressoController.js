@@ -58,6 +58,7 @@ export async function streak(req, res, next) {
   } catch (error) {
     next(error);
   }
+
 }
 
 export async function relatorioDaSala(req, res, next) {
@@ -71,4 +72,4 @@ export async function relatorioDaSala(req, res, next) {
   } catch (error) {
     next(error);
   }
-}
+}`n

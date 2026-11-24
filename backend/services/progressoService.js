@@ -598,4 +598,4 @@ export async function gerarRelatorioDaSala(professorId, salaId) {
     resumoPorMateria,
     alunos: relatorioAlunos,
   };
-}
+}`n
