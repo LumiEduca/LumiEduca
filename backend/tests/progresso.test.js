@@ -431,7 +431,6 @@ describe('Testes de Progresso (/api/v1/progresso)', () => {
     });
   });
 
-
   describe('GET /aluno/:id', () => {
     it('Aluno pode ver o próprio progresso (200) contendo totalPontos', async () => {
       const res = await request(app).get(`/api/v1/progresso/aluno/${alunoDentroId}`).set('Authorization', `Bearer ${tokenAlunoDentro}`);
