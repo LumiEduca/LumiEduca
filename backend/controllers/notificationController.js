@@ -147,3 +147,15 @@ export const marcarTodasComoLidas = async (req, res, next) => {
     next(error);
   }
 };
+
+// DELETE /token - Desvincula o token do dispositivo do usuário logado (logout)
+export const removeToken = async (req, res, next) => {
+  try {
+    const resultado = await prisma.notificacaoToken.deleteMany({
+      where: { token: req.body.token, usuarioId: req.usuario.id },
+    });
+    res.status(200).json({ sucesso: true, removidos: resultado.count });
+  } catch (error) {
+    next(error);
+  }
+};
