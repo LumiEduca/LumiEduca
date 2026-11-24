@@ -1,3 +1,4 @@
+import { ApiError } from "../middlewares/errorHandler.js";
 import {
   gerarDica,
   gerarQuestoes,
@@ -130,8 +131,8 @@ export const dica = async (req, res, next) => {
     }
 
     // Falhas da Gemini/inesperadas: detalhe só no log, mensagem genérica para o cliente.
-    // Só a mensagem vai para o log (nunca o objeto inteiro). O cliente recebe texto genérico.
-    console.error("[lumi] Falha ao gerar dica:", error.message);
+    // Não registrar mensagens externas, pois podem conter credenciais.
+    console.error("[lumi] Falha ao gerar dica:");
     const statusHttp = error?.statusHttp === 502 ? 502 : 503;
     next(
       new ApiError(
@@ -151,7 +152,7 @@ export const status = async (req, res) => {
     const resultado = await verificarStatus();
     res.json(resultado);
   } catch (error) {
-    console.error("[lumi] Falha ao verificar status:", error);
+    console.error("[lumi] Falha ao verificar status:");
     res.json({ disponivel: false });
   }
 };
@@ -170,8 +171,8 @@ export const gerarQuestoesProfessor = async (req, res, next) => {
       return next(error);
     }
 
-    // Detalhe só no log (mensagem, nunca o objeto inteiro). O cliente recebe texto genérico.
-    console.error("[lumi] Falha ao gerar questões:", error.message);
+    // Registrar apenas o contexto da falha.
+    console.error("[lumi] Falha ao gerar questões:");
     const statusHttp = error?.statusHttp === 502 ? 502 : 503;
     next(
       new ApiError(
@@ -197,8 +198,8 @@ export const explicarErro = async (req, res, next) => {
       return next(error);
     }
 
-    // Falhas do Gemini: detalhe só no log (mensagem), cliente recebe texto genérico.
-    console.error("[lumi] Falha ao explicar erro:", error.message);
+    // Falhas do Gemini: contexto no log, mensagem genérica ao cliente.
+    console.error("[lumi] Falha ao explicar erro:");
     const statusHttp = error?.statusHttp === 502 ? 502 : 503;
     next(
       new ApiError(
@@ -221,7 +222,7 @@ export const historico = async (req, res, next) => {
     );
     res.json(resultado);
   } catch (error) {
-    console.error("[lumi] Falha ao listar histórico:", error.message);
+    console.error("[lumi] Falha ao listar histórico:");
     next(
       new ApiError(
         503,
