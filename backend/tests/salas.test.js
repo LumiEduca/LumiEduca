@@ -336,6 +336,43 @@ describe('Testes de Salas (/api/v1/salas)', () => {
       expect(JSON.stringify(res.body)).not.toMatch(/senhaHash/);
     });
 
+    it('Aluno matriculado sem progresso aparece no ranking com 0 pontos', async () => {
+      const res = await request(app)
+        .get(`/api/v1/salas/${salaId}/ranking`)
+        .set(comToken(tokenProfDono));
+
+      expect(res.status).toBe(200);
+      const aluno = res.body.ranking.find((r) => r.nome === 'User dentro');
+      expect(aluno).toBeDefined();
+      expect(aluno.pontos).toBe(0);
+    });
+
+    it('Sala sem alunos retorna 200 com ranking vazio', async () => {
+      const resSala = await request(app)
+        .post('/api/v1/salas')
+        .set(comToken(tokenProfDono))
+        .send({ nome: 'Sala Vazia' });
+      expect(resSala.status).toBe(201);
+
+      const res = await request(app)
+        .get(`/api/v1/salas/${resSala.body.id}/ranking`)
+        .set(comToken(tokenProfDono));
+
+      expect(res.status).toBe(200);
+      expect(res.body.ranking).toEqual([]);
+    });
+
+    it('Ranking devolve apenas alunoId, nome, posicao e pontos (sem usuario/login)', async () => {
+      const res = await request(app)
+        .get(`/api/v1/salas/${salaId}/ranking`)
+        .set(comToken(tokenProfDono));
+
+      expect(res.status).toBe(200);
+      res.body.ranking.forEach((r) => {
+        expect(Object.keys(r).sort()).toEqual(['alunoId', 'nome', 'pontos', 'posicao']);
+      });
+    });
+
     it('Aluno matriculado também vê o ranking', async () => {
       const res = await request(app)
         .get(`/api/v1/salas/${salaId}/ranking`)
