@@ -12,22 +12,22 @@ enum TipoUsuario {
 }
 
 model Usuario {
-  id           String      @id @default(uuid())
-  nome         String
-  usuario      String      @unique
-  senhaHash    String
-  tipo         TipoUsuario
-  criadoEm     DateTime    @default(now())
-  atualizadoEm DateTime    @updatedAt
+  id            String       @id @default(uuid())
+  nome          String
+  usuario       String       @unique
+  senhaHash     String
+  tipo          TipoUsuario
+  criadoEm      DateTime     @default(now())
+  atualizadoEm  DateTime     @updatedAt
 
-  salasCriadas      Sala[]              @relation("SalasDoProfessor")
-  matriculas        Matricula[]
-  atividadesCriadas Atividade[]         @relation("AtividadesDoProfessor")
-  progresso         Progresso[]
-  tokens            NotificacaoToken[]
-  notificacoes      Notificacao[]
-  respostas         Resposta[]
-  lembretes         LembreteAtividade[]
+  salasCriadas  Sala[]           @relation("SalasDoProfessor")
+  matriculas    Matricula[]
+  atividadesCriadas Atividade[]  @relation("AtividadesDoProfessor")
+  progresso     Progresso[]
+  tokens        NotificacaoToken[]
+  notificacoes  Notificacao[]
+  respostas     Resposta[]
+  dicasLumi     LumiDica[]
 
   @@map("usuarios")
 }
@@ -87,6 +87,7 @@ model Questao {
   tipo           String    @default("MULTIPLA_ESCOLHA")
   ordem          Int       @default(0)
   respostas     Resposta[]
+  dicasLumi     LumiDica[]
 
   @@map("questoes")
 }
@@ -165,14 +166,16 @@ model AvaliacaoDemo {
   @@map("avaliacoes_demo")
 }
 
-model LembreteAtividade {
-  id          String    @id @default(uuid())
-  alunoId     String
-  aluno       Usuario   @relation(fields: [alunoId], references: [id], onDelete: Cascade)
-  atividadeId String
-  atividade   Atividade @relation(fields: [atividadeId], references: [id], onDelete: Cascade)
-  enviadoEm   DateTime  @default(now())
+model LumiDica {
+  id         String   @id @default(uuid())
+  alunoId    String
+  aluno      Usuario  @relation(fields: [alunoId], references: [id], onDelete: Cascade)
+  questaoId  String?
+  questao    Questao? @relation(fields: [questaoId], references: [id], onDelete: SetNull)
+  pergunta   String
+  resposta   String
+  criadaEm   DateTime @default(now())
 
-  @@unique([alunoId, atividadeId])
-  @@map("lembretes_atividade")
+  @@index([alunoId, criadaEm])
+  @@map("lumi_dicas")
 }
