@@ -229,50 +229,6 @@ describe('Testes de Progresso (/api/v1/progresso)', () => {
     }, 60000);
   });
 
-    describe('GET /conquistas', () => {
-    it('Deve retornar 401 sem token', async () => {
-      const res = await request(app).get('/api/v1/progresso/conquistas');
-
-      expect(res.status).toBe(401);
-    });
-
-    it('Deve retornar 403 para professores', async () => {
-      const res = await request(app)
-        .get('/api/v1/progresso/conquistas')
-        .set('Authorization', `Bearer ${tokenProfDono}`);
-
-      expect(res.status).toBe(403);
-    });
-
-    it('Deve retornar lista vazia para aluno sem conquistas', async () => {
-      const res = await request(app)
-        .get('/api/v1/progresso/conquistas')
-        .set('Authorization', `Bearer ${tokenAlunoFora}`);
-
-      expect(res.status).toBe(200);
-      expect(res.body.total).toBe(0);
-      expect(res.body.conquistas).toEqual([]);
-    });
-
-    it('Deve retornar as conquistas desbloqueadas pelo próprio aluno', async () => {
-      const res = await request(app)
-        .get('/api/v1/progresso/conquistas')
-        .set('Authorization', `Bearer ${tokenAlunoDentro}`);
-
-      expect(res.status).toBe(200);
-      expect(res.body.total).toBeGreaterThan(0);
-      expect(res.body.conquistas).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            codigo: 'PRIMEIRA_ATIVIDADE',
-            nome: 'Primeira conquista',
-            descricao: 'Concluiu sua primeira atividade.',
-            concedidaEm: expect.any(String),
-          }),
-        ])
-      );
-    });
-  });
   describe('GET /conquistas', () => {
     it('Deve retornar 401 sem token', async () => {
       const res = await request(app).get('/api/v1/progresso/conquistas');
@@ -317,7 +273,165 @@ describe('Testes de Progresso (/api/v1/progresso)', () => {
       );
     });
   });  
-  
+
+  describe('GET /streak', () => {
+    let alunoStreakId;
+    let tokenAlunoStreak;
+    let questoesStreak = [];
+
+    beforeAll(async () => {
+      const sufixo = `streak_${Date.now()}`;
+
+      const cadastro = await request(app)
+        .post('/api/v1/auth/register/aluno')
+        .send({
+          nome: 'Aluno Teste Streak',
+          usuario: sufixo,
+          senha: 'password123',
+        });
+
+      expect(cadastro.status).toBe(201);
+      tokenAlunoStreak = cadastro.body.token;
+      alunoStreakId = cadastro.body.usuario.id;
+
+      const atividade = await request(app)
+        .post('/api/v1/atividades')
+        .set('Authorization', `Bearer ${tokenProfDono}`)
+        .send({
+          titulo: 'Atividade Teste Streak',
+          materia: 'Matemática',
+          questoes: Array.from({ length: 4 }, (_, i) => ({
+            enunciado: `Questão Streak ${i + 1}`,
+            opcoes: ['Errado', 'Correto'],
+            respostaCorreta: '1',
+            ordem: i + 1,
+          })),
+        });
+
+      expect(atividade.status).toBe(201);
+
+      questoesStreak = atividade.body.questoes;
+    });
+
+    async function criarRespostaStreak(indiceQuestao, diasAtras) {
+      const data = new Date();
+      data.setDate(data.getDate() - diasAtras);
+
+      await prisma.resposta.create({
+        data: {
+          alunoId: alunoStreakId,
+          questaoId: questoesStreak[indiceQuestao].id,
+          resposta: '1',
+          correta: true,
+          respondidaEm: data,
+        },
+      });
+    }
+
+    beforeEach(async () => {
+      await prisma.resposta.deleteMany({
+        where: { alunoId: alunoStreakId },
+      });
+    });
+
+    it('Deve calcular três dias consecutivos de atividade', async () => {
+      await criarRespostaStreak(0, 0);
+      await criarRespostaStreak(1, 1);
+      await criarRespostaStreak(2, 2);
+
+      const res = await request(app)
+        .get('/api/v1/progresso/streak')
+        .set('Authorization', `Bearer ${tokenAlunoStreak}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.streakAtual).toBe(3);
+      expect(res.body.melhorStreak).toBe(3);
+    });
+
+    it('Deve interromper a sequência quando faltar um dia', async () => {
+      await criarRespostaStreak(0, 0);
+      await criarRespostaStreak(1, 1);
+      await criarRespostaStreak(2, 3);
+
+      const res = await request(app)
+        .get('/api/v1/progresso/streak')
+        .set('Authorization', `Bearer ${tokenAlunoStreak}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.streakAtual).toBe(2);
+      expect(res.body.melhorStreak).toBe(2);
+    });
+
+    it('Deve contar várias respostas no mesmo dia como apenas um dia', async () => {
+      await criarRespostaStreak(0, 0);
+      await criarRespostaStreak(1, 0);
+      await criarRespostaStreak(2, 1);
+
+      const res = await request(app)
+        .get('/api/v1/progresso/streak')
+        .set('Authorization', `Bearer ${tokenAlunoStreak}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.streakAtual).toBe(2);
+      expect(res.body.melhorStreak).toBe(2);
+    });
+
+    it('Deve zerar o streak atual quando a última atividade foi há dois dias', async () => {
+      await criarRespostaStreak(0, 2);
+      await criarRespostaStreak(1, 3);
+
+      const res = await request(app)
+        .get('/api/v1/progresso/streak')
+        .set('Authorization', `Bearer ${tokenAlunoStreak}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.streakAtual).toBe(0);
+      expect(res.body.melhorStreak).toBe(2);
+    });
+
+    it('Deve retornar 401 sem token', async () => {
+      const res = await request(app).get('/api/v1/progresso/streak');
+
+      expect(res.status).toBe(401);
+    });
+
+    it('Deve retornar 403 para professores', async () => {
+      const res = await request(app)
+        .get('/api/v1/progresso/streak')
+        .set('Authorization', `Bearer ${tokenProfDono}`);
+
+      expect(res.status).toBe(403);
+    });
+
+    it('Deve retornar streak zerado para aluno sem respostas', async () => {
+      const res = await request(app)
+        .get('/api/v1/progresso/streak')
+        .set('Authorization', `Bearer ${tokenAlunoFora}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({
+        streakAtual: 0,
+        melhorStreak: 0,
+        ultimaAtividade: null,
+      });
+    });
+
+    it('Deve retornar os campos esperados para um aluno com respostas', async () => {
+      const res = await request(app)
+        .get('/api/v1/progresso/streak')
+        .set('Authorization', `Bearer ${tokenAlunoDentro}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body).toHaveProperty('streakAtual');
+      expect(res.body).toHaveProperty('melhorStreak');
+      expect(res.body).toHaveProperty('ultimaAtividade');
+      expect(typeof res.body.streakAtual).toBe('number');
+      expect(typeof res.body.melhorStreak).toBe('number');
+      expect(res.body.ultimaAtividade).not.toBeNull();
+    });
+  });
+
+
   describe('GET /aluno/:id', () => {
     it('Aluno pode ver o próprio progresso (200) contendo totalPontos', async () => {
       const res = await request(app).get(`/api/v1/progresso/aluno/${alunoDentroId}`).set('Authorization', `Bearer ${tokenAlunoDentro}`);
