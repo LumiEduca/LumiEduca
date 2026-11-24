@@ -32,7 +32,7 @@ const CATALOGO_CONQUISTAS = {
   },
   CINCO_ACERTOS: {
     nome: "Mente brilhante",
-    descricao: "Acertou cinco questões consecutivas.",
+    descricao: "Acertou cinco questÃµes consecutivas.",
   },
   CEM_PONTOS: {
     nome: "100 pontos",
@@ -48,7 +48,7 @@ function calcularEstrelas(acertos, total, concluida) {
   return 1;
 }
 
-// Monta as fases (uma por atividade com questões) das salas do aluno
+// Monta as fases (uma por atividade com questÃµes) das salas do aluno
 async function montarFases(alunoId) {
   const matriculas = await prisma.matricula.findMany({
     where: { alunoId },
@@ -119,7 +119,7 @@ async function concederConquista(tx, alunoId, codigo) {
     skipDuplicates: true,
   });
 
-  // Só retorna quando a conquista foi realmente concedida agora
+  // SÃ³ retorna quando a conquista foi realmente concedida agora
 
   if (resultado.count === 0) return null;
 
@@ -135,7 +135,7 @@ export async function responderQuestao(alunoId, { questaoId, resposta }) {
     where: { id: questaoId },
     include: { atividade: { select: { id: true, materia: true } } },
   });
-  if (!questao) throw new ApiError(404, "Questão não encontrada");
+  if (!questao) throw new ApiError(404, "QuestÃ£o nÃ£o encontrada");
 
   const atividadeId = questao.atividade.id;
 
@@ -144,13 +144,13 @@ export async function responderQuestao(alunoId, { questaoId, resposta }) {
     where: { alunoId, sala: { salaAtividades: { some: { atividadeId } } } },
   });
   if (!matricula) {
-    throw new ApiError(403, "Esta atividade não está disponível para você");
+    throw new ApiError(403, "Esta atividade nÃ£o estÃ¡ disponÃ­vel para vocÃª");
   }
 
   const jaRespondeu = await prisma.resposta.findUnique({
     where: { alunoId_questaoId: { alunoId, questaoId } },
   });
-  if (jaRespondeu) throw new ApiError(409, "Você já respondeu esta questão");
+  if (jaRespondeu) throw new ApiError(409, "VocÃª jÃ¡ respondeu esta questÃ£o");
 
   const correta = respostaEstaCorreta(questao, resposta);
 
@@ -186,7 +186,7 @@ export async function responderQuestao(alunoId, { questaoId, resposta }) {
       // Verifica quais conquistas foram desbloqueadas
       const novasConquistas = [];
 
-      // 1. Primeira atividade concluída
+      // 1. Primeira atividade concluÃ­da
       const atividadesConcluidas = await tx.progresso.count({
         where: { alunoId, concluida: true },
       });
@@ -250,9 +250,9 @@ export async function responderQuestao(alunoId, { questaoId, resposta }) {
       };
     });
   } catch (error) {
-    // Duas requisições simultâneas para a mesma questão
+    // Duas requisiÃ§Ãµes simultÃ¢neas para a mesma questÃ£o
     if (error.code === "P2002") {
-      throw new ApiError(409, "Você já respondeu esta questão");
+      throw new ApiError(409, "VocÃª jÃ¡ respondeu esta questÃ£o");
     }
     throw error;
   }
@@ -264,18 +264,18 @@ export async function progressoGeral(solicitante, alunoId) {
     select: { id: true, nome: true, usuario: true, tipo: true },
   });
   if (!aluno || aluno.tipo !== "ALUNO") {
-    throw new ApiError(404, "Aluno não encontrado");
+    throw new ApiError(404, "Aluno nÃ£o encontrado");
   }
 
   if (solicitante.tipo === "ALUNO") {
     if (solicitante.id !== alunoId) {
-      throw new ApiError(403, "Você só pode ver o seu próprio progresso");
+      throw new ApiError(403, "VocÃª sÃ³ pode ver o seu prÃ³prio progresso");
     }
   } else {
     const vinculo = await prisma.matricula.findFirst({
       where: { alunoId, sala: { professorId: solicitante.id } },
     });
-    if (!vinculo) throw new ApiError(403, "Este aluno não pertence às suas salas");
+    if (!vinculo) throw new ApiError(403, "Este aluno nÃ£o pertence Ã s suas salas");
   }
 
   const fases = await montarFases(alunoId);
@@ -430,11 +430,11 @@ export async function gerarRelatorioDaSala(professorId, salaId) {
   });
 
   if (!sala) {
-    throw new ApiError(404, "Sala não encontrada");
+    throw new ApiError(404, "Sala nÃ£o encontrada");
   }
 
   if (sala.professorId !== professorId) {
-    throw new ApiError(403, "Você não tem permissão para acessar esta sala");
+    throw new ApiError(403, "VocÃª nÃ£o tem permissÃ£o para acessar esta sala");
   }
 
   // Busca todos os alunos matriculados, inclusive os sem respostas
@@ -453,7 +453,7 @@ export async function gerarRelatorioDaSala(professorId, salaId) {
   const alunos = matriculas.map((matricula) => matricula.aluno);
   const alunoIds = alunos.map((aluno) => aluno.id);
 
-  // Busca as atividades vinculadas à sala e suas questões
+  // Busca as atividades vinculadas Ã  sala e suas questÃµes
   const atividades = await prisma.atividade.findMany({
     where: {
       salaAtividades: {
@@ -490,7 +490,7 @@ export async function gerarRelatorioDaSala(professorId, salaId) {
     },
   });
 
-  // Organiza as atividades por matéria
+  // Organiza as atividades por matÃ©ria
   const materias = new Map();
 
   for (const atividade of atividades) {
@@ -508,7 +508,7 @@ export async function gerarRelatorioDaSala(professorId, salaId) {
     materia.questoesPorAluno += atividade.questoes.length;
   }
 
-  // Calcula os totais de respostas por matéria
+  // Calcula os totais de respostas por matÃ©ria
   for (const resposta of respostas) {
     const atividade = atividades.find(
       (item) => item.id === resposta.questao.atividadeId
