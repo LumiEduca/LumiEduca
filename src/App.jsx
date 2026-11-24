@@ -1,11 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
+import './styles/accessibility.css';
 import Header from './components/Header';
 import AppRoutes from './routes/AppRoutes';
-import { Toaster } from 'react-hot-toast';
+import toast, { Toaster } from 'react-hot-toast';
 import lumiLogo from './assets/images/lumi-logo.png';
+import { ativarPush, ouvirMensagens } from './services/firebase';
+import './styles/accessibility-contrast.css';
 
 function App() {
   const [isLoading, setIsLoading] = useState(true);
+
+  const { pathname } = useLocation();
+  const escopoA11y = !pathname.startsWith('/demos');
 
   const userName = localStorage.getItem('userName') || 'visitante';
   const userType = localStorage.getItem('userType');
@@ -38,6 +45,30 @@ function App() {
     }
   }, [pontos, concluidas, userName]);
 
+  // Push: só para usuário logado. Renova o token em silêncio se já houver permissão
+  // e mostra um toast quando chega mensagem com o app em foco.
+  useEffect(() => {
+    const jwt = localStorage.getItem('token');
+    if (!userType || !jwt) return undefined;
+
+    let cancelado = false;
+    let pararDeOuvir = () => {};
+
+    ativarPush(jwt, { pedirPermissao: false });
+
+    ouvirMensagens(({ title, body }) => {
+      toast(body ? `${title} — ${body}` : title || 'Nova notificação', { icon: '🦊' });
+    }).then((parar) => {
+      if (cancelado) parar();
+      else pararDeOuvir = parar;
+    });
+
+    return () => {
+      cancelado = true;
+      pararDeOuvir();
+    };
+  }, [userType]);
+
   if (isLoading) {
     return (
       <div className="lumi-splash-screen">
@@ -69,7 +100,10 @@ function App() {
   }
 
   return (
-    <div style={{ backgroundColor: '#f5f5f5', minHeight: '100vh' }}>
+    <div
+      className={escopoA11y ? 'app-a11y' : undefined}
+      style={{ backgroundColor: '#f5f5f5', minHeight: '100vh' }}
+    >
       <Toaster />
 
       {userType && <Header pontos={pontos} />}

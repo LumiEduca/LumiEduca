@@ -61,6 +61,7 @@ describe('Testes de Atividades (/api/v1/atividades e /salas/:id/atividades)', ()
       expect(res.status).toBe(201);
       expect(res.body).toHaveProperty('id');
       expect(res.body.questoes[0]).toHaveProperty('respostaCorreta');
+      expect(res.body.questoes[0].tipo).toBe('MULTIPLA_ESCOLHA');
       atividadeId = res.body.id;
     });
 
@@ -200,6 +201,82 @@ describe('Testes de Atividades (/api/v1/atividades e /salas/:id/atividades)', ()
     it('Id estranho (400) e Inexistente (404)', async () => {
       expect((await request(app).get(`/api/v1/atividades/abc.def`).set('Authorization', `Bearer ${tokenProfDono}`)).status).toBe(400);
       expect((await request(app).get(`/api/v1/atividades/00000000-0000-0000-0000-000000000000`).set('Authorization', `Bearer ${tokenProfDono}`)).status).toBe(404);
+    });
+  });
+
+  describe('PATCH e DELETE /api/v1/atividades/:id', () => {
+    it('Dono atualiza título, matéria e prazo', async () => {
+      const prazo = new Date(Date.now() + 2 * 86400000).toISOString();
+      const res = await request(app)
+        .patch(`/api/v1/atividades/${atividadeId}`)
+        .set('Authorization', `Bearer ${tokenProfDono}`)
+        .send({ titulo: 'Título editado', materia: 'História', prazo });
+
+      expect(res.status).toBe(200);
+      expect(res.body.titulo).toBe('Título editado');
+      expect(res.body.materia).toBe('História');
+      expect(new Date(res.body.prazo).toISOString()).toBe(prazo);
+    });
+
+    it('Outro professor e aluno recebem 403 ao editar ou excluir', async () => {
+      for (const token of [tokenProfOutro, tokenAlunoDentro]) {
+        expect(
+          (
+            await request(app)
+              .patch(`/api/v1/atividades/${atividadeId}`)
+              .set('Authorization', `Bearer ${token}`)
+              .send({ titulo: 'Alteração não permitida' })
+          ).status
+        ).toBe(403);
+        expect(
+          (
+            await request(app)
+              .delete(`/api/v1/atividades/${atividadeId}`)
+              .set('Authorization', `Bearer ${token}`)
+          ).status
+        ).toBe(403);
+      }
+    });
+
+    it('Retorna 404 ao editar ou excluir uma atividade inexistente', async () => {
+      const idInexistente = '00000000-0000-0000-0000-000000000000';
+      expect(
+        (
+          await request(app)
+            .patch(`/api/v1/atividades/${idInexistente}`)
+            .set('Authorization', `Bearer ${tokenProfDono}`)
+            .send({ titulo: 'Não existe' })
+        ).status
+      ).toBe(404);
+      expect(
+        (
+          await request(app)
+            .delete(`/api/v1/atividades/${idInexistente}`)
+            .set('Authorization', `Bearer ${tokenProfDono}`)
+        ).status
+      ).toBe(404);
+    });
+
+    it('Dono exclui atividade e registros dependentes em transação', async () => {
+      const questao = await prisma.questao.findFirst({ where: { atividadeId } });
+      const resposta = await request(app)
+        .post('/api/v1/progresso/responder')
+        .set('Authorization', `Bearer ${tokenAlunoDentro}`)
+        .send({ questaoId: questao.id, resposta: '1' });
+      expect(resposta.status).toBe(201);
+
+      const res = await request(app)
+        .delete(`/api/v1/atividades/${atividadeId}`)
+        .set('Authorization', `Bearer ${tokenProfDono}`);
+
+      expect(res.status).toBe(204);
+      expect(await prisma.atividade.count({ where: { id: atividadeId } })).toBe(0);
+      expect(await prisma.questao.count({ where: { atividadeId } })).toBe(0);
+      expect(await prisma.salaAtividade.count({ where: { atividadeId } })).toBe(0);
+      expect(await prisma.progresso.count({ where: { atividadeId } })).toBe(0);
+      expect(
+        await prisma.resposta.count({ where: { questao: { atividadeId } } })
+      ).toBe(0);
     });
   });
 });

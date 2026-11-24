@@ -52,3 +52,20 @@ export const limiteAvaliacaoDemo = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 120,
 });
+
+// Cron de lembretes: só tentativas que falham contam (chave errada)
+export const limiteCron = rateLimit({
+  ...base,
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  skipSuccessfulRequests: true,
+});
+
+// Troca de senha: por usuário (precisa vir depois do verificarToken); só falhas contam
+export const limiteSenha = rateLimit({
+  ...base,
+  windowMs: 15 * 60 * 1000,
+  limit: 5,
+  skipSuccessfulRequests: true,
+  keyGenerator: (req) => req.usuario.id,
+});

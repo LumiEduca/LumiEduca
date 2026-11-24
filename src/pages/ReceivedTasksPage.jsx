@@ -40,6 +40,22 @@ export default function ReceivedTasksPage({ setPontos }) {
     return concluidas.some((c) => String(c.idTarefa) === String(tarefa.id));
   };
 
+  const tipoDaTarefa = (tarefa) => {
+    if (tarefa.tipo === 'VERDADEIRO_FALSO') return 'VERDADEIRO_FALSO';
+    if (tarefa.tipo === 'LACUNA') return 'LACUNA';
+    return 'MULTIPLA_ESCOLHA';
+  };
+
+  const respostasIguais = (tarefa, resposta) => {
+    const tipo = tipoDaTarefa(tarefa);
+    if (tipo === 'MULTIPLA_ESCOLHA') {
+      return Number(resposta) === Number(tarefa.respostaCorreta);
+    }
+
+    return String(resposta).trim().toLocaleLowerCase('pt-BR') ===
+      String(tarefa.respostaCorreta).trim().toLocaleLowerCase('pt-BR');
+  };
+
   const carregarTarefas = () => {
     const todas = JSON.parse(localStorage.getItem('lumi_tarefas') || '[]');
     const concluidas = JSON.parse(
@@ -73,10 +89,15 @@ export default function ReceivedTasksPage({ setPontos }) {
       );
     }
 
-    const tarefasComStatus = tarefasDoAluno.map((tarefa) => ({
-      ...tarefa,
-      concluida: tarefaEstaConcluida(tarefa, concluidas),
-    }));
+    const tarefasComStatus = tarefasDoAluno.map((tarefa) => {
+      const concluida = tarefaEstaConcluida(tarefa, concluidas);
+      const prazo = tarefa.prazo ? new Date(tarefa.prazo).getTime() : Number.NaN;
+      return {
+        ...tarefa,
+        concluida,
+        atrasada: !concluida && Number.isFinite(prazo) && prazo < Date.now(),
+      };
+    });
 
     setTarefas(tarefasComStatus);
 
@@ -118,7 +139,7 @@ export default function ReceivedTasksPage({ setPontos }) {
 
     const dica = await pedirDicaAoLumi(
       tarefaAtiva.pergunta,
-      tarefaAtiva.opcoes,
+      tarefaAtiva.opcoes || [],
       tarefaAtiva.nomeAtividade
     );
 
@@ -132,7 +153,7 @@ export default function ReceivedTasksPage({ setPontos }) {
 
   const acertouTarefa = () => {
     if (!tarefaAtiva) return false;
-    return Number(escolha) === Number(tarefaAtiva.respostaCorreta);
+    return respostasIguais(tarefaAtiva, escolha);
   };
 
   const finalizarTarefa = (tarefa) => {
@@ -141,8 +162,7 @@ export default function ReceivedTasksPage({ setPontos }) {
       return;
     }
 
-    const indiceEscolhido = Number(escolha);
-    const acertou = indiceEscolhido === Number(tarefa.respostaCorreta);
+    const acertou = respostasIguais(tarefa, escolha);
 
     if (acertou && !isProfessor) {
       setPontos((prev) => prev + 10);
@@ -281,42 +301,78 @@ export default function ReceivedTasksPage({ setPontos }) {
               </p>
             )}
 
-            <div className="professor-options-grid">
-              {tarefaAtiva.opcoes.map((op, idx) => (
-                <button
-                  key={idx}
-                  type="button"
-                  className="professor-option-btn"
+            {tipoDaTarefa(tarefaAtiva) === 'LACUNA' ? (
+              <form
+                className="professor-action-row"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  if (String(escolha || '').trim()) setRespondido(true);
+                }}
+              >
+                <input
+                  className="professor-input"
+                  type="text"
+                  value={escolha || ''}
                   disabled={respondido}
-                  onClick={() => {
-                    if (!respondido) {
-                      setEscolha(idx);
-                      setRespondido(true);
-                    }
-                  }}
-                  style={{
-                    backgroundColor: respondido
-                      ? idx === Number(tarefaAtiva.respostaCorreta)
-                        ? '#2ecc71'
-                        : idx === escolha
-                          ? '#e74c3c'
-                          : 'white'
-                      : escolha === idx
-                        ? '#f3f4f6'
-                        : 'white',
-                    color:
-                      respondido &&
-                      (idx === Number(tarefaAtiva.respostaCorreta) || idx === escolha)
-                        ? 'white'
-                        : '#1f2f4d',
-                    borderColor: escolha === idx && !respondido ? '#cbd5e1' : '#e5ecf3',
-                    cursor: respondido ? 'not-allowed' : 'pointer',
-                  }}
-                >
-                  {op}
-                </button>
-              ))}
-            </div>
+                  onChange={(event) => setEscolha(event.target.value)}
+                  placeholder="Digite sua resposta"
+                  required
+                />
+                {!respondido && (
+                  <button type="submit" className="professor-btn orange">
+                    Responder
+                  </button>
+                )}
+              </form>
+            ) : (
+              <div className="professor-options-grid">
+                {(tipoDaTarefa(tarefaAtiva) === 'VERDADEIRO_FALSO'
+                  ? ['Verdadeiro', 'Falso']
+                  : tarefaAtiva.opcoes || []
+                ).map((opcao, idx) => {
+                  const valorResposta =
+                    tipoDaTarefa(tarefaAtiva) === 'VERDADEIRO_FALSO'
+                      ? opcao
+                      : idx;
+                  const selecionada =
+                    tipoDaTarefa(tarefaAtiva) === 'VERDADEIRO_FALSO'
+                      ? escolha === opcao
+                      : escolha === idx;
+                  const correta = respostasIguais(tarefaAtiva, valorResposta);
+
+                  return (
+                    <button
+                      key={idx}
+                      type="button"
+                      className="professor-option-btn"
+                      disabled={respondido}
+                      onClick={() => {
+                        if (!respondido) {
+                          setEscolha(valorResposta);
+                          setRespondido(true);
+                        }
+                      }}
+                      style={{
+                        backgroundColor: respondido
+                          ? correta
+                            ? '#2ecc71'
+                            : selecionada
+                              ? '#e74c3c'
+                              : 'white'
+                          : selecionada
+                            ? '#f3f4f6'
+                            : 'white',
+                        color: respondido && (correta || selecionada) ? 'white' : '#1f2f4d',
+                        borderColor: selecionada && !respondido ? '#cbd5e1' : '#e5ecf3',
+                        cursor: respondido ? 'not-allowed' : 'pointer',
+                      }}
+                    >
+                      {opcao}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
 
             {respondido && (
               <div className={`question-feedback-box ${acertouTarefa() ? 'correct' : 'wrong'}`}>
@@ -485,6 +541,14 @@ export default function ReceivedTasksPage({ setPontos }) {
                   <p className="professor-task-meta">
                     Sala: <strong>{t.salaNome || 'Geral'}</strong>
                   </p>
+                  {t.materia && (
+                    <p className="professor-task-meta">
+                      Matéria: <strong>{t.materia}</strong>
+                    </p>
+                  )}
+                  {t.atrasada && (
+                    <span className="professor-badge orange">Atrasada</span>
+                  )}
                   <p className="professor-task-meta">
                     {isProfessor
                       ? 'Revise ou exclua a atividade cadastrada.'
@@ -496,13 +560,22 @@ export default function ReceivedTasksPage({ setPontos }) {
 
                 <div className="professor-action-row" style={{ marginTop: 0 }}>
                   {isProfessor && (
-                    <button
-                      type="button"
-                      className="professor-btn outline-danger"
-                      onClick={() => excluirTarefa(t.id)}
-                    >
-                      Excluir
-                    </button>
+                    <>
+                      <button
+                        type="button"
+                        className="professor-btn secondary"
+                        onClick={() => navigate('/criar-tarefa', { state: { tarefa: t } })}
+                      >
+                        Editar
+                      </button>
+                      <button
+                        type="button"
+                        className="professor-btn outline-danger"
+                        onClick={() => excluirTarefa(t.id)}
+                      >
+                        Excluir
+                      </button>
+                    </>
                   )}
 
                   <button

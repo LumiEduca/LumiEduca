@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
+  provider = "postgresql"
 }
 
 enum TipoUsuario {
@@ -27,17 +27,18 @@ model Usuario {
   tokens        NotificacaoToken[]
   notificacoes  Notificacao[]
   respostas     Resposta[]
+  dicasLumi     LumiDica[]
 
   @@map("usuarios")
 }
 
 model Sala {
-  id             String          @id @default(uuid())
-  nome           String
-  codigo         String          @unique
-  professorId    String
-  professor      Usuario         @relation("SalasDoProfessor", fields: [professorId], references: [id])
-  criadaEm       DateTime        @default(now())
+  id          String   @id @default(uuid())
+  nome        String
+  codigo      String   @unique
+  professorId String
+  professor   Usuario  @relation("SalasDoProfessor", fields: [professorId], references: [id])
+  criadaEm    DateTime @default(now())
 
   matriculas     Matricula[]
   salaAtividades SalaAtividade[]
@@ -46,42 +47,47 @@ model Sala {
 }
 
 model Matricula {
-  id        String   @id @default(uuid())
-  alunoId   String
-  aluno     Usuario  @relation(fields: [alunoId], references: [id])
-  salaId    String
-  sala      Sala     @relation(fields: [salaId], references: [id])
-  entrouEm  DateTime @default(now())
+  id       String   @id @default(uuid())
+  alunoId  String
+  aluno    Usuario  @relation(fields: [alunoId], references: [id])
+  salaId   String
+  sala     Sala     @relation(fields: [salaId], references: [id])
+  entrouEm DateTime @default(now())
 
   @@unique([alunoId, salaId])
   @@map("matriculas")
 }
 
 model Atividade {
-  id             String          @id @default(uuid())
-  titulo         String
-  materia        String
-  professorId    String
-  professor      Usuario         @relation("AtividadesDoProfessor", fields: [professorId], references: [id])
-  prazo          DateTime?
-  criadaEm       DateTime        @default(now())
+  id          String    @id @default(uuid())
+  titulo      String
+  materia     String
+  professorId String
+  professor   Usuario   @relation("AtividadesDoProfessor", fields: [professorId], references: [id])
+  prazo       DateTime?
+  criadaEm    DateTime  @default(now())
 
   questoes       Questao[]
   progresso      Progresso[]
   salaAtividades SalaAtividade[]
+  lembretes      LembreteAtividade[]
 
   @@map("atividades")
 }
 
 model Questao {
-  id             String    @id @default(uuid())
-  atividadeId    String
-  atividade      Atividade @relation(fields: [atividadeId], references: [id])
-  enunciado      String
-  opcoes         Json
+  id              String     @id @default(uuid())
+  atividadeId     String
+  atividade       Atividade  @relation(fields: [atividadeId], references: [id])
+  enunciado       String
+  opcoes          Json
   respostaCorreta String
+  ordem           Int        @default(0)
+  respostas       Resposta[]
+  tipo           String    @default("MULTIPLA_ESCOLHA")
   ordem          Int       @default(0)
   respostas     Resposta[]
+  dicasLumi     LumiDica[]
 
   @@map("questoes")
 }
@@ -102,23 +108,23 @@ model Progresso {
 }
 
 model NotificacaoToken {
-  id         String   @id @default(uuid())
-  usuarioId  String
-  usuario    Usuario  @relation(fields: [usuarioId], references: [id])
-  token      String   @unique
-  criadoEm   DateTime @default(now())
+  id        String   @id @default(uuid())
+  usuarioId String
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id])
+  token     String   @unique
+  criadoEm  DateTime @default(now())
 
   @@map("notificacao_tokens")
 }
 
 model Notificacao {
-  id         String   @id @default(uuid())
-  usuarioId  String
-  usuario    Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
-  titulo     String
-  corpo      String
-  lida       Boolean  @default(false)
-  criadaEm   DateTime @default(now())
+  id        String   @id @default(uuid())
+  usuarioId String
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  titulo    String
+  corpo     String
+  lida      Boolean  @default(false)
+  criadaEm  DateTime @default(now())
 
   @@index([usuarioId, criadaEm])
   @@map("notificacoes")
@@ -158,4 +164,18 @@ model AvaliacaoDemo {
 
   @@index([jogo, criadaEm])
   @@map("avaliacoes_demo")
+}
+
+model LumiDica {
+  id         String   @id @default(uuid())
+  alunoId    String
+  aluno      Usuario  @relation(fields: [alunoId], references: [id], onDelete: Cascade)
+  questaoId  String?
+  questao    Questao? @relation(fields: [questaoId], references: [id], onDelete: SetNull)
+  pergunta   String
+  resposta   String
+  criadaEm   DateTime @default(now())
+
+  @@index([alunoId, criadaEm])
+  @@map("lumi_dicas")
 }

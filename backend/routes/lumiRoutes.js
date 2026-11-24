@@ -1,7 +1,20 @@
 import express from "express";
 import rateLimit from "express-rate-limit";
-import { dica, status } from "../controllers/lumiController.js";
-import { verificarToken } from "../middlewares/auth.js";
+import {
+  dica,
+  explicarErro,
+  gerarQuestoesProfessor,
+  historico,
+  status,
+} from "../controllers/lumiController.js";
+import { exigirTipo, verificarToken } from "../middlewares/auth.js";
+import { validar } from "../middlewares/validar.js";
+import {
+  explicarErroSchema,
+  gerarQuestoesSchema,
+  historicoQuerySchema,
+} from "../schemas/lumiSchemas.js";
+import { ApiError } from "../middlewares/errorHandler.js";
 
 const router = express.Router();
 
@@ -17,7 +30,9 @@ const limiteDicasPorMinuto = rateLimit({
   standardHeaders: "draft-7",
   legacyHeaders: false,
   keyGenerator: (req) => req.usuario.id,
-  handler: responder429("Muitas dicas em pouco tempo. Tente novamente em instantes."),
+  handler: responder429(
+    "Muitas dicas em pouco tempo. Tente novamente em instantes.",
+  ),
 });
 
 // /dica — teto diário por usuário
@@ -28,6 +43,60 @@ const limiteDicasPorDia = rateLimit({
   legacyHeaders: false,
   keyGenerator: (req) => req.usuario.id,
   handler: responder429("Você atingiu o limite diário de dicas. Volte amanhã!"),
+});
+
+// Nas rotas novas o limite fica desligado nos testes automatizados (mesmo padrão do rateLimit.js)
+const pularNosTestes = () =>
+  process.env.NODE_ENV === "test" && !process.env.ENABLE_RATE_LIMIT_IN_TEST;
+
+// /gerar-questoes — limite por USUÁRIO (gerar questões gasta muitos tokens)
+const limiteGerarQuestoesPorMinuto = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 5,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  skip: pularNosTestes,
+  keyGenerator: (req) => req.usuario.id,
+  handler: responder429(
+    "Muitas gerações em pouco tempo. Tente novamente em instantes.",
+  ),
+});
+
+const limiteGerarQuestoesPorDia = rateLimit({
+  windowMs: 24 * 60 * 60 * 1000,
+  limit: 30,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  skip: pularNosTestes,
+  keyGenerator: (req) => req.usuario.id,
+  handler: responder429(
+    "Você atingiu o limite diário de gerações. Volte amanhã!",
+  ),
+});
+
+// /explicar-erro — limite por USUÁRIO (cada chamada ao Gemini gasta tokens)
+const limiteExplicarErroPorMinuto = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 10,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  skip: pularNosTestes,
+  keyGenerator: (req) => req.usuario.id,
+  handler: responder429(
+    "Muitas explicações em pouco tempo. Tente novamente em instantes.",
+  ),
+});
+
+const limiteExplicarErroPorDia = rateLimit({
+  windowMs: 24 * 60 * 60 * 1000,
+  limit: 100,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  skip: pularNosTestes,
+  keyGenerator: (req) => req.usuario.id,
+  handler: responder429(
+    "Você atingiu o limite diário de explicações. Volte amanhã!",
+  ),
 });
 
 // /status — limite por IP (chave padrão do express-rate-limit)
@@ -43,6 +112,72 @@ const limiteStatusPorIp = rateLimit({
 router.get("/status", limiteStatusPorIp, status);
 
 // Protegida: autentica -> limita por usuário -> valida/gera no controller
-router.post("/dica", verificarToken, limiteDicasPorMinuto, limiteDicasPorDia, dica);
+router.post(
+  "/dica",
+  verificarToken,
+  limiteDicasPorMinuto,
+  limiteDicasPorDia,
+  dica,
+);
+
+// Só professor: autentica -> confere o tipo -> limita por usuário -> valida o corpo -> gera
+router.post(
+  "/gerar-questoes",
+  verificarToken,
+  exigirTipo("PROFESSOR"),
+  limiteGerarQuestoesPorMinuto,
+  limiteGerarQuestoesPorDia,
+  validar(gerarQuestoesSchema),
+  gerarQuestoesProfessor,
+);
+
+// Só aluno: autentica -> confere o tipo -> limita por usuário -> valida o corpo -> explica
+router.post(
+  "/explicar-erro",
+  verificarToken,
+  exigirTipo("ALUNO"),
+  limiteExplicarErroPorMinuto,
+  limiteExplicarErroPorDia,
+  validar(explicarErroSchema),
+  explicarErro,
+);
+
+// Valida o ?limite= sem alterar o middleware compartilhado validar.js
+const validarLimiteHistorico = (req, res, next) => {
+  const resultado = historicoQuerySchema.safeParse(req.query ?? {});
+  if (!resultado.success) {
+    return next(
+      new ApiError(
+        400,
+        resultado.error.issues[0]?.message ?? "Parâmetros inválidos",
+      ),
+    );
+  }
+  req.limiteHistorico = resultado.data.limite;
+  next();
+};
+
+// /historico — leitura simples, limite por USUÁRIO
+const limiteHistoricoPorMinuto = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 30,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  skip: pularNosTestes,
+  keyGenerator: (req) => req.usuario.id,
+  handler: responder429(
+    "Muitas consultas em pouco tempo. Tente novamente em instantes.",
+  ),
+});
+
+// Só aluno: autentica -> confere o tipo -> limita por usuário -> valida o limite -> lista
+router.get(
+  "/historico",
+  verificarToken,
+  exigirTipo("ALUNO"),
+  limiteHistoricoPorMinuto,
+  validarLimiteHistorico,
+  historico,
+);
 
 export default router;
