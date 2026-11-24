@@ -13,7 +13,7 @@ export async function registrarDica({
   try {
     await lumiRepository.salvarDica({ alunoId, questaoId, pergunta, resposta });
   } catch (error) {
-    console.error("[lumi] Falha ao gravar histórico de dicas:", error.message);
+    console.error("[lumi] Falha ao gravar histórico de dicas:");
   }
 }
 
