@@ -14,6 +14,7 @@ export const lumiRepository = {
         enunciado: true,
         opcoes: true,
         respostaCorreta: true,
+        tipo: true,
       },
     });
   },
