@@ -46,3 +46,15 @@ export async function conquistas(req, res, next) {
     next(error);
   }
 }
+
+export async function streak(req, res, next) {
+  try {
+    const resultado = await progressoService.calcularStreakDoAluno(
+      req.usuario.id
+    );
+
+    res.json(resultado);
+  } catch (error) {
+    next(error);
+  }
+}

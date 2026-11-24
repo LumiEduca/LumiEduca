@@ -334,3 +334,81 @@ export async function listarConquistasDoAluno(alunoId) {
     conquistas,
   };
 }
+
+export async function calcularStreakDoAluno(alunoId) {
+  const respostas = await prisma.resposta.findMany({
+    where: { alunoId },
+    orderBy: { respondidaEm: "desc" },
+    select: { respondidaEm: true },
+  });
+
+  if (respostas.length === 0) {
+    return {
+      streakAtual: 0,
+      melhorStreak: 0,
+      ultimaAtividade: null,
+    };
+  }
+
+  const formatarDia = (data) => {
+  const partes = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(data);
+
+  const valores = Object.fromEntries(
+    partes.map(({ type, value }) => [type, value])
+  );
+
+  return `${valores.year}-${valores.month}-${valores.day}`;
+};
+
+  const diasAtivos = [
+    ...new Set(respostas.map((resposta) => formatarDia(resposta.respondidaEm))),
+  ];
+
+  const converterDia = (dia) => {
+    const [ano, mes, diaDoMes] = dia.split("-").map(Number);
+    return Date.UTC(ano, mes - 1, diaDoMes) / 86400000;
+  };
+
+  const diasNumericos = diasAtivos.map(converterDia);
+
+  let melhorStreak = 1;
+  let sequencia = 1;
+
+  for (let i = 1; i < diasNumericos.length; i++) {
+    if (diasNumericos[i - 1] - diasNumericos[i] === 1) {
+      sequencia++;
+      melhorStreak = Math.max(melhorStreak, sequencia);
+    } else {
+      sequencia = 1;
+    }
+  }
+
+  const hoje = converterDia(formatarDia(new Date()));
+  const ontem = hoje - 1;
+  const diaMaisRecente = diasNumericos[0];
+
+  let streakAtual = 0;
+
+  if (diaMaisRecente === hoje || diaMaisRecente === ontem) {
+    streakAtual = 1;
+
+    for (let i = 1; i < diasNumericos.length; i++) {
+      if (diasNumericos[i - 1] - diasNumericos[i] === 1) {
+        streakAtual++;
+      } else {
+        break;
+      }
+    }
+  }
+
+  return {
+    streakAtual,
+    melhorStreak,
+    ultimaAtividade: respostas[0].respondidaEm,
+  };
+}

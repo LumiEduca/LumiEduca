@@ -32,5 +32,11 @@ router.get(
   exigirTipo("ALUNO"),
   progressoController.conquistas
 );
+router.get(
+  "/streak",
+  verificarToken,
+  exigirTipo("ALUNO"),
+  progressoController.streak
+);
 
 export default router;
