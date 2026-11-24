@@ -430,11 +430,11 @@ export async function gerarRelatorioDaSala(professorId, salaId) {
   });
 
   if (!sala) {
-    throw new ApiError(404, "Sala nÃ£o encontrada");
+    throw new ApiError(404, "Sala não encontrada");
   }
 
   if (sala.professorId !== professorId) {
-    throw new ApiError(403, "VocÃª nÃ£o tem permissÃ£o para acessar esta sala");
+    throw new ApiError(403, "Você não tem permissão para acessar esta sala");
   }
 
   // Busca todos os alunos matriculados, inclusive os sem respostas
@@ -453,7 +453,7 @@ export async function gerarRelatorioDaSala(professorId, salaId) {
   const alunos = matriculas.map((matricula) => matricula.aluno);
   const alunoIds = alunos.map((aluno) => aluno.id);
 
-  // Busca as atividades vinculadas Ã  sala e suas questÃµes
+  // Busca as atividades vinculadas à sala e suas questões
   const atividades = await prisma.atividade.findMany({
     where: {
       salaAtividades: {
@@ -490,7 +490,8 @@ export async function gerarRelatorioDaSala(professorId, salaId) {
     },
   });
 
-  // Organiza as atividades por matÃ©ria
+  // Organiza as atividades por matéria
+
   const materias = new Map();
 
   for (const atividade of atividades) {
@@ -508,7 +509,8 @@ export async function gerarRelatorioDaSala(professorId, salaId) {
     materia.questoesPorAluno += atividade.questoes.length;
   }
 
-  // Calcula os totais de respostas por matÃ©ria
+  // Calcula os totais de respostas por matéria
+
   for (const resposta of respostas) {
     const atividade = atividades.find(
       (item) => item.id === resposta.questao.atividadeId
@@ -598,4 +600,4 @@ export async function gerarRelatorioDaSala(professorId, salaId) {
     resumoPorMateria,
     alunos: relatorioAlunos,
   };
-}`n
+}

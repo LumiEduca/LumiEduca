@@ -38,6 +38,13 @@ router.get(
   exigirTipo("ALUNO"),
   progressoController.streak
 );
+router.get(
+  "/relatorio/sala/:id",
+  verificarToken,
+  exigirTipo("PROFESSOR"),
+  validarParams(idParamSchema),
+  progressoController.relatorioDaSala
+);
 
 router.get(
   "/streak",
