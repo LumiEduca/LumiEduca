@@ -412,3 +412,190 @@ export async function calcularStreakDoAluno(alunoId) {
     ultimaAtividade: respostas[0].respondidaEm,
   };
 }
+
+function calcularTaxaAcerto(acertos, respondidas) {
+  if (respondidas === 0) return 0;
+  return Number(((acertos / respondidas) * 100).toFixed(2));
+}
+
+export async function gerarRelatorioDaSala(professorId, salaId) {
+  // Verifica se a sala existe e pertence ao professor
+  const sala = await prisma.sala.findUnique({
+    where: { id: salaId },
+    select: {
+      id: true,
+      nome: true,
+      professorId: true,
+    },
+  });
+
+  if (!sala) {
+    throw new ApiError(404, "Sala não encontrada");
+  }
+
+  if (sala.professorId !== professorId) {
+    throw new ApiError(403, "Você não tem permissão para acessar esta sala");
+  }
+
+  // Busca todos os alunos matriculados, inclusive os sem respostas
+  const matriculas = await prisma.matricula.findMany({
+    where: { salaId },
+    select: {
+      aluno: {
+        select: {
+          id: true,
+          nome: true,
+        },
+      },
+    },
+  });
+
+  const alunos = matriculas.map((matricula) => matricula.aluno);
+  const alunoIds = alunos.map((aluno) => aluno.id);
+
+  // Busca as atividades vinculadas à sala e suas questões
+  const atividades = await prisma.atividade.findMany({
+    where: {
+      salaAtividades: {
+        some: { salaId },
+      },
+    },
+    select: {
+      id: true,
+      materia: true,
+      questoes: {
+        select: { id: true },
+      },
+    },
+  });
+
+  const atividadeIds = atividades.map((atividade) => atividade.id);
+
+  // Busca as respostas dos alunos matriculados
+  const respostas = await prisma.resposta.findMany({
+    where: {
+      alunoId: { in: alunoIds },
+      questao: {
+        atividadeId: { in: atividadeIds },
+      },
+    },
+    select: {
+      alunoId: true,
+      correta: true,
+      questao: {
+        select: {
+          atividadeId: true,
+        },
+      },
+    },
+  });
+
+  // Organiza as atividades por matéria
+  const materias = new Map();
+
+  for (const atividade of atividades) {
+    if (!materias.has(atividade.materia)) {
+      materias.set(atividade.materia, {
+        materia: atividade.materia,
+        questoesPorAluno: 0,
+        questoesTotal: 0,
+        questoesRespondidas: 0,
+        acertos: 0,
+      });
+    }
+
+    const materia = materias.get(atividade.materia);
+    materia.questoesPorAluno += atividade.questoes.length;
+  }
+
+  // Calcula os totais de respostas por matéria
+  for (const resposta of respostas) {
+    const atividade = atividades.find(
+      (item) => item.id === resposta.questao.atividadeId
+    );
+
+    if (!atividade) continue;
+
+    const materia = materias.get(atividade.materia);
+    materia.questoesRespondidas++;
+
+    if (resposta.correta) {
+      materia.acertos++;
+    }
+  }
+
+  const resumoPorMateria = [...materias.values()].map((materia) => ({
+    materia: materia.materia,
+    questoesTotal: materia.questoesPorAluno * alunos.length,
+    questoesRespondidas: materia.questoesRespondidas,
+    acertos: materia.acertos,
+    taxaAcerto: calcularTaxaAcerto(
+      materia.acertos,
+      materia.questoesRespondidas
+    ),
+  }));
+
+  // Monta o desempenho individual de cada aluno
+  const relatorioAlunos = alunos.map((aluno) => {
+    const respostasDoAluno = respostas.filter(
+      (resposta) => resposta.alunoId === aluno.id
+    );
+
+    const materiasDoAluno = [...materias.values()].map((materia) => {
+      const atividadesDaMateria = atividades.filter(
+        (atividade) => atividade.materia === materia.materia
+      );
+
+      const idsDasAtividades = atividadesDaMateria.map(
+        (atividade) => atividade.id
+      );
+
+      const respostasDaMateria = respostasDoAluno.filter((resposta) =>
+        idsDasAtividades.includes(resposta.questao.atividadeId)
+      );
+
+      const acertos = respostasDaMateria.filter(
+        (resposta) => resposta.correta
+      ).length;
+
+      return {
+        materia: materia.materia,
+        questoesTotal: materia.questoesPorAluno,
+        questoesRespondidas: respostasDaMateria.length,
+        acertos,
+        taxaAcerto: calcularTaxaAcerto(
+          acertos,
+          respostasDaMateria.length
+        ),
+      };
+    });
+
+    const acertos = respostasDoAluno.filter(
+      (resposta) => resposta.correta
+    ).length;
+
+    return {
+      aluno,
+      questoesTotal: atividades.reduce(
+        (total, atividade) => total + atividade.questoes.length,
+        0
+      ),
+      questoesRespondidas: respostasDoAluno.length,
+      acertos,
+      taxaAcerto: calcularTaxaAcerto(
+        acertos,
+        respostasDoAluno.length
+      ),
+      materias: materiasDoAluno,
+    };
+  });
+
+  return {
+    sala: {
+      id: sala.id,
+      nome: sala.nome,
+    },
+    resumoPorMateria,
+    alunos: relatorioAlunos,
+  };
+}

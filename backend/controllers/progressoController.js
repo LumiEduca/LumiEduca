@@ -58,3 +58,16 @@ export async function streak(req, res, next) {
     next(error);
   }
 }
+
+export async function relatorioDaSala(req, res, next) {
+  try {
+    const resultado = await progressoService.gerarRelatorioDaSala(
+      req.usuario.id,
+      req.params.id
+    );
+
+    res.json(resultado);
+  } catch (error) {
+    next(error);
+  }
+}
