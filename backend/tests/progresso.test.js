@@ -572,4 +572,196 @@ describe('Testes de Progresso (/api/v1/progresso)', () => {
       expect(atrasada.atrasada).toBe(false);
     });
   });
+
+  describe('GET /relatorio/sala/:id', () => {
+    let tokenAlunoRelatorio;
+    let tokenAlunoSemRespostas;
+    let salaRelatorioId;
+    let alunoRelatorioId;
+    let alunoSemRespostasId;
+
+    beforeAll(async () => {
+      const sufixo = `relatorio_${Date.now()}`;
+
+      // Cria uma sala exclusiva para os testes do relatório
+      const sala = await request(app)
+        .post('/api/v1/salas')
+        .set('Authorization', `Bearer ${tokenProfDono}`)
+        .send({ nome: 'Sala Teste Relatório' });
+
+      expect(sala.status).toBe(201);
+      salaRelatorioId = sala.body.id;
+
+      // Cria dois alunos
+      const cadastroAluno = await request(app)
+        .post('/api/v1/auth/register/aluno')
+        .send({
+          nome: 'Aluno Relatório',
+          usuario: `${sufixo}_1`,
+          senha: 'password123',
+        });
+
+      expect(cadastroAluno.status).toBe(201);
+      tokenAlunoRelatorio = cadastroAluno.body.token;
+      alunoRelatorioId = cadastroAluno.body.usuario.id;
+
+      const cadastroAlunoSemRespostas = await request(app)
+        .post('/api/v1/auth/register/aluno')
+        .send({
+          nome: 'Aluno Sem Respostas',
+          usuario: `${sufixo}_2`,
+          senha: 'password123',
+        });
+
+      expect(cadastroAlunoSemRespostas.status).toBe(201);
+      tokenAlunoSemRespostas = cadastroAlunoSemRespostas.body.token;
+      alunoSemRespostasId = cadastroAlunoSemRespostas.body.usuario.id;
+
+      // Matricula os dois alunos na sala
+      for (const token of [
+        tokenAlunoRelatorio,
+        tokenAlunoSemRespostas,
+      ]) {
+        const matricula = await request(app)
+          .post('/api/v1/salas/entrar')
+          .set('Authorization', `Bearer ${token}`)
+          .send({ codigo: sala.body.codigo });
+
+        expect(matricula.status).toBe(200);
+      }
+
+      // Cria uma atividade com duas questões
+      const atividade = await request(app)
+        .post('/api/v1/atividades')
+        .set('Authorization', `Bearer ${tokenProfDono}`)
+        .send({
+          titulo: 'Atividade Relatório',
+          materia: 'Matemática',
+          questoes: [
+            {
+              enunciado: 'Quanto é 2 + 2?',
+              opcoes: ['3', '4'],
+              respostaCorreta: '1',
+              ordem: 1,
+            },
+            {
+              enunciado: 'Quanto é 3 + 3?',
+              opcoes: ['5', '6'],
+              respostaCorreta: '1',
+              ordem: 2,
+            },
+          ],
+        });
+
+      expect(atividade.status).toBe(201);
+
+      const vinculada = await request(app)
+        .post(`/api/v1/salas/${salaRelatorioId}/atividades`)
+        .set('Authorization', `Bearer ${tokenProfDono}`)
+        .send({ idAtividade: atividade.body.id });
+
+      expect(vinculada.status).toBe(201);
+
+      // Registra uma resposta correta e uma incorreta
+      // diretamente no banco, sem alterar o progresso dos outros testes
+      await prisma.resposta.createMany({
+        data: [
+          {
+            alunoId: alunoRelatorioId,
+            questaoId: atividade.body.questoes[0].id,
+            resposta: '1',
+            correta: true,
+          },
+          {
+            alunoId: alunoRelatorioId,
+            questaoId: atividade.body.questoes[1].id,
+            resposta: '0',
+            correta: false,
+          },
+        ],
+      });
+    });
+
+    it('Deve retornar 401 sem token', async () => {
+      const res = await request(app)
+        .get(`/api/v1/progresso/relatorio/sala/${salaRelatorioId}`);
+
+      expect(res.status).toBe(401);
+    });
+
+    it('Deve retornar 403 para alunos', async () => {
+      const res = await request(app)
+        .get(`/api/v1/progresso/relatorio/sala/${salaRelatorioId}`)
+        .set('Authorization', `Bearer ${tokenAlunoRelatorio}`);
+
+      expect(res.status).toBe(403);
+    });
+
+    it('Deve retornar 403 para professor que não é dono da sala', async () => {
+      const res = await request(app)
+        .get(`/api/v1/progresso/relatorio/sala/${salaRelatorioId}`)
+        .set('Authorization', `Bearer ${tokenProfOutro}`);
+
+      expect(res.status).toBe(403);
+    });
+
+    it('Deve retornar 404 para sala inexistente', async () => {
+      const res = await request(app)
+        .get('/api/v1/progresso/relatorio/sala/sala-inexistente')
+        .set('Authorization', `Bearer ${tokenProfDono}`);
+
+      expect(res.status).toBe(404);
+    });
+
+    it('Professor dono deve receber o relatório com os cálculos corretos', async () => {
+      const res = await request(app)
+        .get(`/api/v1/progresso/relatorio/sala/${salaRelatorioId}`)
+        .set('Authorization', `Bearer ${tokenProfDono}`);
+
+      expect(res.status).toBe(200);
+
+      expect(res.body.sala).toEqual({
+        id: salaRelatorioId,
+        nome: 'Sala Teste Relatório',
+      });
+
+      expect(res.body.resumoPorMateria).toEqual([
+        expect.objectContaining({
+          materia: 'Matemática',
+          questoesTotal: 4,
+          questoesRespondidas: 2,
+          acertos: 1,
+          taxaAcerto: 50,
+        }),
+      ]);
+
+      expect(res.body.alunos).toHaveLength(2);
+
+      const alunoComRespostas = res.body.alunos.find(
+        (item) => item.aluno.id === alunoRelatorioId
+      );
+
+      expect(alunoComRespostas).toEqual(
+        expect.objectContaining({
+          questoesTotal: 2,
+          questoesRespondidas: 2,
+          acertos: 1,
+          taxaAcerto: 50,
+        })
+      );
+
+      const alunoSemRespostas = res.body.alunos.find(
+        (item) => item.aluno.id === alunoSemRespostasId
+      );
+
+      expect(alunoSemRespostas).toEqual(
+        expect.objectContaining({
+          questoesTotal: 2,
+          questoesRespondidas: 0,
+          acertos: 0,
+          taxaAcerto: 0,
+        })
+      );
+    });
+  });
 });
