@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import Header from './components/Header';
 import AppRoutes from './routes/AppRoutes';
-import { Toaster } from 'react-hot-toast';
+import toast, { Toaster } from 'react-hot-toast';
 import lumiLogo from './assets/images/lumi-logo.png';
+import { ativarPush, ouvirMensagens } from './services/firebase';
 
 function App() {
   const [isLoading, setIsLoading] = useState(true);
@@ -37,6 +38,30 @@ function App() {
       );
     }
   }, [pontos, concluidas, userName]);
+
+  // Push: só para usuário logado. Renova o token em silêncio se já houver permissão
+  // e mostra um toast quando chega mensagem com o app em foco.
+  useEffect(() => {
+    const jwt = localStorage.getItem('token');
+    if (!userType || !jwt) return undefined;
+
+    let cancelado = false;
+    let pararDeOuvir = () => {};
+
+    ativarPush(jwt, { pedirPermissao: false });
+
+    ouvirMensagens(({ title, body }) => {
+      toast(body ? `${title} — ${body}` : title || 'Nova notificação', { icon: '🦊' });
+    }).then((parar) => {
+      if (cancelado) parar();
+      else pararDeOuvir = parar;
+    });
+
+    return () => {
+      cancelado = true;
+      pararDeOuvir();
+    };
+  }, [userType]);
 
   if (isLoading) {
     return (

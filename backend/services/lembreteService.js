@@ -1,4 +1,5 @@
 import prisma from "../config/prismaClient.js";
+import { enviarPush } from "./notificationService.js";
 
 const JANELA_MS = 24 * 60 * 60 * 1000;
 
@@ -43,22 +44,29 @@ export const enviarLembretesDePrazo = async (agora = new Date()) => {
     });
     for (const c of concluidos) alunoIds.delete(c.alunoId);
 
+    const titulo = "Prazo chegando";
+    const corpo = `A atividade "${atividade.titulo}" vence em ${formatarPrazo(atividade.prazo)}.`;
+    const avisados = [];
+
     for (const alunoId of alunoIds) {
       try {
         await prisma.$transaction([
           prisma.lembreteAtividade.create({ data: { alunoId, atividadeId: atividade.id } }),
-          prisma.notificacao.create({
-            data: {
-              usuarioId: alunoId,
-              titulo: "Prazo chegando",
-              corpo: `A atividade "${atividade.titulo}" vence em ${formatarPrazo(atividade.prazo)}.`,
-            },
-          }),
+          prisma.notificacao.create({ data: { usuarioId: alunoId, titulo, corpo } }),
         ]);
         lembretes++;
+        avisados.push(alunoId);
       } catch (error) {
         if (error.code === "P2002") continue; // já avisado antes
         console.error("Falha ao criar lembrete de prazo:", error);
+      }
+    }
+
+    if (avisados.length > 0) {
+      try {
+        await enviarPush(avisados, { title: titulo, body: corpo });
+      } catch (error) {
+        console.error("Falha ao enviar push do lembrete:", error);
       }
     }
   }
