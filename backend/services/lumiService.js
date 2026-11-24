@@ -85,10 +85,7 @@ export async function verificarStatus() {
       await model.generateContent("ping");
       resultado = { disponivel: true };
     } catch (error) {
-      console.error(
-        "[lumiService] Falha ao verificar status da Gemini:",
-        error.message,
-      );
+      console.error("[lumiService] Falha ao verificar status da Gemini.");
       resultado = { disponivel: false };
     }
 
