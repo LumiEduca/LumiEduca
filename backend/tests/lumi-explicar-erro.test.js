@@ -134,6 +134,7 @@ describe("POST /api/v1/lumi/explicar-erro", () => {
     expect(res.body).toEqual({ acertou: false, explicacao: "Quase! 🦊" });
     expect(lumiService.explicarErro).toHaveBeenCalledWith({
       enunciado: "Quanto é 1/2 + 1/2?",
+      tipo: "MULTIPLA_ESCOLHA",
       opcoes: ["1", "2", "1/4"],
       respostaAluno: "1/4",
       respostaCorreta: "1",
