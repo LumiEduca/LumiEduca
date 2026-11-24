@@ -1,17 +1,42 @@
 import React, { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import '../styles/professor-pages.css';
 import { showLumiNotification } from '../services/notificationClient';
 import Modal from '../components/UI/Modal';
 
 export default function CreateTaskPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const tarefaEditando = location.state?.tarefa || null;
 
-  const [nomeAtividade, setNomeAtividade] = useState('');
-  const [pergunta, setPergunta] = useState('');
-  const [opcoes, setOpcoes] = useState(['', '', '', '']);
-  const [correta, setCorreta] = useState(0);
-  const [salaSelecionada, setSalaSelecionada] = useState('');
+  const [nomeAtividade, setNomeAtividade] = useState(tarefaEditando?.nomeAtividade || '');
+  const [materia, setMateria] = useState(tarefaEditando?.materia || '');
+  const [prazo, setPrazo] = useState(() => {
+    if (!tarefaEditando?.prazo) return '';
+    const data = new Date(tarefaEditando.prazo);
+    if (Number.isNaN(data.getTime())) return '';
+    return new Date(data.getTime() - data.getTimezoneOffset() * 60000)
+      .toISOString()
+      .slice(0, 16);
+  });
+  const [pergunta, setPergunta] = useState(tarefaEditando?.pergunta || '');
+  const [opcoes, setOpcoes] = useState(
+    tarefaEditando?.opcoes?.length ? tarefaEditando.opcoes : ['', '', '', '']
+  );
+  const [tipoQuestao, setTipoQuestao] = useState(
+    tarefaEditando?.tipo === 'VERDADEIRO_FALSO' || tarefaEditando?.tipo === 'LACUNA'
+      ? tarefaEditando.tipo
+      : 'MULTIPLA_ESCOLHA'
+  );
+  const [correta, setCorreta] = useState(
+    tarefaEditando?.tipo === 'VERDADEIRO_FALSO'
+      ? tarefaEditando.respostaCorreta || 'Verdadeiro'
+      : Number(tarefaEditando?.respostaCorreta ?? 0)
+  );
+  const [respostaLacuna, setRespostaLacuna] = useState(
+    tarefaEditando?.tipo === 'LACUNA' ? tarefaEditando.respostaCorreta || '' : ''
+  );
+  const [salaSelecionada, setSalaSelecionada] = useState(tarefaEditando?.salaId || '');
   const [modal, setModal] = useState({
     isOpen: false,
     title: '',
@@ -49,7 +74,20 @@ export default function CreateTaskPage() {
       return;
     }
 
-    if (opcoes.some((opt) => opt.trim() === '')) {
+    if (!pergunta.trim()) {
+      setModal({
+        isOpen: true,
+        title: 'Pergunta obrigatória',
+        message: 'Informe o enunciado da questão.',
+        type: 'info',
+      });
+      return;
+    }
+
+    if (
+      tipoQuestao === 'MULTIPLA_ESCOLHA' &&
+      (opcoes.some((opt) => opt.trim() === '') || opcoes.length < 2)
+    ) {
       setModal({
         isOpen: true,
         title: 'Alternativas incompletas',
@@ -59,28 +97,55 @@ export default function CreateTaskPage() {
       return;
     }
 
+    if (tipoQuestao === 'LACUNA' && !respostaLacuna.trim()) {
+      setModal({
+        isOpen: true,
+        title: 'Resposta obrigatória',
+        message: 'Informe o texto que completa a lacuna.',
+        type: 'info',
+      });
+      return;
+    }
+
     const tarefasAtuais = JSON.parse(localStorage.getItem('lumi_tarefas') || '[]');
     const sala = salasProfessor.find((s) => s.id === salaSelecionada);
+    const respostaCorreta =
+      tipoQuestao === 'LACUNA' ? respostaLacuna.trim() : correta;
 
     const novaTarefa = {
-      id: Date.now(),
+      ...(tarefaEditando || {}),
+      id: tarefaEditando?.id || Date.now(),
       nomeAtividade: nomeAtividade.trim(),
+      materia: materia.trim(),
+      prazo: prazo ? new Date(prazo).toISOString() : null,
       pergunta,
-      opcoes,
-      respostaCorreta: correta,
-      tipo: 'multipla_escolha',
+      opcoes:
+        tipoQuestao === 'MULTIPLA_ESCOLHA'
+          ? opcoes.map((opcao) => opcao.trim())
+          : tipoQuestao === 'VERDADEIRO_FALSO'
+            ? ['Verdadeiro', 'Falso']
+            : [],
+      respostaCorreta,
+      tipo: tipoQuestao,
       criadoPor: userName,
       salaId: sala?.id || null,
       salaNome: sala?.nome || 'Geral',
       salaCodigo: sala?.codigo || null,
     };
 
-    localStorage.setItem('lumi_tarefas', JSON.stringify([...tarefasAtuais, novaTarefa]));
+    const tarefasAtualizadas = tarefaEditando
+      ? tarefasAtuais.map((tarefa) =>
+          String(tarefa.id) === String(tarefaEditando.id) ? novaTarefa : tarefa
+        )
+      : [...tarefasAtuais, novaTarefa];
+    localStorage.setItem('lumi_tarefas', JSON.stringify(tarefasAtualizadas));
 
-    await showLumiNotification(
-      'Nova atividade no LumiEduca! 🦊',
-      `${novaTarefa.nomeAtividade} foi lançada para os alunos.`
-    );
+    if (!tarefaEditando) {
+      await showLumiNotification(
+        'Nova atividade no LumiEduca! 🦊',
+        `${novaTarefa.nomeAtividade} foi lançada para os alunos.`
+      );
+    }
 
     navigate('/tarefas-recebidas');
   };
@@ -99,10 +164,12 @@ export default function CreateTaskPage() {
         <section className="professor-card blue-top">
           <span className="professor-badge">✨ Novo desafio personalizado</span>
 
-          <h1 className="professor-title">Criar desafio</h1>
+          <h1 className="professor-title">
+            {tarefaEditando ? 'Editar desafio' : 'Criar desafio'}
+          </h1>
 
           <p className="professor-text">
-            Monte uma atividade de múltipla escolha e, se desejar, vincule a uma sala personalizada.
+            Monte uma atividade com a questão que melhor combina com o desafio.
           </p>
 
           <form className="professor-form-grid" onSubmit={salvarTarefa}>
@@ -115,6 +182,27 @@ export default function CreateTaskPage() {
                 value={nomeAtividade}
                 onChange={(e) => setNomeAtividade(e.target.value)}
                 required
+              />
+            </div>
+
+            <div>
+              <label className="professor-label">Matéria</label>
+              <input
+                className="professor-input"
+                type="text"
+                placeholder="Ex: Ciências"
+                value={materia}
+                onChange={(e) => setMateria(e.target.value)}
+              />
+            </div>
+
+            <div>
+              <label className="professor-label">Prazo (opcional)</label>
+              <input
+                className="professor-input"
+                type="datetime-local"
+                value={prazo}
+                onChange={(e) => setPrazo(e.target.value)}
               />
             </div>
 
@@ -135,6 +223,22 @@ export default function CreateTaskPage() {
             </div>
 
             <div>
+              <label className="professor-label">Tipo de questão</label>
+              <select
+                className="professor-input"
+                value={tipoQuestao}
+                onChange={(e) => {
+                  setTipoQuestao(e.target.value);
+                  setCorreta(e.target.value === 'VERDADEIRO_FALSO' ? 'Verdadeiro' : 0);
+                }}
+              >
+                <option value="MULTIPLA_ESCOLHA">Múltipla escolha</option>
+                <option value="VERDADEIRO_FALSO">Verdadeiro ou falso</option>
+                <option value="LACUNA">Preencher lacuna</option>
+              </select>
+            </div>
+
+            <div>
               <label className="professor-label">Pergunta do desafio</label>
               <textarea
                 className="professor-textarea"
@@ -145,36 +249,66 @@ export default function CreateTaskPage() {
               />
             </div>
 
-            <div>
-              <label className="professor-label">Alternativas (marque a correta)</label>
+            {tipoQuestao === 'MULTIPLA_ESCOLHA' && (
+              <div>
+                <label className="professor-label">Alternativas (marque a correta)</label>
 
-              <div className="professor-form-grid">
-                {opcoes.map((opcao, index) => (
-                  <div key={index} className="professor-option-row">
-                    <input
-                      className="professor-radio"
-                      type="radio"
-                      name="correta"
-                      checked={correta === index}
-                      onChange={() => setCorreta(index)}
-                    />
+                <div className="professor-form-grid">
+                  {opcoes.map((opcao, index) => (
+                    <div key={index} className="professor-option-row">
+                      <input
+                        className="professor-radio"
+                        type="radio"
+                        name="correta"
+                        checked={correta === index}
+                        onChange={() => setCorreta(index)}
+                      />
 
-                    <input
-                      className="professor-input"
-                      type="text"
-                      placeholder={`Opção ${index + 1}`}
-                      value={opcao}
-                      onChange={(e) => handleOpcaoChange(index, e.target.value)}
-                      required
-                    />
-                  </div>
-                ))}
+                      <input
+                        className="professor-input"
+                        type="text"
+                        placeholder={`Opção ${index + 1}`}
+                        value={opcao}
+                        onChange={(e) => handleOpcaoChange(index, e.target.value)}
+                        required
+                      />
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
+
+            {tipoQuestao === 'VERDADEIRO_FALSO' && (
+              <div>
+                <label className="professor-label">Resposta correta</label>
+                <select
+                  className="professor-input"
+                  value={correta}
+                  onChange={(e) => setCorreta(e.target.value)}
+                >
+                  <option value="Verdadeiro">Verdadeiro</option>
+                  <option value="Falso">Falso</option>
+                </select>
+              </div>
+            )}
+
+            {tipoQuestao === 'LACUNA' && (
+              <div>
+                <label className="professor-label">Resposta que completa a lacuna</label>
+                <input
+                  className="professor-input"
+                  type="text"
+                  placeholder="Resposta correta"
+                  value={respostaLacuna}
+                  onChange={(e) => setRespostaLacuna(e.target.value)}
+                  required
+                />
+              </div>
+            )}
 
             <div className="professor-action-row">
               <button type="submit" className="professor-btn primary">
-                Lançar para alunos
+                {tarefaEditando ? 'Salvar alterações' : 'Lançar para alunos'}
               </button>
 
               <button

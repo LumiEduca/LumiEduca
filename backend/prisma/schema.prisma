@@ -80,6 +80,7 @@ model Questao {
   enunciado      String
   opcoes         Json
   respostaCorreta String
+  tipo           String    @default("MULTIPLA_ESCOLHA")
   ordem          Int       @default(0)
   respostas     Resposta[]
 

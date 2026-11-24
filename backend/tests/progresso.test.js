@@ -107,6 +107,7 @@ describe('Testes de Progresso (/api/v1/progresso)', () => {
       expect(res.status).toBe(201);
       expect(res.body.correta).toBe(true);
       expect(res.body.pontosGanhos).toBe(10);
+      expect(res.body).not.toHaveProperty('respostaCorreta');
     });
   
     it('Deve impedir que o aluno responda a mesma questão duas vezes (409)', async () => {
@@ -147,6 +148,112 @@ describe('Testes de Progresso (/api/v1/progresso)', () => {
     it('Professores não possuem trilha e devem receber 403', async () => {
       const res = await request(app).get('/api/v1/progresso/trilha').set('Authorization', `Bearer ${tokenProfDono}`);
       expect(res.status).toBe(403);
+    });
+  });
+
+  describe('Novos tipos de questão', () => {
+    const criarQuestaoEAssociar = async (tipo, respostaCorreta) => {
+      const atividade = await request(app)
+        .post('/api/v1/atividades')
+        .set('Authorization', `Bearer ${tokenProfDono}`)
+        .send({
+          titulo: `Questão ${tipo}`,
+          materia: 'Português',
+          questoes: [
+            {
+              tipo,
+              enunciado: 'Responda à questão',
+              respostaCorreta,
+            },
+          ],
+        });
+
+      expect(atividade.status).toBe(201);
+      expect(atividade.body.questoes[0].tipo).toBe(tipo);
+
+      const vinculada = await request(app)
+        .post(`/api/v1/salas/${salaId}/atividades`)
+        .set('Authorization', `Bearer ${tokenProfDono}`)
+        .send({ idAtividade: atividade.body.id });
+      expect(vinculada.status).toBe(201);
+
+      return atividade.body.questoes[0].id;
+    };
+
+    it('Corrige questões VERDADEIRO_FALSO sem exigir opções do cliente', async () => {
+      const novaQuestaoId = await criarQuestaoEAssociar(
+        'VERDADEIRO_FALSO',
+        'Verdadeiro'
+      );
+      const res = await request(app)
+        .post('/api/v1/progresso/responder')
+        .set('Authorization', `Bearer ${tokenAlunoDentro}`)
+        .send({ questaoId: novaQuestaoId, resposta: 'true' });
+
+      expect(res.status).toBe(201);
+      expect(res.body.correta).toBe(true);
+      expect(res.body).not.toHaveProperty('respostaCorreta');
+    });
+
+    it('Corrige LACUNA sem exigir opções e ignora diferença de caixa', async () => {
+      const novaQuestaoId = await criarQuestaoEAssociar('LACUNA', 'Brasília');
+      const res = await request(app)
+        .post('/api/v1/progresso/responder')
+        .set('Authorization', `Bearer ${tokenAlunoDentro}`)
+        .send({ questaoId: novaQuestaoId, resposta: 'brasília' });
+
+      expect(res.status).toBe(201);
+      expect(res.body.correta).toBe(true);
+      expect(res.body).not.toHaveProperty('respostaCorreta');
+    });
+  });
+
+  describe('Prazo de atividade para aluno', () => {
+    it('Marca atividade vencida como atrasada até a conclusão', async () => {
+      const atividade = await request(app)
+        .post('/api/v1/atividades')
+        .set('Authorization', `Bearer ${tokenProfDono}`)
+        .send({
+          titulo: 'Atividade vencida',
+          materia: 'Matemática',
+          prazo: new Date(Date.now() - 86400000).toISOString(),
+          questoes: [
+            {
+              enunciado: 'Quanto é 1 + 1?',
+              opcoes: ['2', '3'],
+              respostaCorreta: '0',
+            },
+          ],
+        });
+      expect(atividade.status).toBe(201);
+
+      const vinculada = await request(app)
+        .post(`/api/v1/salas/${salaId}/atividades`)
+        .set('Authorization', `Bearer ${tokenProfDono}`)
+        .send({ idAtividade: atividade.body.id });
+      expect(vinculada.status).toBe(201);
+
+      const listar = () =>
+        request(app)
+          .get(`/api/v1/salas/${salaId}/atividades`)
+          .set('Authorization', `Bearer ${tokenAlunoDentro}`);
+      let lista = await listar();
+      let atrasada = lista.body.find((item) => item.id === atividade.body.id);
+      expect(atrasada.atrasada).toBe(true);
+      expect(JSON.stringify(atrasada)).not.toMatch(/respostaCorreta/);
+
+      const resposta = await request(app)
+        .post('/api/v1/progresso/responder')
+        .set('Authorization', `Bearer ${tokenAlunoDentro}`)
+        .send({
+          questaoId: atividade.body.questoes[0].id,
+          resposta: '0',
+        });
+      expect(resposta.status).toBe(201);
+
+      lista = await listar();
+      atrasada = lista.body.find((item) => item.id === atividade.body.id);
+      expect(atrasada.atrasada).toBe(false);
     });
   });
 });
