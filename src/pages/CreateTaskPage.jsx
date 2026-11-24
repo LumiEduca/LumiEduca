@@ -4,6 +4,7 @@ import '../styles/professor-pages.css';
 import { showLumiNotification } from '../services/notificationClient';
 import Modal from '../components/UI/Modal';
 import { listarSalas } from '../services/salaService';
+import { criarAtividade, editarAtividade } from '../services/atividadeService';
 
 export default function CreateTaskPage() {
   const navigate = useNavigate();
@@ -38,14 +39,13 @@ export default function CreateTaskPage() {
     tarefaEditando?.tipo === 'LACUNA' ? tarefaEditando.respostaCorreta || '' : ''
   );
   const [salaSelecionada, setSalaSelecionada] = useState(tarefaEditando?.salaId || '');
+  const [salvando, setSalvando] = useState(false);
   const [modal, setModal] = useState({
     isOpen: false,
     title: '',
     message: '',
     type: 'info',
   });
-
-  const userName = localStorage.getItem('userName') || 'Professor';
 
   const [salasProfessor, setSalasProfessor] = useState([]);
 
@@ -67,6 +67,7 @@ export default function CreateTaskPage() {
 
   const salvarTarefa = async (e) => {
     e.preventDefault();
+    if (salvando) return;
 
     if (!nomeAtividade.trim()) {
       setModal({
@@ -111,46 +112,55 @@ export default function CreateTaskPage() {
       return;
     }
 
-    const tarefasAtuais = JSON.parse(localStorage.getItem('lumi_tarefas') || '[]');
-    const sala = salasProfessor.find((s) => s.id === salaSelecionada);
-    const respostaCorreta =
-      tipoQuestao === 'LACUNA' ? respostaLacuna.trim() : correta;
+    if (!salaSelecionada) {
+      setModal({
+        isOpen: true,
+        title: 'Escolha uma sala',
+        message: 'Selecione a sala que vai receber este desafio.',
+        type: 'info',
+      });
+      return;
+    }
 
-    const novaTarefa = {
-      ...(tarefaEditando || {}),
-      id: tarefaEditando?.id || Date.now(),
+    const dados = {
+      salaId: salaSelecionada,
       nomeAtividade: nomeAtividade.trim(),
       materia: materia.trim(),
       prazo: prazo ? new Date(prazo).toISOString() : null,
-      pergunta,
+      tipo: tipoQuestao,
+      pergunta: pergunta.trim(),
       opcoes:
         tipoQuestao === 'MULTIPLA_ESCOLHA'
           ? opcoes.map((opcao) => opcao.trim())
           : tipoQuestao === 'VERDADEIRO_FALSO'
             ? ['Verdadeiro', 'Falso']
             : [],
-      respostaCorreta,
-      tipo: tipoQuestao,
-      criadoPor: userName,
-      salaId: sala?.id || null,
-      salaNome: sala?.nome || 'Geral',
-      salaCodigo: sala?.codigo || null,
+      respostaCorreta: tipoQuestao === 'LACUNA' ? respostaLacuna.trim() : correta,
     };
 
-    const tarefasAtualizadas = tarefaEditando
-      ? tarefasAtuais.map((tarefa) =>
-          String(tarefa.id) === String(tarefaEditando.id) ? novaTarefa : tarefa
-        )
-      : [...tarefasAtuais, novaTarefa];
-    localStorage.setItem('lumi_tarefas', JSON.stringify(tarefasAtualizadas));
-
-    if (!tarefaEditando) {
-      await showLumiNotification(
-        'Nova atividade no LumiEduca! 🦊',
-        `${novaTarefa.nomeAtividade} foi lançada para os alunos.`
-      );
+    setSalvando(true);
+    try {
+      if (tarefaEditando) {
+        await editarAtividade(tarefaEditando.id, dados);
+      } else {
+        await criarAtividade(dados);
+        await showLumiNotification(
+          'Nova atividade no LumiEduca! 🦊',
+          `${dados.nomeAtividade} foi lançada para os alunos.`
+        );
+      }
+    } catch (err) {
+      setSalvando(false);
+      setModal({
+        isOpen: true,
+        title: 'Não foi possível salvar o desafio',
+        message: err.message,
+        type: 'info',
+      });
+      return;
     }
 
+    setSalvando(false);
     navigate('/tarefas-recebidas');
   };
 
@@ -216,8 +226,9 @@ export default function CreateTaskPage() {
                 className="professor-input"
                 value={salaSelecionada}
                 onChange={(e) => setSalaSelecionada(e.target.value)}
+                required
               >
-                <option value="">Geral — todos os alunos</option>
+                <option value="">Selecione uma sala</option>
                 {salasProfessor.map((sala) => (
                   <option key={sala.id} value={sala.id}>
                     {sala.nome} — código {sala.codigo}
@@ -311,8 +322,12 @@ export default function CreateTaskPage() {
             )}
 
             <div className="professor-action-row">
-              <button type="submit" className="professor-btn primary">
-                {tarefaEditando ? 'Salvar alterações' : 'Lançar para alunos'}
+              <button type="submit" className="professor-btn primary" disabled={salvando}>
+                {salvando
+                  ? 'Salvando...'
+                  : tarefaEditando
+                    ? 'Salvar alterações'
+                    : 'Lançar para alunos'}
               </button>
 
               <button

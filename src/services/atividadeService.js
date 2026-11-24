@@ -35,10 +35,14 @@ async function request(path, options = {}) {
 export const criarAtividade = (dados) =>
   request('', { method: 'POST', body: JSON.stringify(dados) });
 
+export const editarAtividade = (id, dados) =>
+  request(`/${id}`, { method: 'PATCH', body: JSON.stringify(dados) });
+
 export const listarAtividades = (salaId) =>
   request(salaId ? `?salaId=${encodeURIComponent(salaId)}` : '');
 
-export const responderAtividade = (id, indice) =>
-  request(`/${id}/responder`, { method: 'POST', body: JSON.stringify({ indice }) });
+// resposta: índice (múltipla escolha), "Verdadeiro"/"Falso" ou o texto da lacuna
+export const responderAtividade = (id, resposta) =>
+  request(`/${id}/responder`, { method: 'POST', body: JSON.stringify({ resposta }) });
 
 export const excluirAtividade = (id) => request(`/${id}`, { method: 'DELETE' });

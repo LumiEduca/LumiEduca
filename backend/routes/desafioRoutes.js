@@ -1,6 +1,7 @@
 import express from "express";
 import {
   criarDesafio,
+  editarDesafio,
   listarDesafios,
   responderDesafio,
   removerDesafio,
@@ -13,6 +14,13 @@ const router = express.Router();
 
 router.post("/", verificarToken, exigirTipo("PROFESSOR"), criarDesafio);
 router.get("/", verificarToken, listarDesafios);
+router.patch(
+  "/:id",
+  verificarToken,
+  exigirTipo("PROFESSOR"),
+  validarParams(idParamSchema),
+  editarDesafio
+);
 router.post(
   "/:id/responder",
   verificarToken,
