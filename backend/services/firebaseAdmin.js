@@ -1,6 +1,8 @@
-// TODO: substituir mock por firebase-admin real (módulo push-notifications)
+import { initializeApp, cert, getApps } from "firebase-admin/app";
+import { getMessaging } from "firebase-admin/messaging";
 
-const admin = {
+// Modo simulado: usado nos testes e quando não há credencial válida
+const simulado = {
   messaging() {
     return {
       async send(message) {
