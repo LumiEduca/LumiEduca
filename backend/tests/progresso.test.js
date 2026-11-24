@@ -4,7 +4,7 @@ import { prisma, limparDados } from './helpers/db.js';
 
 describe('Testes de Progresso (/api/v1/progresso)', () => {
   let tokenProfDono, tokenProfOutro, tokenAlunoDentro, tokenAlunoFora;
-  let salaId, atividadeId, questaoId, alunoDentroId, alunoForaId;
+  let salaId, atividadeId, questaoId, alunoDentroId, alunoForaId, codigoSala;
 
   beforeAll(async () => {
     await limparDados();
@@ -40,6 +40,7 @@ describe('Testes de Progresso (/api/v1/progresso)', () => {
     // Setup: Cria sala, aluno entra, cria atividade e vincula
     const resSala = await request(app).post('/api/v1/salas').set('Authorization', `Bearer ${tokenProfDono}`).send({ nome: 'Sala Progresso' });
     salaId = resSala.body.id;
+    codigoSala = resSala.body.codigo;
     await request(app).post('/api/v1/salas/entrar').set('Authorization', `Bearer ${tokenAlunoDentro}`).send({ codigo: resSala.body.codigo });
 
     const resAtiv = await request(app).post('/api/v1/atividades').set('Authorization', `Bearer ${tokenProfDono}`).send({
@@ -114,6 +115,118 @@ describe('Testes de Progresso (/api/v1/progresso)', () => {
       const res = await responder(tokenAlunoDentro, { questaoId, resposta: '1' });
       expect(res.status).toBe(409);
     });
+  });
+
+  describe('Conquistas automáticas', () => {
+    let tokenAlunoConquistas;
+
+    beforeAll(async () => {
+      const sufixo = `conquistas_${Date.now()}`;
+
+      const cadastro = await request(app)
+        .post('/api/v1/auth/register/aluno')
+        .send({
+          nome: 'Aluno Conquistas',
+          usuario: sufixo,
+          senha: 'password123',
+        });
+
+      expect(cadastro.status).toBe(201);
+      tokenAlunoConquistas = cadastro.body.token;
+
+      const entrada = await request(app)
+        .post('/api/v1/salas/entrar')
+        .set('Authorization', `Bearer ${tokenAlunoConquistas}`)
+        .send({ codigo: codigoSala });
+
+      expect(entrada.status).toBe(200);
+    });
+
+    async function criarAtividadeComQuestoes(quantidade) {
+      const atividade = await request(app)
+        .post('/api/v1/atividades')
+        .set('Authorization', `Bearer ${tokenProfDono}`)
+        .send({
+          titulo: `Teste conquistas ${quantidade}`,
+          materia: 'Matemática',
+          questoes: Array.from({ length: quantidade }, (_, i) => ({
+            enunciado: `Questão ${i + 1}`,
+            opcoes: ['Errado', 'Correto'],
+            respostaCorreta: '1',
+            ordem: i + 1,
+          })),
+        });
+
+      expect(atividade.status).toBe(201);
+
+      const vinculada = await request(app)
+        .post(`/api/v1/salas/${salaId}/atividades`)
+        .set('Authorization', `Bearer ${tokenProfDono}`)
+        .send({ idAtividade: atividade.body.id });
+
+      expect(vinculada.status).toBe(201);
+
+      return atividade.body.questoes;
+    }
+
+    async function responderQuestoes(questoes) {
+      const respostas = [];
+
+      for (const questao of questoes) {
+        const resposta = await request(app)
+          .post('/api/v1/progresso/responder')
+          .set('Authorization', `Bearer ${tokenAlunoConquistas}`)
+          .send({
+            questaoId: questao.id,
+            resposta: '1',
+          });
+
+        expect(resposta.status).toBe(201);
+        respostas.push(resposta.body);
+      }
+
+      return respostas;
+    }
+
+    it('Concede a conquista da primeira atividade concluída', async () => {
+      const questoes = await criarAtividadeComQuestoes(1);
+      const respostas = await responderQuestoes(questoes);
+
+      expect(respostas[0].atividade.concluida).toBe(true);
+      expect(respostas[0].novasConquistas).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            codigo: 'PRIMEIRA_ATIVIDADE',
+          }),
+        ])
+      );
+    });
+
+    it('Concede a conquista de cinco acertos consecutivos', async () => {
+      const questoes = await criarAtividadeComQuestoes(5);
+      const respostas = await responderQuestoes(questoes);
+
+      expect(
+        respostas.some((resposta) =>
+          resposta.novasConquistas?.some(
+            (conquista) => conquista.codigo === 'CINCO_ACERTOS'
+          )
+        )
+      ).toBe(true);
+    });
+
+    it('Concede a conquista ao acumular 100 pontos', async () => {
+      const questoes = await criarAtividadeComQuestoes(10);
+      const respostas = await responderQuestoes(questoes);
+
+      expect(
+        respostas.some((resposta) =>
+          resposta.novasConquistas?.some(
+            (conquista) => conquista.codigo === 'CEM_PONTOS'
+          )
+        )
+      ).toBe(true);
+    }, 60000);
   });
 
   describe('GET /aluno/:id', () => {
