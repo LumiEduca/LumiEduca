@@ -282,12 +282,10 @@ export default function ClassroomsPage() {
               <input
                 type="text"
                 className="classrooms-input"
-                placeholder="Código de 6 caracteres"
+                placeholder="Código de 6 dígitos"
                 value={codigoInput}
                 onChange={(e) => {
-                  setCodigoInput(
-                    e.target.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 6)
-                  );
+                  setCodigoInput(e.target.value.replace(/\D/g, '').slice(0, 6));
                   setErro('');
                 }}
                 maxLength={6}

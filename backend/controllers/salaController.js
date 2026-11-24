@@ -3,10 +3,8 @@ import prisma from "../config/prismaClient.js";
 import { salaRepository } from "../repositories/salaRepository.js";
 import { ApiError } from "../middlewares/errorHandler.js";
 
-// Código de 6 caracteres, sem letras/números ambíguos (0, O, 1, I)
-const ALFABETO = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-const gerarCodigo = (tamanho = 6) =>
-  Array.from(crypto.randomBytes(tamanho), (b) => ALFABETO[b % ALFABETO.length]).join("");
+// Código numérico de 6 dígitos
+const gerarCodigo = () => String(crypto.randomInt(100000, 1000000));
 
 // Remove o código de acesso e a lista de matrículas da resposta para o aluno
 const versaoAluno = (sala) => {
