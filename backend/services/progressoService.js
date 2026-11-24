@@ -3,6 +3,26 @@ import { ApiError } from "../middlewares/errorHandler.js";
 
 const PONTOS_POR_ACERTO = 10;
 
+function respostaEstaCorreta(questao, resposta) {
+  const recebida = String(resposta).trim();
+  if (questao.tipo === "VERDADEIRO_FALSO") {
+    const normalizar = (valor) => {
+      const respostaNormalizada = String(valor).trim().toLocaleLowerCase("pt-BR");
+      if (["true", "verdadeiro"].includes(respostaNormalizada)) return "verdadeiro";
+      if (["false", "falso"].includes(respostaNormalizada)) return "falso";
+      return respostaNormalizada;
+    };
+    return normalizar(recebida) === normalizar(questao.respostaCorreta);
+  }
+
+  if (questao.tipo === "LACUNA") {
+    return recebida.toLocaleLowerCase("pt-BR") ===
+      questao.respostaCorreta.trim().toLocaleLowerCase("pt-BR");
+  }
+
+  return recebida === questao.respostaCorreta.trim();
+}
+
 function calcularEstrelas(acertos, total, concluida) {
   if (!concluida || total === 0) return 0;
   const taxa = acertos / total;
@@ -85,7 +105,7 @@ export async function responderQuestao(alunoId, { questaoId, resposta }) {
   });
   if (jaRespondeu) throw new ApiError(409, "Você já respondeu esta questão");
 
-  const correta = String(resposta).trim() === questao.respostaCorreta.trim();
+  const correta = respostaEstaCorreta(questao, resposta);
 
   try {
     return await prisma.$transaction(async (tx) => {
@@ -118,7 +138,6 @@ export async function responderQuestao(alunoId, { questaoId, resposta }) {
 
       return {
         correta,
-        respostaCorreta: questao.respostaCorreta,
         pontosGanhos: correta ? PONTOS_POR_ACERTO : 0,
         atividade: {
           id: atividadeId,

@@ -88,17 +88,37 @@ export const listarAtividadesDaSala = async (req, res, next) => {
       orderBy: { criadaEm: "desc" },
       include: {
         atividade: {
-          include: { questoes: { orderBy: { ordem: "asc" } } },
+          include: {
+            questoes: { orderBy: { ordem: "asc" } },
+            progresso: {
+              where: { alunoId: req.usuario.id },
+              select: { concluida: true },
+            },
+          },
         },
       },
     });
 
     const atividades = associacoes.map(({ atividade }) => {
-      if (!ehAlunoMatriculado) return atividade;
+      if (!ehAlunoMatriculado) {
+        const atividadeSemProgresso = { ...atividade };
+        delete atividadeSemProgresso.progresso;
+        return atividadeSemProgresso;
+      }
 
+      const concluida = atividade.progresso.some((progresso) => progresso.concluida);
+      const atrasada =
+        atividade.prazo !== null &&
+        atividade.prazo < new Date() &&
+        !concluida;
+      const atividadeDoAluno = { ...atividade };
+      delete atividadeDoAluno.progresso;
       return {
-        ...atividade,
-        questoes: atividade.questoes.map(({ respostaCorreta, ...questao }) => questao),
+        ...atividadeDoAluno,
+        atrasada,
+        questoes: atividadeDoAluno.questoes.map(
+          ({ respostaCorreta, ...questao }) => questao
+        ),
       };
     });
 

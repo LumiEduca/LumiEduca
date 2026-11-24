@@ -84,6 +84,9 @@ model Questao {
   respostaCorreta String
   ordem           Int        @default(0)
   respostas       Resposta[]
+  tipo           String    @default("MULTIPLA_ESCOLHA")
+  ordem          Int       @default(0)
+  respostas     Resposta[]
 
   @@map("questoes")
 }

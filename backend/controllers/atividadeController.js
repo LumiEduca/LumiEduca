@@ -21,33 +21,52 @@ function validarQuestoes(questoes) {
 
     const enunciado = validarTexto(questao.enunciado, `questoes[${index}].enunciado`);
 
-    if (!Array.isArray(questao.opcoes) || questao.opcoes.length < 2) {
-      throw new ApiError(400, `A questão ${index + 1} deve ter pelo menos duas opções.`);
-    }
+    const tipo = questao.tipo ?? "MULTIPLA_ESCOLHA";
+    let opcoes;
+    let respostaCorreta;
 
-    const opcoes = questao.opcoes.map((opcao, opcaoIndex) =>
-      validarTexto(opcao, `questoes[${index}].opcoes[${opcaoIndex}]`)
-    );
+    if (tipo === "MULTIPLA_ESCOLHA") {
+      if (!Array.isArray(questao.opcoes) || questao.opcoes.length < 2) {
+        throw new ApiError(400, `A questão ${index + 1} deve ter pelo menos duas opções.`);
+      }
 
-    const respostaInformada = questao.respostaCorreta;
-    const respostaCorreta =
-      typeof respostaInformada === "number" ||
-      (typeof respostaInformada === "string" && respostaInformada.trim() !== "")
-        ? Number(respostaInformada)
-        : Number.NaN;
+      opcoes = questao.opcoes.map((opcao, opcaoIndex) =>
+        validarTexto(opcao, `questoes[${index}].opcoes[${opcaoIndex}]`)
+      );
+      const respostaInformada = questao.respostaCorreta;
+      const respostaIndex =
+        typeof respostaInformada === "number" ||
+        (typeof respostaInformada === "string" && respostaInformada.trim() !== "")
+          ? Number(respostaInformada)
+          : Number.NaN;
 
-    if (
-      !Number.isInteger(respostaCorreta) ||
-      respostaCorreta < 0 ||
-      respostaCorreta >= opcoes.length
-    ) {
-      throw new ApiError(400, `A resposta correta da questão ${index + 1} deve indicar uma opção existente.`);
+      if (
+        !Number.isInteger(respostaIndex) ||
+        respostaIndex < 0 ||
+        respostaIndex >= opcoes.length
+      ) {
+        throw new ApiError(400, `A resposta correta da questão ${index + 1} deve indicar uma opção existente.`);
+      }
+      respostaCorreta = String(respostaIndex);
+    } else if (tipo === "VERDADEIRO_FALSO") {
+      opcoes = ["Verdadeiro", "Falso"];
+      const resposta = String(questao.respostaCorreta).toLocaleLowerCase("pt-BR");
+      respostaCorreta = ["true", "verdadeiro"].includes(resposta)
+        ? "Verdadeiro"
+        : "Falso";
+    } else {
+      opcoes = [];
+      respostaCorreta = validarTexto(
+        questao.respostaCorreta,
+        `questoes[${index}].respostaCorreta`
+      );
     }
 
     return {
       enunciado,
       opcoes,
-      respostaCorreta: String(respostaCorreta),
+      respostaCorreta,
+      tipo,
       ordem: index,
     };
   });
@@ -134,6 +153,72 @@ export const obterAtividade = async (req, res, next) => {
       ...atividade,
       questoes: atividade.questoes.map(({ respostaCorreta, ...questao }) => questao),
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const editarAtividade = async (req, res, next) => {
+  try {
+    const atividade = await prisma.atividade.findUnique({
+      where: { id: req.params.id },
+      select: { id: true, professorId: true },
+    });
+
+    if (!atividade) throw new ApiError(404, "Atividade não encontrada.");
+    if (atividade.professorId !== req.usuario.id) {
+      throw new ApiError(403, "Apenas o professor dono pode editar esta atividade.");
+    }
+
+    const data = {};
+    if (req.body.titulo !== undefined) data.titulo = req.body.titulo;
+    if (req.body.materia !== undefined) data.materia = req.body.materia;
+    if (req.body.prazo !== undefined) {
+      if (req.body.prazo === null || req.body.prazo === "") {
+        data.prazo = null;
+      } else {
+        const prazo = new Date(req.body.prazo);
+        if (Number.isNaN(prazo.getTime())) {
+          throw new ApiError(400, "O campo 'prazo' deve ser uma data válida.");
+        }
+        data.prazo = prazo;
+      }
+    }
+
+    const atualizada = await prisma.atividade.update({
+      where: { id: atividade.id },
+      data,
+      include: { questoes: { orderBy: { ordem: "asc" } } },
+    });
+    res.json(atualizada);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const excluirAtividade = async (req, res, next) => {
+  try {
+    const atividade = await prisma.atividade.findUnique({
+      where: { id: req.params.id },
+      select: { id: true, professorId: true },
+    });
+
+    if (!atividade) throw new ApiError(404, "Atividade não encontrada.");
+    if (atividade.professorId !== req.usuario.id) {
+      throw new ApiError(403, "Apenas o professor dono pode excluir esta atividade.");
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await tx.resposta.deleteMany({
+        where: { questao: { atividadeId: atividade.id } },
+      });
+      await tx.questao.deleteMany({ where: { atividadeId: atividade.id } });
+      await tx.salaAtividade.deleteMany({ where: { atividadeId: atividade.id } });
+      await tx.progresso.deleteMany({ where: { atividadeId: atividade.id } });
+      await tx.atividade.delete({ where: { id: atividade.id } });
+    });
+
+    res.status(204).end();
   } catch (error) {
     next(error);
   }
