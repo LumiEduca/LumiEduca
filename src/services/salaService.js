@@ -33,6 +33,16 @@ async function request(path, options = {}) {
   return data;
 }
 
+export const criarSala = (nome) =>
+  request('', { method: 'POST', body: JSON.stringify({ nome }) });
+
+export const listarSalas = () => request('');
+
+export const entrarNaSala = (codigo) =>
+  request('/entrar', { method: 'POST', body: JSON.stringify({ codigo }) });
+
+export const detalharSala = (salaId) => request(`/${salaId}`);
+
 export const editarNomeSala = (salaId, nome) =>
   request(`/${salaId}`, { method: 'PATCH', body: JSON.stringify({ nome }) });
 

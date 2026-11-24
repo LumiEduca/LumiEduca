@@ -3,23 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import '../styles/classrooms.css';
 import { showLumiNotification } from '../services/notificationClient';
 import SalaAlunosRanking from '../components/SalaAlunosRanking';
-import { editarNomeSala } from '../services/salaService';
-
-function gerarCodigo() {
-  return Math.floor(100000 + Math.random() * 900000).toString();
-}
-
-function carregarSalas() {
-  try {
-    return JSON.parse(localStorage.getItem('salas')) || [];
-  } catch {
-    return [];
-  }
-}
-
-function salvarSalas(salas) {
-  localStorage.setItem('salas', JSON.stringify(salas));
-}
+import {
+  editarNomeSala,
+  criarSala,
+  listarSalas,
+  entrarNaSala,
+  detalharSala,
+} from '../services/salaService';
 
 function carregarTarefas() {
   try {
@@ -37,16 +27,18 @@ function chaveEstudante(userName) {
   return `salasEstudante_${userName}`;
 }
 
+// Guarda objetos { id, nome, codigo }; ignora o formato antigo (só códigos)
 function carregarSalasEstudante(userName) {
   try {
-    return JSON.parse(localStorage.getItem(chaveEstudante(userName))) || [];
+    const lista = JSON.parse(localStorage.getItem(chaveEstudante(userName))) || [];
+    return lista.filter((s) => s && typeof s === 'object' && s.id);
   } catch {
     return [];
   }
 }
 
-function salvarSalasEstudante(userName, codigos) {
-  localStorage.setItem(chaveEstudante(userName), JSON.stringify(codigos));
+function salvarSalasEstudante(userName, salas) {
+  localStorage.setItem(chaveEstudante(userName), JSON.stringify(salas));
 }
 
 export default function ClassroomsPage() {
@@ -56,7 +48,7 @@ export default function ClassroomsPage() {
   const userName = localStorage.getItem('userName') || '';
   const isProfessor = userType === 'professor';
 
-  const [salas, setSalas] = useState(carregarSalas);
+  const [salas, setSalas] = useState([]);
   const [tarefas, setTarefas] = useState(carregarTarefas);
   const [salasEstudante, setSalasEstudante] = useState(() =>
     isProfessor ? [] : carregarSalasEstudante(userName)
@@ -77,6 +69,29 @@ export default function ClassroomsPage() {
     return JSON.parse(localStorage.getItem(`lumi_tarefas_concluidas_${userName}`) || '[]');
   }, [userName, isProfessor]);
 
+  // Carrega as salas da API ao abrir a página
+  useEffect(() => {
+    if (isProfessor) {
+      listarSalas()
+        .then((lista) => setSalas(lista))
+        .catch((err) => setErro(err.message));
+      return;
+    }
+
+    // Aluno: confirma no servidor quais salas ainda existem para ele
+    Promise.all(
+      carregarSalasEstudante(userName).map((s) =>
+        detalharSala(s.id)
+          .then((d) => ({ ...s, nome: d.nome }))
+          .catch(() => null)
+      )
+    ).then((lista) => {
+      const validas = lista.filter(Boolean);
+      salvarSalasEstudante(userName, validas);
+      setSalasEstudante(validas);
+    });
+  }, [isProfessor, userName]);
+
   useEffect(() => {
     if (salaSelecionada && window.innerWidth <= 768) {
       const mainContent = document.querySelector('.classrooms-main');
@@ -87,15 +102,7 @@ export default function ClassroomsPage() {
     }
   }, [salaSelecionada]);
 
-  const minhasSalas = isProfessor
-    ? salas.filter((sala) => sala.criadoPor === userName)
-    : [];
-
-  const salasDoAluno = !isProfessor
-    ? salas.filter((sala) => salasEstudante.includes(sala.codigo))
-    : [];
-
-  const listaSalas = isProfessor ? minhasSalas : salasDoAluno;
+  const listaSalas = isProfessor ? salas : salasEstudante;
 
   const tarefasDaSala = salaSelecionada
     ? tarefas.filter((tarefa) => tarefa.salaId === salaSelecionada.id)
@@ -115,7 +122,7 @@ export default function ClassroomsPage() {
     setTarefas(novasTarefas);
   };
 
-  const handleCriarSala = (e) => {
+  const handleCriarSala = async (e) => {
     e.preventDefault();
 
     const nome = nomeSala.trim();
@@ -125,58 +132,47 @@ export default function ClassroomsPage() {
       return;
     }
 
-    const novaSala = {
-      id: Date.now().toString(),
-      nome,
-      codigo: gerarCodigo(),
-      criadoPor: userName,
-    };
+    try {
+      const novaSala = await criarSala(nome);
 
-    const novasSalas = [...salas, novaSala];
-
-    salvarSalas(novasSalas);
-    setSalas(novasSalas);
-    setSalaSelecionada(novaSala);
-    setNomeSala('');
-    setErro('');
-    setSucesso(`Sala "${nome}" criada! Código: ${novaSala.codigo}`);
-
-    setTimeout(() => setSucesso(''), 4000);
+      setSalas([...salas, novaSala]);
+      setSalaSelecionada(novaSala);
+      setNomeSala('');
+      setErro('');
+      setSucesso(`Sala "${novaSala.nome}" criada! Código: ${novaSala.codigo}`);
+      setTimeout(() => setSucesso(''), 4000);
+    } catch (err) {
+      setErro(err.message);
+    }
   };
 
-  const handleEntrarComCodigo = (e) => {
+  const handleEntrarComCodigo = async (e) => {
     e.preventDefault();
 
-    const codigo = codigoInput.trim();
+    const codigo = codigoInput.trim().toUpperCase();
 
     if (!codigo) {
       setErro('Informe o código da sala.');
       return;
     }
 
-    const sala = salas.find((s) => s.codigo === codigo);
+    try {
+      const resp = await entrarNaSala(codigo);
+      const sala = { id: resp.sala.id, nome: resp.sala.nome, codigo };
 
-    if (!sala) {
-      setErro('Código inválido. Verifique e tente novamente.');
-      return;
-    }
+      const jaEstava = salasEstudante.some((s) => s.id === sala.id);
+      const novas = jaEstava ? salasEstudante : [...salasEstudante, sala];
 
-    if (salasEstudante.includes(codigo)) {
-      setErro('Você já está nessa sala.');
+      salvarSalasEstudante(userName, novas);
+      setSalasEstudante(novas);
       setSalaSelecionada(sala);
-      return;
+      setCodigoInput('');
+      setErro('');
+      setSucesso(`Você entrou na sala "${sala.nome}"!`);
+      setTimeout(() => setSucesso(''), 4000);
+    } catch (err) {
+      setErro(err.message);
     }
-
-    const novosCodigos = [...salasEstudante, codigo];
-
-    salvarSalasEstudante(userName, novosCodigos);
-    setSalasEstudante(novosCodigos);
-    setSalaSelecionada(sala);
-    setCodigoInput('');
-    setErro('');
-    setSucesso(`Você entrou na sala "${sala.nome}"!`);
-
-    setTimeout(() => setSucesso(''), 4000);
   };
 
   const handleVincularAtividadeExistente = async (tarefaId) => {
@@ -237,7 +233,6 @@ export default function ClassroomsPage() {
       const novasSalas = salas.map((s) =>
         s.id === salaSelecionada.id ? { ...s, nome } : s
       );
-      salvarSalas(novasSalas);
       setSalas(novasSalas);
       setSalaSelecionada({ ...salaSelecionada, nome });
       setEditandoNome(false);
@@ -250,9 +245,9 @@ export default function ClassroomsPage() {
   };
 
   const handleAlunoSaiu = (sala) => {
-    const novosCodigos = salasEstudante.filter((c) => c !== sala.codigo);
-    salvarSalasEstudante(userName, novosCodigos);
-    setSalasEstudante(novosCodigos);
+    const novas = salasEstudante.filter((s) => s.id !== sala.id);
+    salvarSalasEstudante(userName, novas);
+    setSalasEstudante(novas);
     setSalaSelecionada(null);
     setSucesso(`Você saiu da sala "${sala.nome}".`);
     setTimeout(() => setSucesso(''), 4000);
@@ -287,10 +282,12 @@ export default function ClassroomsPage() {
               <input
                 type="text"
                 className="classrooms-input"
-                placeholder="Código de 6 dígitos"
+                placeholder="Código de 6 caracteres"
                 value={codigoInput}
                 onChange={(e) => {
-                  setCodigoInput(e.target.value.replace(/\D/g, '').slice(0, 6));
+                  setCodigoInput(
+                    e.target.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 6)
+                  );
                   setErro('');
                 }}
                 maxLength={6}
