@@ -230,10 +230,9 @@ O cron só roda no deploy de **produção**. No plano Hobby, no máximo uma exec
 - Feedback de questões, dicas e erros anunciados por leitor de tela (`aria-live` / `role`).
 - Zoom liberado no celular.
 - Respeita `prefers-reduced-motion`.
-- Contraste mínimo de 4,5:1 nos textos pequenos: laranja escuro `#a85200` em botões e rodapé, `#d86f00` em títulos grandes, logo mantido em `#ff8c00`, azul `#2271a8`.
+- Cores originais da marca mantidas. O contraste mínimo de 4,5:1 (WCAG AA) **não** foi aplicado em laranjas e azuis da marca; fica como melhoria futura, a decidir pela equipe.
 - Fontes mínimas de 0,875 rem e alvos de toque de 44 px.
 - Todo o CSS de acessibilidade fica sob a classe `.app-a11y`, que **não é aplicada em `/demos`**. O zoom liberado no `index.html` vale também para as demos.
-- Os valores de contraste foram calculados à mão: validar com o Lighthouse.
 
 ## 🚀 Deploy (Vercel)
 
