@@ -34,3 +34,15 @@ export async function trilha(req, res, next) {
     next(error);
   }
 }
+
+export async function conquistas(req, res, next) {
+  try {
+    const resultado = await progressoService.listarConquistasDoAluno(
+      req.usuario.id
+    );
+
+    res.json(resultado);
+  } catch (error) {
+    next(error);
+  }
+}

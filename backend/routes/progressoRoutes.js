@@ -20,6 +20,17 @@ router.get(
   validarParams(idParamSchema),
   progressoController.progressoDoAluno
 );
-router.get("/trilha", verificarToken, exigirTipo("ALUNO"), progressoController.trilha);
+router.get(
+  "/trilha", 
+  verificarToken, 
+  exigirTipo("ALUNO"), 
+  progressoController.trilha
+);
+router.get(
+  "/conquistas",
+  verificarToken,
+  exigirTipo("ALUNO"),
+  progressoController.conquistas
+);
 
 export default router;

@@ -307,3 +307,30 @@ export async function trilhaDoAluno(alunoId) {
     fases: trilha,
   };
 }
+
+export async function listarConquistasDoAluno(alunoId) {
+  const registros = await prisma.usuarioConquista.findMany({
+    where: { alunoId },
+    orderBy: { concedidaEm: "desc" },
+    select: {
+      concedidaEm: true,
+      conquista: {
+        select: {
+          codigo: true,
+          nome: true,
+          descricao: true,
+        },
+      },
+    },
+  });
+
+  const conquistas = registros.map((registro) => ({
+    ...registro.conquista,
+    concedidaEm: registro.concedidaEm,
+  }));
+
+  return {
+    total: conquistas.length,
+    conquistas,
+  };
+}
