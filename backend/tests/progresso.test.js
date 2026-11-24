@@ -229,6 +229,95 @@ describe('Testes de Progresso (/api/v1/progresso)', () => {
     }, 60000);
   });
 
+    describe('GET /conquistas', () => {
+    it('Deve retornar 401 sem token', async () => {
+      const res = await request(app).get('/api/v1/progresso/conquistas');
+
+      expect(res.status).toBe(401);
+    });
+
+    it('Deve retornar 403 para professores', async () => {
+      const res = await request(app)
+        .get('/api/v1/progresso/conquistas')
+        .set('Authorization', `Bearer ${tokenProfDono}`);
+
+      expect(res.status).toBe(403);
+    });
+
+    it('Deve retornar lista vazia para aluno sem conquistas', async () => {
+      const res = await request(app)
+        .get('/api/v1/progresso/conquistas')
+        .set('Authorization', `Bearer ${tokenAlunoFora}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.total).toBe(0);
+      expect(res.body.conquistas).toEqual([]);
+    });
+
+    it('Deve retornar as conquistas desbloqueadas pelo próprio aluno', async () => {
+      const res = await request(app)
+        .get('/api/v1/progresso/conquistas')
+        .set('Authorization', `Bearer ${tokenAlunoDentro}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.total).toBeGreaterThan(0);
+      expect(res.body.conquistas).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            codigo: 'PRIMEIRA_ATIVIDADE',
+            nome: 'Primeira conquista',
+            descricao: 'Concluiu sua primeira atividade.',
+            concedidaEm: expect.any(String),
+          }),
+        ])
+      );
+    });
+  });
+  describe('GET /conquistas', () => {
+    it('Deve retornar 401 sem token', async () => {
+      const res = await request(app).get('/api/v1/progresso/conquistas');
+
+      expect(res.status).toBe(401);
+    });
+
+    it('Deve retornar 403 para professores', async () => {
+      const res = await request(app)
+        .get('/api/v1/progresso/conquistas')
+        .set('Authorization', `Bearer ${tokenProfDono}`);
+
+      expect(res.status).toBe(403);
+    });
+
+    it('Deve retornar lista vazia para aluno sem conquistas', async () => {
+      const res = await request(app)
+        .get('/api/v1/progresso/conquistas')
+        .set('Authorization', `Bearer ${tokenAlunoFora}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.total).toBe(0);
+      expect(res.body.conquistas).toEqual([]);
+    });
+
+    it('Deve retornar as conquistas desbloqueadas pelo próprio aluno', async () => {
+      const res = await request(app)
+        .get('/api/v1/progresso/conquistas')
+        .set('Authorization', `Bearer ${tokenAlunoDentro}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.total).toBeGreaterThan(0);
+      expect(res.body.conquistas).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            codigo: 'PRIMEIRA_ATIVIDADE',
+            nome: 'Primeira conquista',
+            descricao: 'Concluiu sua primeira atividade.',
+            concedidaEm: expect.any(String),
+          }),
+        ])
+      );
+    });
+  });  
+  
   describe('GET /aluno/:id', () => {
     it('Aluno pode ver o próprio progresso (200) contendo totalPontos', async () => {
       const res = await request(app).get(`/api/v1/progresso/aluno/${alunoDentroId}`).set('Authorization', `Bearer ${tokenAlunoDentro}`);
