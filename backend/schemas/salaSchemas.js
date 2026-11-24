@@ -15,3 +15,10 @@ export const entrarSalaSchema = z.object({
     .min(1, "Informe o código de acesso")
     .max(20, "Código de acesso inválido"),
 });
+
+export const editarSalaSchema = criarSalaSchema;
+
+export const salaAlunoParamsSchema = z.object({
+  id: z.string().min(1),
+  alunoId: z.string().min(1),
+});

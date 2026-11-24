@@ -399,3 +399,77 @@
     width: 100%;
   }
 }
+.classrooms-ranking {
+  background: white;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 18px;
+  padding: 1.2rem;
+  margin-bottom: 1.4rem;
+  box-shadow: 0 8px 20px rgba(31, 41, 55, 0.05);
+}
+
+.classrooms-ranking-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.classrooms-ranking-header h2 {
+  margin: 0;
+  color: #1f2f4d;
+  font-size: 1.25rem;
+  font-weight: 900;
+}
+
+.classrooms-ranking-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.classrooms-ranking-item {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 0.7rem 1rem;
+}
+
+.classrooms-ranking-pos {
+  font-weight: 900;
+  color: #3498db;
+  min-width: 2.2rem;
+}
+
+.classrooms-ranking-name {
+  flex: 1;
+  font-weight: 800;
+  color: #1f2f4d;
+}
+
+.classrooms-ranking-points {
+  font-weight: 800;
+  color: #475569;
+}
+
+.classrooms-btn.small {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.8rem;
+}
+
+.classrooms-title-edit {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.classrooms-title-edit .classrooms-input {
+  max-width: 280px;
+}
