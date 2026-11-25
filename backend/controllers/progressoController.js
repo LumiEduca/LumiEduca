@@ -45,6 +45,7 @@ export async function conquistas(req, res, next) {
   } catch (error) {
     next(error);
   }
+
 }
 
 export async function streak(req, res, next) {

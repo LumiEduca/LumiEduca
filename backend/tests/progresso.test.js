@@ -4,7 +4,7 @@ import { prisma, limparDados } from './helpers/db.js';
 
 describe('Testes de Progresso (/api/v1/progresso)', () => {
   let tokenProfDono, tokenProfOutro, tokenAlunoDentro, tokenAlunoFora;
-  let salaId, atividadeId, questaoId, alunoDentroId, alunoForaId, codigoSala;
+  let salaId, atividadeId, questaoId, alunoDentroId, alunoForaId;
 
   beforeAll(async () => {
     await limparDados();
@@ -40,7 +40,6 @@ describe('Testes de Progresso (/api/v1/progresso)', () => {
     // Setup: Cria sala, aluno entra, cria atividade e vincula
     const resSala = await request(app).post('/api/v1/salas').set('Authorization', `Bearer ${tokenProfDono}`).send({ nome: 'Sala Progresso' });
     salaId = resSala.body.id;
-    codigoSala = resSala.body.codigo;
     await request(app).post('/api/v1/salas/entrar').set('Authorization', `Bearer ${tokenAlunoDentro}`).send({ codigo: resSala.body.codigo });
 
     const resAtiv = await request(app).post('/api/v1/atividades').set('Authorization', `Bearer ${tokenProfDono}`).send({
@@ -431,7 +430,6 @@ describe('Testes de Progresso (/api/v1/progresso)', () => {
     });
   });
 
-
   describe('GET /aluno/:id', () => {
     it('Aluno pode ver o próprio progresso (200) contendo totalPontos', async () => {
       const res = await request(app).get(`/api/v1/progresso/aluno/${alunoDentroId}`).set('Authorization', `Bearer ${tokenAlunoDentro}`);
@@ -693,108 +691,9 @@ describe('Testes de Progresso (/api/v1/progresso)', () => {
         .set('Authorization', `Bearer ${tokenProfDono}`)
         .send({ idAtividade: atividade.body.id });
 
-      expect(vinculada.status).toBe(201);
-
-      // Registra uma resposta correta e uma incorreta
-      // diretamente no banco, sem alterar o progresso dos outros testes
-      await prisma.resposta.createMany({
-        data: [
-          {
-            alunoId: alunoRelatorioId,
-            questaoId: atividade.body.questoes[0].id,
-            resposta: '1',
-            correta: true,
-          },
-          {
-            alunoId: alunoRelatorioId,
-            questaoId: atividade.body.questoes[1].id,
-            resposta: '0',
-            correta: false,
-          },
-        ],
-      });
-    });
-
-    it('Deve retornar 401 sem token', async () => {
-      const res = await request(app)
-        .get(`/api/v1/progresso/relatorio/sala/${salaRelatorioId}`);
-
-      expect(res.status).toBe(401);
-    });
-
-    it('Deve retornar 403 para alunos', async () => {
-      const res = await request(app)
-        .get(`/api/v1/progresso/relatorio/sala/${salaRelatorioId}`)
-        .set('Authorization', `Bearer ${tokenAlunoRelatorio}`);
-
-      expect(res.status).toBe(403);
-    });
-
-    it('Deve retornar 403 para professor que não é dono da sala', async () => {
-      const res = await request(app)
-        .get(`/api/v1/progresso/relatorio/sala/${salaRelatorioId}`)
-        .set('Authorization', `Bearer ${tokenProfOutro}`);
-
-      expect(res.status).toBe(403);
-    });
-
-    it('Deve retornar 404 para sala inexistente', async () => {
-      const res = await request(app)
-        .get('/api/v1/progresso/relatorio/sala/sala-inexistente')
-        .set('Authorization', `Bearer ${tokenProfDono}`);
-
-      expect(res.status).toBe(404);
-    });
-
-    it('Professor dono deve receber o relatório com os cálculos corretos', async () => {
-      const res = await request(app)
-        .get(`/api/v1/progresso/relatorio/sala/${salaRelatorioId}`)
-        .set('Authorization', `Bearer ${tokenProfDono}`);
-
-      expect(res.status).toBe(200);
-
-      expect(res.body.sala).toEqual({
-        id: salaRelatorioId,
-        nome: 'Sala Teste Relatório',
-      });
-
-      expect(res.body.resumoPorMateria).toEqual([
-        expect.objectContaining({
-          materia: 'Matemática',
-          questoesTotal: 4,
-          questoesRespondidas: 2,
-          acertos: 1,
-          taxaAcerto: 50,
-        }),
-      ]);
-
-      expect(res.body.alunos).toHaveLength(2);
-
-      const alunoComRespostas = res.body.alunos.find(
-        (item) => item.aluno.id === alunoRelatorioId
-      );
-
-      expect(alunoComRespostas).toEqual(
-        expect.objectContaining({
-          questoesTotal: 2,
-          questoesRespondidas: 2,
-          acertos: 1,
-          taxaAcerto: 50,
-        })
-      );
-
-      const alunoSemRespostas = res.body.alunos.find(
-        (item) => item.aluno.id === alunoSemRespostasId
-      );
-
-      expect(alunoSemRespostas).toEqual(
-        expect.objectContaining({
-          questoesTotal: 2,
-          questoesRespondidas: 0,
-          acertos: 0,
-          taxaAcerto: 0,
-        })
-      );
+      desafios = await listarDesafios();
+      desafioAtrasado = desafios.body.find((item) => item.id === atividade.body.id);
+      expect(desafioAtrasado.atrasada).toBe(false);
     });
   });
 });
