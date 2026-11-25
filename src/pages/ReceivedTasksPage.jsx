@@ -251,7 +251,8 @@ export default function ReceivedTasksPage({ setPontos }) {
     setModal({
       isOpen: true,
       title: 'Apagar desafio?',
-      message: 'Essa atividade será removida da gestão de desafios.',
+      message:
+        'Essa atividade será excluída com suas questões, respostas e o progresso dos alunos. Esta ação não pode ser desfeita.',
       type: 'danger',
       showCancel: true,
       onConfirm: async () => {

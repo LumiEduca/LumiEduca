@@ -84,6 +84,70 @@ describe('Testes de Atividades (/api/v1/atividades e /salas/:id/atividades)', ()
       expect((await request(app).post('/api/v1/atividades').set('Authorization', auth).send({ ...payloadAtividadeValida, questoes: [{ enunciado: '?', opcoes: ['1','2','3','4','5','6','7'], respostaCorreta: '1', ordem: 1 }] })).status).toBe(400);
       expect((await request(app).post('/api/v1/atividades').set('Authorization', auth).send({ ...payloadAtividadeValida, questoes: [{ enunciado: '?', opcoes: ['1', '2'], respostaCorreta: '5', ordem: 1 }] })).status).toBe(400);
     });
+
+    it('Deve retornar 400 para tipo inválido e resposta V/F inválida', async () => {
+      const auth = `Bearer ${tokenProfDono}`;
+      const questaoBase = {
+        enunciado: 'A afirmação é correta?',
+        opcoes: ['Verdadeiro', 'Falso'],
+        respostaCorreta: 'true',
+      };
+
+      const tipoInvalido = await request(app)
+        .post('/api/v1/atividades')
+        .set('Authorization', auth)
+        .send({
+          ...payloadAtividadeValida,
+          questoes: [{ ...questaoBase, tipo: 'DISSERTATIVA' }],
+        });
+      expect(tipoInvalido.status).toBe(400);
+
+      const respostaInvalida = await request(app)
+        .post('/api/v1/atividades')
+        .set('Authorization', auth)
+        .send({
+          ...payloadAtividadeValida,
+          questoes: [
+            {
+              ...questaoBase,
+              tipo: 'VERDADEIRO_FALSO',
+              respostaCorreta: 'talvez',
+            },
+          ],
+        });
+      expect(respostaInvalida.status).toBe(400);
+    });
+
+    it('Normaliza os quatro valores permitidos para resposta V/F', async () => {
+        const respostas = [
+          [true, 'Verdadeiro'],
+          [false, 'Falso'],
+          ['true', 'Verdadeiro'],
+          ['false', 'Falso'],
+          ['verdadeiro', 'Verdadeiro'],
+          ['falso', 'Falso'],
+        ];
+
+        for (const [respostaCorreta, esperada] of respostas) {
+          const res = await request(app)
+            .post('/api/v1/atividades')
+            .set('Authorization', `Bearer ${tokenProfDono}`)
+            .send({
+              titulo: `V/F ${respostaCorreta}`,
+              materia: 'Português',
+              questoes: [
+                {
+                  tipo: 'VERDADEIRO_FALSO',
+                  enunciado: 'A afirmação é correta?',
+                  respostaCorreta,
+                },
+              ],
+            });
+
+          expect(res.status).toBe(201);
+          expect(res.body.questoes[0].respostaCorreta).toBe(esperada);
+        }
+    });
   });
 
   describe('GET /api/v1/atividades', () => {

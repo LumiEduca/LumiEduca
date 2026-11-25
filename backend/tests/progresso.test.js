@@ -103,7 +103,7 @@ describe('Testes de Progresso (/api/v1/progresso)', () => {
       expect(res.status).toBe(400);
     });
   
-    it('Aluno da sala deve responder corretamente recebendo 201, correta: true e pontosGanhos: 10', async () => {
+    it('Questão legada sem campo tipo continua corrigindo corretamente', async () => {
       const res = await responder(tokenAlunoDentro, { questaoId, resposta: '1' });
       expect(res.status).toBe(201);
       expect(res.body.correta).toBe(true);
@@ -496,6 +496,25 @@ describe('Testes de Progresso (/api/v1/progresso)', () => {
       return atividade.body.questoes[0].id;
     };
 
+    it('Rejeita resposta correta V/F inválida na criação da atividade', async () => {
+      const atividade = await request(app)
+        .post('/api/v1/atividades')
+        .set('Authorization', `Bearer ${tokenProfDono}`)
+        .send({
+          titulo: 'Questão V/F inválida',
+          materia: 'Português',
+          questoes: [
+            {
+              tipo: 'VERDADEIRO_FALSO',
+              enunciado: 'Responda à questão',
+              respostaCorreta: 'talvez',
+            },
+          ],
+        });
+
+      expect(atividade.status).toBe(400);
+    });
+
     it('Corrige questões VERDADEIRO_FALSO sem exigir opções do cliente', async () => {
       const novaQuestaoId = await criarQuestaoEAssociar(
         'VERDADEIRO_FALSO',
@@ -511,12 +530,12 @@ describe('Testes de Progresso (/api/v1/progresso)', () => {
       expect(res.body).not.toHaveProperty('respostaCorreta');
     });
 
-    it('Corrige LACUNA sem exigir opções e ignora diferença de caixa', async () => {
+    it('Corrige LACUNA ignorando caixa e espaços nas pontas', async () => {
       const novaQuestaoId = await criarQuestaoEAssociar('LACUNA', 'Brasília');
       const res = await request(app)
         .post('/api/v1/progresso/responder')
         .set('Authorization', `Bearer ${tokenAlunoDentro}`)
-        .send({ questaoId: novaQuestaoId, resposta: 'brasília' });
+        .send({ questaoId: novaQuestaoId, resposta: '  brasília  ' });
 
       expect(res.status).toBe(201);
       expect(res.body.correta).toBe(true);
