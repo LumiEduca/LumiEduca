@@ -27,9 +27,7 @@ model Usuario {
   tokens        NotificacaoToken[]
   notificacoes  Notificacao[]
   respostas     Resposta[]
-  conquistas    UsuarioConquista[]
   dicasLumi     LumiDica[]
-  lembretes     LembreteAtividade[]
 
   @@map("usuarios")
 }
@@ -84,10 +82,12 @@ model Questao {
   enunciado       String
   opcoes          Json
   respostaCorreta String
-  tipo            String     @default("MULTIPLA_ESCOLHA")
   ordem           Int        @default(0)
   respostas       Resposta[]
-  dicasLumi       LumiDica[]
+  tipo           String    @default("MULTIPLA_ESCOLHA")
+  ordem          Int       @default(0)
+  respostas     Resposta[]
+  dicasLumi     LumiDica[]
 
   @@map("questoes")
 }
@@ -166,30 +166,6 @@ model AvaliacaoDemo {
   @@map("avaliacoes_demo")
 }
 
-model Conquista {
-  id          String             @id @default(uuid())
-  codigo      String             @unique
-  nome        String
-  descricao   String
-
-  usuarios    UsuarioConquista[]
-
-  @@map("conquistas")
-}
-
-model UsuarioConquista {
-  id          String    @id @default(uuid())
-  alunoId     String
-  aluno       Usuario   @relation(fields: [alunoId], references: [id], onDelete: Cascade)
-  conquistaId String
-  conquista   Conquista @relation(fields: [conquistaId], references: [id], onDelete: Cascade)
-  concedidaEm DateTime  @default(now())
-
-  @@unique([alunoId, conquistaId])
-  @@index([alunoId])
-  @@map("usuario_conquistas")
-}
-
 model LumiDica {
   id         String   @id @default(uuid())
   alunoId    String
@@ -202,16 +178,4 @@ model LumiDica {
 
   @@index([alunoId, criadaEm])
   @@map("lumi_dicas")
-}
-
-model LembreteAtividade {
-  id          String    @id @default(uuid())
-  alunoId     String
-  aluno       Usuario   @relation(fields: [alunoId], references: [id], onDelete: Cascade)
-  atividadeId String
-  atividade   Atividade @relation(fields: [atividadeId], references: [id], onDelete: Cascade)
-  enviadoEm   DateTime  @default(now())
-
-  @@unique([alunoId, atividadeId])
-  @@map("lembretes_atividade")
 }
