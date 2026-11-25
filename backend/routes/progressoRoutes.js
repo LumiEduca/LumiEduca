@@ -20,31 +20,7 @@ router.get(
   validarParams(idParamSchema),
   progressoController.progressoDoAluno
 );
-router.get(
-  "/trilha", 
-  verificarToken, 
-  exigirTipo("ALUNO"), 
-  progressoController.trilha
-);
-router.get(
-  "/conquistas",
-  verificarToken,
-  exigirTipo("ALUNO"),
-  progressoController.conquistas
-);
-router.get(
-  "/streak",
-  verificarToken,
-  exigirTipo("ALUNO"),
-  progressoController.streak
-);
-router.get(
-  "/relatorio/sala/:id",
-  verificarToken,
-  exigirTipo("PROFESSOR"),
-  validarParams(idParamSchema),
-  progressoController.relatorioDaSala
-);
+router.get("/trilha", verificarToken, exigirTipo("ALUNO"), progressoController.trilha);
 
 router.get(
   "/streak",

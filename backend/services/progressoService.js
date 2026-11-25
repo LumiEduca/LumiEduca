@@ -1,4 +1,3 @@
-
 import prisma from "../config/prismaClient.js";
 import { ApiError } from "../middlewares/errorHandler.js";
 
@@ -6,7 +5,6 @@ const PONTOS_POR_ACERTO = 10;
 
 function respostaEstaCorreta(questao, resposta) {
   const recebida = String(resposta).trim();
-
   if (questao.tipo === "VERDADEIRO_FALSO") {
     const normalizar = (valor) => {
       const respostaNormalizada = String(valor).trim().toLocaleLowerCase("pt-BR");
@@ -246,7 +244,6 @@ export async function responderQuestao(alunoId, { questaoId, resposta }) {
           pontos,
           estrelas: calcularEstrelas(acertos, total, concluida),
         },
-        novasConquistas,
       };
     });
   } catch (error) {
