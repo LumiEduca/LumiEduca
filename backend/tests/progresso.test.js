@@ -553,10 +553,20 @@ describe('Testes de Progresso (/api/v1/progresso)', () => {
         request(app)
           .get(`/api/v1/salas/${salaId}/atividades`)
           .set('Authorization', `Bearer ${tokenAlunoDentro}`);
+      const listarDesafios = () =>
+        request(app)
+          .get('/api/v1/desafios')
+          .set('Authorization', `Bearer ${tokenAlunoDentro}`);
+
       let lista = await listar();
       let atrasada = lista.body.find((item) => item.id === atividade.body.id);
       expect(atrasada.atrasada).toBe(true);
       expect(JSON.stringify(atrasada)).not.toMatch(/respostaCorreta/);
+
+      let desafios = await listarDesafios();
+      let desafioAtrasado = desafios.body.find((item) => item.id === atividade.body.id);
+      expect(desafioAtrasado.atrasada).toBe(true);
+      expect(desafioAtrasado).not.toHaveProperty('respostaCorreta');
 
       const resposta = await request(app)
         .post('/api/v1/progresso/responder')
@@ -570,6 +580,10 @@ describe('Testes de Progresso (/api/v1/progresso)', () => {
       lista = await listar();
       atrasada = lista.body.find((item) => item.id === atividade.body.id);
       expect(atrasada.atrasada).toBe(false);
+
+      desafios = await listarDesafios();
+      desafioAtrasado = desafios.body.find((item) => item.id === atividade.body.id);
+      expect(desafioAtrasado.atrasada).toBe(false);
     });
   });
 
