@@ -179,3 +179,15 @@ model LumiDica {
   @@index([alunoId, criadaEm])
   @@map("lumi_dicas")
 }
+
+model LembreteAtividade {
+  id          String    @id @default(uuid())
+  alunoId     String
+  aluno       Usuario   @relation(fields: [alunoId], references: [id], onDelete: Cascade)
+  atividadeId String
+  atividade   Atividade @relation(fields: [atividadeId], references: [id], onDelete: Cascade)
+  enviadoEm   DateTime  @default(now())
+
+  @@unique([alunoId, atividadeId])
+  @@map("lembretes_atividade")
+}

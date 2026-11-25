@@ -22,4 +22,19 @@ router.get(
 );
 router.get("/trilha", verificarToken, exigirTipo("ALUNO"), progressoController.trilha);
 
+router.get(
+  "/streak",
+  verificarToken,
+  exigirTipo("ALUNO"),
+  progressoController.streak
+);
+router.get(
+  "/relatorio/sala/:id",
+  verificarToken,
+  exigirTipo("PROFESSOR"),
+  validarParams(idParamSchema),
+  progressoController.relatorioDaSala
+);
+
+
 export default router;
