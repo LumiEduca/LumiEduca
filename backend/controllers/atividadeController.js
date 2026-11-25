@@ -22,6 +22,10 @@ function validarQuestoes(questoes) {
     const enunciado = validarTexto(questao.enunciado, `questoes[${index}].enunciado`);
 
     const tipo = questao.tipo ?? "MULTIPLA_ESCOLHA";
+    if (!["MULTIPLA_ESCOLHA", "VERDADEIRO_FALSO", "LACUNA"].includes(tipo)) {
+      throw new ApiError(400, `O tipo da questão ${index + 1} é inválido.`);
+    }
+
     let opcoes;
     let respostaCorreta;
 
@@ -50,7 +54,23 @@ function validarQuestoes(questoes) {
       respostaCorreta = String(respostaIndex);
     } else if (tipo === "VERDADEIRO_FALSO") {
       opcoes = ["Verdadeiro", "Falso"];
-      const resposta = String(questao.respostaCorreta).toLocaleLowerCase("pt-BR");
+      const respostaInformada = questao.respostaCorreta;
+      if (
+        typeof respostaInformada !== "boolean" &&
+        typeof respostaInformada !== "string"
+      ) {
+        throw new ApiError(
+          400,
+          `A resposta correta da questão ${index + 1} deve ser true, false, Verdadeiro ou Falso.`
+        );
+      }
+      const resposta = String(respostaInformada).trim().toLocaleLowerCase("pt-BR");
+      if (!["true", "false", "verdadeiro", "falso"].includes(resposta)) {
+        throw new ApiError(
+          400,
+          `A resposta correta da questão ${index + 1} deve ser true, false, Verdadeiro ou Falso.`
+        );
+      }
       respostaCorreta = ["true", "verdadeiro"].includes(resposta)
         ? "Verdadeiro"
         : "Falso";

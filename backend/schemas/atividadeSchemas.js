@@ -50,7 +50,20 @@ const questaoSchema = z
     }
 
     if (questao.tipo === "VERDADEIRO_FALSO") {
-      const resposta = String(questao.respostaCorreta).toLocaleLowerCase("pt-BR");
+      if (
+        typeof questao.respostaCorreta !== "boolean" &&
+        typeof questao.respostaCorreta !== "string"
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "A resposta correta deve ser Verdadeiro ou Falso.",
+          path: ["respostaCorreta"],
+        });
+        return;
+      }
+      const resposta = String(questao.respostaCorreta)
+        .trim()
+        .toLocaleLowerCase("pt-BR");
       if (!["true", "false", "verdadeiro", "falso"].includes(resposta)) {
         ctx.addIssue({
           code: "custom",

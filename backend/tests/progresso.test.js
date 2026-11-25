@@ -102,7 +102,7 @@ describe('Testes de Progresso (/api/v1/progresso)', () => {
       expect(res.status).toBe(400);
     });
   
-    it('Aluno da sala deve responder corretamente recebendo 201, correta: true e pontosGanhos: 10', async () => {
+    it('Questão legada sem campo tipo continua corrigindo corretamente', async () => {
       const res = await responder(tokenAlunoDentro, { questaoId, resposta: '1' });
       expect(res.status).toBe(201);
       expect(res.body.correta).toBe(true);
@@ -494,6 +494,25 @@ describe('Testes de Progresso (/api/v1/progresso)', () => {
       return atividade.body.questoes[0].id;
     };
 
+    it('Rejeita resposta correta V/F inválida na criação da atividade', async () => {
+      const atividade = await request(app)
+        .post('/api/v1/atividades')
+        .set('Authorization', `Bearer ${tokenProfDono}`)
+        .send({
+          titulo: 'Questão V/F inválida',
+          materia: 'Português',
+          questoes: [
+            {
+              tipo: 'VERDADEIRO_FALSO',
+              enunciado: 'Responda à questão',
+              respostaCorreta: 'talvez',
+            },
+          ],
+        });
+
+      expect(atividade.status).toBe(400);
+    });
+
     it('Corrige questões VERDADEIRO_FALSO sem exigir opções do cliente', async () => {
       const novaQuestaoId = await criarQuestaoEAssociar(
         'VERDADEIRO_FALSO',
@@ -509,12 +528,12 @@ describe('Testes de Progresso (/api/v1/progresso)', () => {
       expect(res.body).not.toHaveProperty('respostaCorreta');
     });
 
-    it('Corrige LACUNA sem exigir opções e ignora diferença de caixa', async () => {
+    it('Corrige LACUNA ignorando caixa e espaços nas pontas', async () => {
       const novaQuestaoId = await criarQuestaoEAssociar('LACUNA', 'Brasília');
       const res = await request(app)
         .post('/api/v1/progresso/responder')
         .set('Authorization', `Bearer ${tokenAlunoDentro}`)
-        .send({ questaoId: novaQuestaoId, resposta: 'brasília' });
+        .send({ questaoId: novaQuestaoId, resposta: '  brasília  ' });
 
       expect(res.status).toBe(201);
       expect(res.body.correta).toBe(true);
@@ -578,6 +597,99 @@ describe('Testes de Progresso (/api/v1/progresso)', () => {
       lista = await listar();
       atrasada = lista.body.find((item) => item.id === atividade.body.id);
       expect(atrasada.atrasada).toBe(false);
+
+      desafios = await listarDesafios();
+      desafioAtrasado = desafios.body.find((item) => item.id === atividade.body.id);
+      expect(desafioAtrasado.atrasada).toBe(false);
+    });
+  });
+
+  describe('GET /relatorio/sala/:id', () => {
+    let tokenAlunoRelatorio;
+    let tokenAlunoSemRespostas;
+    let salaRelatorioId;
+    let alunoRelatorioId;
+    let alunoSemRespostasId;
+
+    beforeAll(async () => {
+      const sufixo = `relatorio_${Date.now()}`;
+
+      // Cria uma sala exclusiva para os testes do relatório
+      const sala = await request(app)
+        .post('/api/v1/salas')
+        .set('Authorization', `Bearer ${tokenProfDono}`)
+        .send({ nome: 'Sala Teste Relatório' });
+
+      expect(sala.status).toBe(201);
+      salaRelatorioId = sala.body.id;
+
+      // Cria dois alunos
+      const cadastroAluno = await request(app)
+        .post('/api/v1/auth/register/aluno')
+        .send({
+          nome: 'Aluno Relatório',
+          usuario: `${sufixo}_1`,
+          senha: 'password123',
+        });
+
+      expect(cadastroAluno.status).toBe(201);
+      tokenAlunoRelatorio = cadastroAluno.body.token;
+      alunoRelatorioId = cadastroAluno.body.usuario.id;
+
+      const cadastroAlunoSemRespostas = await request(app)
+        .post('/api/v1/auth/register/aluno')
+        .send({
+          nome: 'Aluno Sem Respostas',
+          usuario: `${sufixo}_2`,
+          senha: 'password123',
+        });
+
+      expect(cadastroAlunoSemRespostas.status).toBe(201);
+      tokenAlunoSemRespostas = cadastroAlunoSemRespostas.body.token;
+      alunoSemRespostasId = cadastroAlunoSemRespostas.body.usuario.id;
+
+      // Matricula os dois alunos na sala
+      for (const token of [
+        tokenAlunoRelatorio,
+        tokenAlunoSemRespostas,
+      ]) {
+        const matricula = await request(app)
+          .post('/api/v1/salas/entrar')
+          .set('Authorization', `Bearer ${token}`)
+          .send({ codigo: sala.body.codigo });
+
+        expect(matricula.status).toBe(200);
+      }
+
+      // Cria uma atividade com duas questões
+      const atividade = await request(app)
+        .post('/api/v1/atividades')
+        .set('Authorization', `Bearer ${tokenProfDono}`)
+        .send({
+          titulo: 'Atividade Relatório',
+          materia: 'Matemática',
+          questoes: [
+            {
+              enunciado: 'Quanto é 2 + 2?',
+              opcoes: ['3', '4'],
+              respostaCorreta: '1',
+              ordem: 1,
+            },
+            {
+              enunciado: 'Quanto é 3 + 3?',
+              opcoes: ['5', '6'],
+              respostaCorreta: '1',
+              ordem: 2,
+            },
+          ],
+        });
+
+      expect(atividade.status).toBe(201);
+
+      const vinculada = await request(app)
+        .post(`/api/v1/salas/${salaRelatorioId}/atividades`)
+        .set('Authorization', `Bearer ${tokenProfDono}`)
+        .send({ idAtividade: atividade.body.id });
 
       desafios = await listarDesafios();
       desafioAtrasado = desafios.body.find((item) => item.id === atividade.body.id);
