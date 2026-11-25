@@ -2,6 +2,7 @@ import prisma from "../config/prismaClient.js";
 import bcrypt from "bcryptjs";
 import { ApiError } from "../middlewares/errorHandler.js";
 import { assinarToken } from "../config/jwt.js";
+import { MSG_TROCA_SENHA } from "../schemas/authSchemas.js";
 
 const SALT_ROUNDS = 10;
 // Hash falso: o login gasta o mesmo tempo quando o usuário não existe
@@ -65,4 +66,22 @@ export const renovarToken = (usuario, payloadAtual) => {
 
   const token = assinarToken({ id: usuario.id, tipo: usuario.tipo, authTime: inicioSessao });
   return { usuario, token };
+};
+
+export const atualizarNome = async (usuarioId, nome) =>
+  prisma.usuario.update({
+    where: { id: usuarioId },
+    data: { nome: nome.trim() },
+    omit: { senhaHash: true },
+  });
+
+export const trocarSenha = async (usuarioId, senhaAtual, novaSenha) => {
+  const user = await prisma.usuario.findUnique({ where: { id: usuarioId } });
+  if (!user) throw new ApiError(401, "Token inválido ou expirado");
+
+  const confere = await bcrypt.compare(senhaAtual, user.senhaHash);
+  if (!confere) throw new ApiError(400, MSG_TROCA_SENHA);
+
+  const senhaHash = await bcrypt.hash(novaSenha, SALT_ROUNDS);
+  await prisma.usuario.update({ where: { id: usuarioId }, data: { senhaHash } });
 };

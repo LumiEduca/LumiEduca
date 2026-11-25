@@ -3,6 +3,7 @@ import {
   registerNotificationServiceWorker,
   requestNotificationPermission,
 } from '../services/notificationClient';
+import { ativarPush } from '../services/firebase';
 
 export default function usePushNotifications() {
   useEffect(() => {
@@ -10,7 +11,12 @@ export default function usePushNotifications() {
       await registerNotificationServiceWorker();
 
       if ('Notification' in window && Notification.permission === 'default') {
-        await requestNotificationPermission();
+        const resultado = await requestNotificationPermission();
+
+        // Permissão acabou de ser concedida: registra o token no back sem esperar recarregar
+        if (resultado === 'granted') {
+          await ativarPush(localStorage.getItem('token'), { pedirPermissao: false });
+        }
       }
     };
 

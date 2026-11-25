@@ -1,5 +1,6 @@
 import prisma from "../config/prismaClient.js";
 import { ApiError } from "../middlewares/errorHandler.js";
+import { notificarNovaAtividade } from "../services/notificationService.js";
 
 export const associarAtividade = async (req, res, next) => {
   try {
@@ -14,7 +15,7 @@ export const associarAtividade = async (req, res, next) => {
 
     const sala = await prisma.sala.findUnique({
       where: { id: req.params.id },
-      select: { id: true, professorId: true },
+      select: { id: true, nome: true, professorId: true },
     });
     if (!sala) throw new ApiError(404, "Sala não encontrada.");
     if (sala.professorId !== req.usuario.id) {
@@ -23,24 +24,37 @@ export const associarAtividade = async (req, res, next) => {
 
     const atividade = await prisma.atividade.findUnique({
       where: { id: idAtividade.trim() },
-      select: { id: true, professorId: true },
+      select: { id: true, titulo: true, professorId: true },
     });
     if (!atividade) throw new ApiError(404, "Atividade não encontrada.");
     if (atividade.professorId !== req.usuario.id) {
       throw new ApiError(403, "Apenas o professor dono pode associar esta atividade.");
     }
 
+    let associacao;
     try {
-      const associacao = await prisma.salaAtividade.create({
+      associacao = await prisma.salaAtividade.create({
         data: { salaId: sala.id, atividadeId: atividade.id },
       });
-      return res.status(201).json(associacao);
     } catch (error) {
       if (error.code === "P2002") {
         throw new ApiError(409, "Esta atividade já está associada à sala.");
       }
       throw error;
     }
+
+    // Aviso aos alunos: nunca pode derrubar a rota
+    try {
+      await notificarNovaAtividade({
+        salaId: sala.id,
+        salaNome: sala.nome,
+        atividadeTitulo: atividade.titulo,
+      });
+    } catch (error) {
+      console.error("Falha ao notificar alunos da nova atividade:", error);
+    }
+
+    return res.status(201).json(associacao);
   } catch (error) {
     next(error);
   }

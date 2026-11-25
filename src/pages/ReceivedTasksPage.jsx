@@ -4,6 +4,11 @@ import '../styles/professor-pages.css';
 import '../styles/question.css';
 import Modal from '../components/UI/Modal';
 import { pedirDicaAoLumi } from '../services/aiService';
+import {
+  listarAtividades,
+  responderAtividade,
+  excluirAtividade,
+} from '../services/atividadeService';
 
 export default function ReceivedTasksPage({ setPontos }) {
   const navigate = useNavigate();
@@ -14,6 +19,8 @@ export default function ReceivedTasksPage({ setPontos }) {
   const [respondido, setRespondido] = useState(false);
   const [escolha, setEscolha] = useState(null);
   const [modoRevisao, setModoRevisao] = useState(false);
+  const [resultado, setResultado] = useState(null);
+  const [enviando, setEnviando] = useState(false);
 
   const [modal, setModal] = useState({
     isOpen: false,
@@ -36,10 +43,6 @@ export default function ReceivedTasksPage({ setPontos }) {
   const tarefaIdOrigem = location.state?.tarefaId || null;
   const modoRevisaoOrigem = Boolean(location.state?.modoRevisao);
 
-  const tarefaEstaConcluida = (tarefa, concluidas) => {
-    return concluidas.some((c) => String(c.idTarefa) === String(tarefa.id));
-  };
-
   const tipoDaTarefa = (tarefa) => {
     if (tarefa.tipo === 'VERDADEIRO_FALSO') return 'VERDADEIRO_FALSO';
     if (tarefa.tipo === 'LACUNA') return 'LACUNA';
@@ -56,62 +59,52 @@ export default function ReceivedTasksPage({ setPontos }) {
       String(tarefa.respostaCorreta).trim().toLocaleLowerCase('pt-BR');
   };
 
-  const carregarTarefas = () => {
-    const todas = JSON.parse(localStorage.getItem('lumi_tarefas') || '[]');
-    const concluidas = JSON.parse(
-      localStorage.getItem(`lumi_tarefas_concluidas_${nomeUsuario}`) || '[]'
-    );
+  const carregarTarefas = async () => {
+    try {
+      const lista = await listarAtividades();
 
-    if (isProfessor) {
-      setTarefas(todas);
-      return;
-    }
-
-    const codigosAluno = JSON.parse(
-      localStorage.getItem(`salasEstudante_${nomeUsuario}`) || '[]'
-    );
-
-    let tarefasDoAluno = todas.filter((tarefa) => {
-      if (!tarefa.salaCodigo) return true;
-      return codigosAluno.includes(tarefa.salaCodigo);
-    });
-
-    if (salaCodigoOrigem) {
-      tarefasDoAluno = tarefasDoAluno.filter(
-        (tarefa) => String(tarefa.salaCodigo) === String(salaCodigoOrigem)
-      );
-    } else {
-      tarefasDoAluno = tarefasDoAluno.filter(
-        (tarefa) => !tarefaEstaConcluida(tarefa, concluidas)
-      );
-    }
-
-    const tarefasComStatus = tarefasDoAluno.map((tarefa) => {
-      const concluida = tarefaEstaConcluida(tarefa, concluidas);
-      const prazo = tarefa.prazo ? new Date(tarefa.prazo).getTime() : Number.NaN;
-      return {
-        ...tarefa,
-        concluida,
-        atrasada: !concluida && Number.isFinite(prazo) && prazo < Date.now(),
-      };
-    });
-
-    setTarefas(tarefasComStatus);
-
-    if (tarefaIdOrigem) {
-      const tarefaEncontrada = tarefasComStatus.find(
-        (tarefa) => String(tarefa.id) === String(tarefaIdOrigem)
-      );
-
-      if (tarefaEncontrada) {
-        const revisar = modoRevisaoOrigem || tarefaEncontrada.concluida;
-
-        setTarefaAtiva(tarefaEncontrada);
-        setModoRevisao(revisar);
-        setRespondido(false);
-        setEscolha(null);
-        setExibirDica(false);
+      let visiveis = lista;
+      if (!isProfessor) {
+        visiveis = salaCodigoOrigem
+          ? lista.filter((t) => String(t.salaCodigo) === String(salaCodigoOrigem))
+          : lista.filter((t) => !t.concluida);
       }
+
+      const tarefasComStatus = visiveis.map((t) => {
+        const prazo = t.prazo ? new Date(t.prazo).getTime() : Number.NaN;
+        return {
+          ...t,
+          atrasada: !isProfessor && !t.concluida && Number.isFinite(prazo) && prazo < Date.now(),
+        };
+      });
+
+      setTarefas(tarefasComStatus);
+
+      if (tarefaIdOrigem) {
+        const tarefaEncontrada = tarefasComStatus.find(
+          (t) => String(t.id) === String(tarefaIdOrigem)
+        );
+
+        if (tarefaEncontrada) {
+          const revisar = modoRevisaoOrigem || tarefaEncontrada.concluida;
+
+          setTarefaAtiva(tarefaEncontrada);
+          setModoRevisao(revisar);
+          setRespondido(false);
+          setEscolha(null);
+          setExibirDica(false);
+        }
+      }
+    } catch (err) {
+      setTarefas([]);
+      setModal({
+        isOpen: true,
+        title: 'Não foi possível carregar os desafios',
+        message: err.message,
+        type: 'info',
+        onConfirm: closeModal,
+        showCancel: false,
+      });
     }
   };
 
@@ -153,6 +146,38 @@ export default function ReceivedTasksPage({ setPontos }) {
     return respostasIguais(tarefaAtiva, escolha);
   };
 
+  // Aluno responde: o servidor confere, grava e devolve o gabarito. Professor e revisão só visualizam.
+  const responder = async (valor) => {
+    if (respondido || enviando || !tarefaAtiva) return;
+
+    setEscolha(valor);
+
+    if (isProfessor || modoRevisao) {
+      setRespondido(true);
+      return;
+    }
+
+    setEnviando(true);
+    try {
+      const r = await responderAtividade(tarefaAtiva.id, valor);
+      setTarefaAtiva((prev) => ({ ...prev, respostaCorreta: r.respostaCorreta }));
+      setResultado(r);
+      setRespondido(true);
+    } catch (err) {
+      setEscolha(null);
+      setModal({
+        isOpen: true,
+        title: 'Não foi possível enviar a resposta',
+        message: err.message,
+        type: 'info',
+        onConfirm: closeModal,
+        showCancel: false,
+      });
+    } finally {
+      setEnviando(false);
+    }
+  };
+
   const finalizarTarefa = (tarefa) => {
     if (modoRevisao) {
       voltarLista();
@@ -160,9 +185,10 @@ export default function ReceivedTasksPage({ setPontos }) {
     }
 
     const acertou = respostasIguais(tarefa, escolha);
+    const ganhou = resultado?.pontosGanhos ?? 0;
 
-    if (acertou && !isProfessor) {
-      setPontos((prev) => prev + 10);
+    if (ganhou > 0 && !isProfessor) {
+      setPontos((prev) => prev + ganhou);
     }
 
     const historico = JSON.parse(localStorage.getItem('lumi_historico_tarefas') || '[]');
@@ -184,19 +210,17 @@ export default function ReceivedTasksPage({ setPontos }) {
     localStorage.setItem('lumi_historico_tarefas', JSON.stringify(historico));
 
     if (!isProfessor) {
-      const chaveConcluidas = `lumi_tarefas_concluidas_${nomeUsuario}`;
-      const feitas = JSON.parse(localStorage.getItem(chaveConcluidas) || '[]');
-      const jaConcluida = feitas.some((item) => String(item.idTarefa) === String(tarefa.id));
-
-      if (!jaConcluida) {
-        feitas.push({ idTarefa: tarefa.id });
-        localStorage.setItem(chaveConcluidas, JSON.stringify(feitas));
-      }
-
       setTarefas((prev) =>
         salaCodigoOrigem
           ? prev.map((t) =>
-              String(t.id) === String(tarefa.id) ? { ...t, concluida: true } : t
+              String(t.id) === String(tarefa.id)
+                ? {
+                    ...t,
+                    concluida: true,
+                    atrasada: false,
+                    respostaCorreta: tarefa.respostaCorreta,
+                  }
+                : t
             )
           : prev.filter((t) => String(t.id) !== String(tarefa.id))
       );
@@ -207,12 +231,15 @@ export default function ReceivedTasksPage({ setPontos }) {
     setEscolha(null);
     setModoRevisao(false);
     setExibirDica(false);
+    setResultado(null);
 
     setModal({
       isOpen: true,
       title: acertou ? 'Muito bem! 🌟' : 'Resposta enviada!',
       message: acertou
-        ? 'Você ganhou 10 estrelas por concluir o desafio.'
+        ? ganhou > 0
+          ? 'Você ganhou 10 estrelas por concluir o desafio.'
+          : 'Resposta correta! Esse desafio já tinha sido concluído antes.'
         : 'Sua resposta foi registrada. Continue praticando!',
       type: acertou ? 'info' : 'default',
       onConfirm: closeModal,
@@ -227,12 +254,21 @@ export default function ReceivedTasksPage({ setPontos }) {
       message: 'Essa atividade será removida da gestão de desafios.',
       type: 'danger',
       showCancel: true,
-      onConfirm: () => {
-        const todas = JSON.parse(localStorage.getItem('lumi_tarefas') || '[]');
-        const novas = todas.filter((t) => t.id !== id);
-        localStorage.setItem('lumi_tarefas', JSON.stringify(novas));
-        setTarefas(novas);
-        closeModal();
+      onConfirm: async () => {
+        try {
+          await excluirAtividade(id);
+          setTarefas((prev) => prev.filter((t) => t.id !== id));
+          closeModal();
+        } catch (err) {
+          setModal({
+            isOpen: true,
+            title: 'Não foi possível excluir',
+            message: err.message,
+            type: 'info',
+            showCancel: false,
+            onConfirm: closeModal,
+          });
+        }
       },
     });
   };
@@ -243,6 +279,7 @@ export default function ReceivedTasksPage({ setPontos }) {
     setEscolha(null);
     setModoRevisao(false);
     setExibirDica(false);
+    setResultado(null);
   };
 
   if (tarefaAtiva) {
@@ -303,21 +340,21 @@ export default function ReceivedTasksPage({ setPontos }) {
                 className="professor-action-row"
                 onSubmit={(event) => {
                   event.preventDefault();
-                  if (String(escolha || '').trim()) setRespondido(true);
+                  if (String(escolha || '').trim()) responder(escolha);
                 }}
               >
                 <input
                   className="professor-input"
                   type="text"
                   value={escolha || ''}
-                  disabled={respondido}
+                  disabled={respondido || enviando}
                   onChange={(event) => setEscolha(event.target.value)}
                   placeholder="Digite sua resposta"
                   required
                 />
                 {!respondido && (
-                  <button type="submit" className="professor-btn orange">
-                    Responder
+                  <button type="submit" className="professor-btn orange" disabled={enviando}>
+                    {enviando ? 'Enviando...' : 'Responder'}
                   </button>
                 )}
               </form>
@@ -342,13 +379,8 @@ export default function ReceivedTasksPage({ setPontos }) {
                       key={idx}
                       type="button"
                       className="professor-option-btn"
-                      disabled={respondido}
-                      onClick={() => {
-                        if (!respondido) {
-                          setEscolha(valorResposta);
-                          setRespondido(true);
-                        }
-                      }}
+                      disabled={respondido || enviando}
+                      onClick={() => responder(valorResposta)}
                       style={{
                         backgroundColor: respondido
                           ? correta
@@ -361,7 +393,7 @@ export default function ReceivedTasksPage({ setPontos }) {
                             : 'white',
                         color: respondido && (correta || selecionada) ? 'white' : '#1f2f4d',
                         borderColor: selecionada && !respondido ? '#cbd5e1' : '#e5ecf3',
-                        cursor: respondido ? 'not-allowed' : 'pointer',
+                        cursor: respondido || enviando ? 'not-allowed' : 'pointer',
                       }}
                     >
                       {opcao}
@@ -584,6 +616,7 @@ export default function ReceivedTasksPage({ setPontos }) {
                       setRespondido(false);
                       setEscolha(null);
                       setExibirDica(false);
+                      setResultado(null);
                     }}
                   >
                     {isProfessor ? 'Revisar' : t.concluida ? 'Revisar' : 'Jogar'}

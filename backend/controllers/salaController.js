@@ -3,10 +3,8 @@ import prisma from "../config/prismaClient.js";
 import { salaRepository } from "../repositories/salaRepository.js";
 import { ApiError } from "../middlewares/errorHandler.js";
 
-// Código de 6 caracteres, sem letras/números ambíguos (0, O, 1, I)
-const ALFABETO = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-const gerarCodigo = (tamanho = 6) =>
-  Array.from(crypto.randomBytes(tamanho), (b) => ALFABETO[b % ALFABETO.length]).join("");
+// Código numérico de 6 dígitos
+const gerarCodigo = () => String(crypto.randomInt(100000, 1000000));
 
 // Remove o código de acesso e a lista de matrículas da resposta para o aluno
 const versaoAluno = (sala) => {
@@ -115,6 +113,80 @@ export const removerSala = async (req, res, next) => {
     ]);
 
     res.status(204).send();
+  } catch (err) {
+    next(err);
+  }
+};
+
+// PATCH /api/v1/salas/:id — professor dono edita o nome
+export const editarSala = async (req, res, next) => {
+  try {
+    const nome = String(req.body?.nome ?? "").trim();
+    if (!nome) throw new ApiError(400, "O nome da sala é obrigatório");
+
+    const sala = await salaRepository.buscarPorId(req.params.id);
+    if (!sala) throw new ApiError(404, "Sala não encontrada");
+    if (sala.professorId !== req.usuario.id) {
+      throw new ApiError(403, "Apenas o professor dono pode editar a sala");
+    }
+
+    const atualizada = await salaRepository.atualizarNome(sala.id, nome);
+    res.json(atualizada);
+  } catch (err) {
+    next(err);
+  }
+};
+
+// DELETE /api/v1/salas/:id/alunos/:alunoId — professor dono remove um aluno
+export const removerAluno = async (req, res, next) => {
+  try {
+    const { id, alunoId } = req.params;
+
+    const sala = await salaRepository.buscarPorId(id);
+    if (!sala) throw new ApiError(404, "Sala não encontrada");
+    if (sala.professorId !== req.usuario.id) {
+      throw new ApiError(403, "Apenas o professor dono pode remover alunos da sala");
+    }
+
+    const { count } = await salaRepository.removerMatricula(id, alunoId);
+    if (count === 0) throw new ApiError(404, "Aluno não encontrado nesta sala");
+
+    res.status(204).send();
+  } catch (err) {
+    next(err);
+  }
+};
+
+// DELETE /api/v1/salas/:id/sair — aluno sai da sala
+export const sairDaSala = async (req, res, next) => {
+  try {
+    const sala = await salaRepository.buscarPorId(req.params.id);
+    if (!sala) throw new ApiError(404, "Sala não encontrada");
+
+    const { count } = await salaRepository.removerMatricula(sala.id, req.usuario.id);
+    if (count === 0) throw new ApiError(404, "Você não está nesta sala");
+
+    res.status(204).send();
+  } catch (err) {
+    next(err);
+  }
+};
+
+// GET /api/v1/salas/:id/ranking — lista de alunos com pontos (dono ou aluno matriculado)
+export const rankingDaSala = async (req, res, next) => {
+  try {
+    const sala = await salaRepository.buscarPorId(req.params.id);
+    if (!sala) throw new ApiError(404, "Sala não encontrada");
+
+    const { id, tipo } = req.usuario;
+    const ehDono = tipo === "PROFESSOR" && sala.professorId === id;
+    const ehAluno = tipo === "ALUNO" && sala.matriculas.some((m) => m.alunoId === id);
+    if (!ehDono && !ehAluno) {
+      throw new ApiError(403, "Você não tem acesso a esta sala");
+    }
+
+    const ranking = await salaRepository.rankingPorSala(sala.id);
+    res.json({ sala: { id: sala.id, nome: sala.nome }, ranking });
   } catch (err) {
     next(err);
   }
