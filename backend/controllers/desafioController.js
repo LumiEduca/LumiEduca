@@ -241,6 +241,11 @@ export const listarDesafios = async (req, res, next) => {
         const atividade = porId.get(v.atividadeId);
         const questao = atividade.questoes[0];
         const concluida = respondidas.has(questao.id);
+        const atrasada =
+          !ehProfessor &&
+          atividade.prazo !== null &&
+          atividade.prazo < new Date() &&
+          !concluida;
         const item = {
           id: atividade.id,
           nomeAtividade: atividade.titulo,
@@ -253,6 +258,7 @@ export const listarDesafios = async (req, res, next) => {
           salaNome: v.sala.nome,
           salaCodigo: v.sala.codigo,
           concluida,
+          atrasada,
         };
         // O gabarito só vai para o professor ou para o aluno que já respondeu
         if (ehProfessor || concluida) item.respostaCorreta = gabarito(questao);
