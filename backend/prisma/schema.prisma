@@ -27,6 +27,7 @@ model Usuario {
   tokens        NotificacaoToken[]
   notificacoes  Notificacao[]
   respostas     Resposta[]
+  lembretes     LembreteAtividade[]
   dicasLumi     LumiDica[]
 
   @@map("usuarios")
@@ -85,8 +86,6 @@ model Questao {
   ordem           Int        @default(0)
   respostas       Resposta[]
   tipo           String    @default("MULTIPLA_ESCOLHA")
-  ordem          Int       @default(0)
-  respostas     Resposta[]
   dicasLumi     LumiDica[]
 
   @@map("questoes")
@@ -115,6 +114,18 @@ model NotificacaoToken {
   criadoEm  DateTime @default(now())
 
   @@map("notificacao_tokens")
+}
+
+model LembreteAtividade {
+  id          String    @id @default(uuid())
+  alunoId     String
+  aluno       Usuario   @relation(fields: [alunoId], references: [id], onDelete: Cascade)
+  atividadeId String
+  atividade   Atividade @relation(fields: [atividadeId], references: [id], onDelete: Cascade)
+  enviadoEm   DateTime  @default(now())
+
+  @@unique([alunoId, atividadeId])
+  @@map("lembretes_atividade")
 }
 
 model Notificacao {
