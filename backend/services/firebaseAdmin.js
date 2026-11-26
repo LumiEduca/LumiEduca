@@ -5,11 +5,8 @@ import { getMessaging } from "firebase-admin/messaging";
 const simulado = {
   messaging() {
     return {
-      async send(message) {
-        console.log("Notificação simulada:", {
-          titulo: message?.notification?.title,
-          corpo: message?.notification?.body,
-        });
+      async send() {
+        console.log("Notificação simulada.");
         return "mock-message-id";
       },
     };
