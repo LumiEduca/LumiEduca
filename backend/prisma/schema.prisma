@@ -28,6 +28,8 @@ model Usuario {
   notificacoes  Notificacao[]
   respostas     Resposta[]
   dicasLumi     LumiDica[]
+  lembretes     LembreteAtividade[]
+  conquistas    UsuarioConquista[]
 
   @@map("usuarios")
 }
@@ -82,12 +84,10 @@ model Questao {
   enunciado       String
   opcoes          Json
   respostaCorreta String
+  tipo            String     @default("MULTIPLA_ESCOLHA")
   ordem           Int        @default(0)
   respostas       Resposta[]
-  tipo           String    @default("MULTIPLA_ESCOLHA")
-  ordem          Int       @default(0)
-  respostas     Resposta[]
-  dicasLumi     LumiDica[]
+  dicasLumi       LumiDica[]
 
   @@map("questoes")
 }
@@ -190,4 +190,28 @@ model LembreteAtividade {
 
   @@unique([alunoId, atividadeId])
   @@map("lembretes_atividade")
+}
+
+model Conquista {
+  id          String             @id @default(uuid())
+  codigo      String             @unique
+  nome        String
+  descricao   String
+
+  usuarios    UsuarioConquista[]
+
+  @@map("conquistas")
+}
+
+model UsuarioConquista {
+  id          String    @id @default(uuid())
+  alunoId     String
+  aluno       Usuario   @relation(fields: [alunoId], references: [id], onDelete: Cascade)
+  conquistaId String
+  conquista   Conquista @relation(fields: [conquistaId], references: [id], onDelete: Cascade)
+  concedidaEm DateTime  @default(now())
+
+  @@unique([alunoId, conquistaId])
+  @@index([alunoId])
+  @@map("usuario_conquistas")
 }
