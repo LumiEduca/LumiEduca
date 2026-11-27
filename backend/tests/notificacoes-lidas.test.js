@@ -5,6 +5,8 @@ import { prisma, limparDados } from './helpers/db.js';
 // Mock do Lumi (antes de importar o app), igual ao notificacoes-lumi.test.js
 jest.unstable_mockModule('../services/lumiService.js', () => ({
   gerarDica: jest.fn().mockResolvedValue({ dica: 'ok' }),
+  gerarQuestoes: jest.fn(),
+  explicarErro: jest.fn(),
   verificarStatus: jest.fn().mockResolvedValue({ disponivel: true }),
 }));
 

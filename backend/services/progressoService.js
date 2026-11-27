@@ -118,7 +118,6 @@ async function concederConquista(tx, alunoId, codigo) {
   });
 
   // Só retorna quando a conquista foi realmente concedida agora
-
   if (resultado.count === 0) return null;
 
   return {
@@ -198,7 +197,7 @@ export async function responderQuestao(alunoId, { questaoId, resposta }) {
         if (conquista) novasConquistas.push(conquista);
       }
 
-         // 2. Cinco respostas corretas consecutivas
+      // 2. Cinco respostas corretas consecutivas
       const ultimasRespostas = await tx.resposta.findMany({
         where: { alunoId },
         orderBy: [{ respondidaEm: "desc" }, { id: "desc" }],
@@ -215,7 +214,6 @@ export async function responderQuestao(alunoId, { questaoId, resposta }) {
           alunoId,
           "CINCO_ACERTOS"
         );
-
         if (conquista) novasConquistas.push(conquista);
       }
 
@@ -233,6 +231,7 @@ export async function responderQuestao(alunoId, { questaoId, resposta }) {
         );
         if (conquista) novasConquistas.push(conquista);
       }
+
       return {
         correta,
         pontosGanhos: correta ? PONTOS_POR_ACERTO : 0,
@@ -244,6 +243,7 @@ export async function responderQuestao(alunoId, { questaoId, resposta }) {
           pontos,
           estrelas: calcularEstrelas(acertos, total, concluida),
         },
+        novasConquistas,
       };
     });
   } catch (error) {
@@ -348,19 +348,19 @@ export async function calcularStreakDoAluno(alunoId) {
   }
 
   const formatarDia = (data) => {
-  const partes = new Intl.DateTimeFormat("en-US", {
-    timeZone: "America/Sao_Paulo",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(data);
+    const partes = new Intl.DateTimeFormat("en-US", {
+      timeZone: "America/Sao_Paulo",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).formatToParts(data);
 
-  const valores = Object.fromEntries(
-    partes.map(({ type, value }) => [type, value])
-  );
+    const valores = Object.fromEntries(
+      partes.map(({ type, value }) => [type, value])
+    );
 
-  return `${valores.year}-${valores.month}-${valores.day}`;
-};
+    return `${valores.year}-${valores.month}-${valores.day}`;
+  };
 
   const diasAtivos = [
     ...new Set(respostas.map((resposta) => formatarDia(resposta.respondidaEm))),
@@ -488,7 +488,6 @@ export async function gerarRelatorioDaSala(professorId, salaId) {
   });
 
   // Organiza as atividades por matéria
-
   const materias = new Map();
 
   for (const atividade of atividades) {
@@ -507,7 +506,6 @@ export async function gerarRelatorioDaSala(professorId, salaId) {
   }
 
   // Calcula os totais de respostas por matéria
-
   for (const resposta of respostas) {
     const atividade = atividades.find(
       (item) => item.id === resposta.questao.atividadeId
