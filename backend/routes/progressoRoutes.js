@@ -23,6 +23,12 @@ router.get(
 router.get("/trilha", verificarToken, exigirTipo("ALUNO"), progressoController.trilha);
 
 router.get(
+  "/conquistas",
+  verificarToken,
+  exigirTipo("ALUNO"),
+  progressoController.conquistas
+);
+router.get(
   "/streak",
   verificarToken,
   exigirTipo("ALUNO"),

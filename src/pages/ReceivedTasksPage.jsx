@@ -110,6 +110,7 @@ export default function ReceivedTasksPage({ setPontos }) {
 
   useEffect(() => {
     carregarTarefas();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isProfessor, nomeUsuario, salaCodigoOrigem, tarefaIdOrigem, modoRevisaoOrigem]);
 
   const closeModal = () => {

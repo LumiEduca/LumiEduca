@@ -30,7 +30,7 @@ const CATALOGO_CONQUISTAS = {
   },
   CINCO_ACERTOS: {
     nome: "Mente brilhante",
-    descricao: "Acertou cinco questÃµes consecutivas.",
+    descricao: "Acertou cinco questões consecutivas.",
   },
   CEM_PONTOS: {
     nome: "100 pontos",
@@ -46,7 +46,7 @@ function calcularEstrelas(acertos, total, concluida) {
   return 1;
 }
 
-// Monta as fases (uma por atividade com questÃµes) das salas do aluno
+// Monta as fases (uma por atividade com questões) das salas do aluno
 async function montarFases(alunoId) {
   const matriculas = await prisma.matricula.findMany({
     where: { alunoId },
@@ -117,8 +117,7 @@ async function concederConquista(tx, alunoId, codigo) {
     skipDuplicates: true,
   });
 
-  // SÃ³ retorna quando a conquista foi realmente concedida agora
-
+  // Só retorna quando a conquista foi realmente concedida agora
   if (resultado.count === 0) return null;
 
   return {
@@ -133,7 +132,7 @@ export async function responderQuestao(alunoId, { questaoId, resposta }) {
     where: { id: questaoId },
     include: { atividade: { select: { id: true, materia: true } } },
   });
-  if (!questao) throw new ApiError(404, "QuestÃ£o nÃ£o encontrada");
+  if (!questao) throw new ApiError(404, "Questão não encontrada");
 
   const atividadeId = questao.atividade.id;
 
@@ -142,13 +141,13 @@ export async function responderQuestao(alunoId, { questaoId, resposta }) {
     where: { alunoId, sala: { salaAtividades: { some: { atividadeId } } } },
   });
   if (!matricula) {
-    throw new ApiError(403, "Esta atividade nÃ£o estÃ¡ disponÃ­vel para vocÃª");
+    throw new ApiError(403, "Esta atividade não está disponível para você");
   }
 
   const jaRespondeu = await prisma.resposta.findUnique({
     where: { alunoId_questaoId: { alunoId, questaoId } },
   });
-  if (jaRespondeu) throw new ApiError(409, "VocÃª jÃ¡ respondeu esta questÃ£o");
+  if (jaRespondeu) throw new ApiError(409, "Você já respondeu esta questão");
 
   const correta = respostaEstaCorreta(questao, resposta);
 
@@ -184,7 +183,7 @@ export async function responderQuestao(alunoId, { questaoId, resposta }) {
       // Verifica quais conquistas foram desbloqueadas
       const novasConquistas = [];
 
-      // 1. Primeira atividade concluÃ­da
+      // 1. Primeira atividade concluída
       const atividadesConcluidas = await tx.progresso.count({
         where: { alunoId, concluida: true },
       });
@@ -198,7 +197,7 @@ export async function responderQuestao(alunoId, { questaoId, resposta }) {
         if (conquista) novasConquistas.push(conquista);
       }
 
-         // 2. Cinco respostas corretas consecutivas
+      // 2. Cinco respostas corretas consecutivas
       const ultimasRespostas = await tx.resposta.findMany({
         where: { alunoId },
         orderBy: [{ respondidaEm: "desc" }, { id: "desc" }],
@@ -215,7 +214,6 @@ export async function responderQuestao(alunoId, { questaoId, resposta }) {
           alunoId,
           "CINCO_ACERTOS"
         );
-
         if (conquista) novasConquistas.push(conquista);
       }
 
@@ -233,6 +231,7 @@ export async function responderQuestao(alunoId, { questaoId, resposta }) {
         );
         if (conquista) novasConquistas.push(conquista);
       }
+
       return {
         correta,
         pontosGanhos: correta ? PONTOS_POR_ACERTO : 0,
@@ -244,12 +243,13 @@ export async function responderQuestao(alunoId, { questaoId, resposta }) {
           pontos,
           estrelas: calcularEstrelas(acertos, total, concluida),
         },
+        novasConquistas,
       };
     });
   } catch (error) {
-    // Duas requisiÃ§Ãµes simultÃ¢neas para a mesma questÃ£o
+    // Duas requisições simultâneas para a mesma questão
     if (error.code === "P2002") {
-      throw new ApiError(409, "VocÃª jÃ¡ respondeu esta questÃ£o");
+      throw new ApiError(409, "Você já respondeu esta questão");
     }
     throw error;
   }
@@ -261,18 +261,18 @@ export async function progressoGeral(solicitante, alunoId) {
     select: { id: true, nome: true, usuario: true, tipo: true },
   });
   if (!aluno || aluno.tipo !== "ALUNO") {
-    throw new ApiError(404, "Aluno nÃ£o encontrado");
+    throw new ApiError(404, "Aluno não encontrado");
   }
 
   if (solicitante.tipo === "ALUNO") {
     if (solicitante.id !== alunoId) {
-      throw new ApiError(403, "VocÃª sÃ³ pode ver o seu prÃ³prio progresso");
+      throw new ApiError(403, "Você só pode ver o seu próprio progresso");
     }
   } else {
     const vinculo = await prisma.matricula.findFirst({
       where: { alunoId, sala: { professorId: solicitante.id } },
     });
-    if (!vinculo) throw new ApiError(403, "Este aluno nÃ£o pertence Ã s suas salas");
+    if (!vinculo) throw new ApiError(403, "Este aluno não pertence às suas salas");
   }
 
   const fases = await montarFases(alunoId);
@@ -348,19 +348,19 @@ export async function calcularStreakDoAluno(alunoId) {
   }
 
   const formatarDia = (data) => {
-  const partes = new Intl.DateTimeFormat("en-US", {
-    timeZone: "America/Sao_Paulo",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(data);
+    const partes = new Intl.DateTimeFormat("en-US", {
+      timeZone: "America/Sao_Paulo",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).formatToParts(data);
 
-  const valores = Object.fromEntries(
-    partes.map(({ type, value }) => [type, value])
-  );
+    const valores = Object.fromEntries(
+      partes.map(({ type, value }) => [type, value])
+    );
 
-  return `${valores.year}-${valores.month}-${valores.day}`;
-};
+    return `${valores.year}-${valores.month}-${valores.day}`;
+  };
 
   const diasAtivos = [
     ...new Set(respostas.map((resposta) => formatarDia(resposta.respondidaEm))),
@@ -488,7 +488,6 @@ export async function gerarRelatorioDaSala(professorId, salaId) {
   });
 
   // Organiza as atividades por matéria
-
   const materias = new Map();
 
   for (const atividade of atividades) {
@@ -507,7 +506,6 @@ export async function gerarRelatorioDaSala(professorId, salaId) {
   }
 
   // Calcula os totais de respostas por matéria
-
   for (const resposta of respostas) {
     const atividade = atividades.find(
       (item) => item.id === resposta.questao.atividadeId

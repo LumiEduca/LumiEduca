@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../styles/classrooms.css';
 import { showLumiNotification } from '../services/notificationClient';
@@ -10,18 +10,7 @@ import {
   entrarNaSala,
   detalharSala,
 } from '../services/salaService';
-
-function carregarTarefas() {
-  try {
-    return JSON.parse(localStorage.getItem('lumi_tarefas')) || [];
-  } catch {
-    return [];
-  }
-}
-
-function salvarTarefas(tarefas) {
-  localStorage.setItem('lumi_tarefas', JSON.stringify(tarefas));
-}
+import { editarAtividade, listarAtividades } from '../services/atividadeService';
 
 function chaveEstudante(userName) {
   return `salasEstudante_${userName}`;
@@ -49,10 +38,14 @@ export default function ClassroomsPage() {
   const isProfessor = userType === 'professor';
 
   const [salas, setSalas] = useState([]);
-  const [tarefas, setTarefas] = useState(carregarTarefas);
   const [salasEstudante, setSalasEstudante] = useState(() =>
     isProfessor ? [] : carregarSalasEstudante(userName)
   );
+
+  // Atividades vindas da API: as da sala aberta e (professor) todas as dele
+  const [tarefasDaSala, setTarefasDaSala] = useState([]);
+  const [todasAtividades, setTodasAtividades] = useState([]);
+  const [versaoAtividades, setVersaoAtividades] = useState(0);
 
   const [nomeSala, setNomeSala] = useState('');
   const [codigoInput, setCodigoInput] = useState('');
@@ -64,10 +57,7 @@ export default function ClassroomsPage() {
 
   const [mostrarAtividadesExistentes, setMostrarAtividadesExistentes] = useState(false);
 
-  const tarefasConcluidas = useMemo(() => {
-    if (isProfessor) return [];
-    return JSON.parse(localStorage.getItem(`lumi_tarefas_concluidas_${userName}`) || '[]');
-  }, [userName, isProfessor]);
+  const salaSelecionadaId = salaSelecionada?.id || null;
 
   // Carrega as salas da API ao abrir a página
   useEffect(() => {
@@ -92,6 +82,48 @@ export default function ClassroomsPage() {
     });
   }, [isProfessor, userName]);
 
+  // Atividades da sala aberta (a API já informa concluída e atrasada para o aluno)
+  useEffect(() => {
+    if (!salaSelecionadaId) {
+      setTarefasDaSala([]);
+      return undefined;
+    }
+
+    let ativo = true;
+    listarAtividades(salaSelecionadaId)
+      .then((lista) => {
+        if (ativo) setTarefasDaSala(lista);
+      })
+      .catch((err) => {
+        if (ativo) {
+          setTarefasDaSala([]);
+          setErro(err.message);
+        }
+      });
+
+    return () => {
+      ativo = false;
+    };
+  }, [salaSelecionadaId, versaoAtividades]);
+
+  // Professor: todas as atividades dele, para mover uma delas para esta sala
+  useEffect(() => {
+    if (!isProfessor) return undefined;
+
+    let ativo = true;
+    listarAtividades()
+      .then((lista) => {
+        if (ativo) setTodasAtividades(lista);
+      })
+      .catch(() => {
+        if (ativo) setTodasAtividades([]);
+      });
+
+    return () => {
+      ativo = false;
+    };
+  }, [isProfessor, versaoAtividades]);
+
   useEffect(() => {
     if (salaSelecionada && window.innerWidth <= 768) {
       const mainContent = document.querySelector('.classrooms-main');
@@ -104,23 +136,9 @@ export default function ClassroomsPage() {
 
   const listaSalas = isProfessor ? salas : salasEstudante;
 
-  const tarefasDaSala = salaSelecionada
-    ? tarefas.filter((tarefa) => tarefa.salaId === salaSelecionada.id)
-    : [];
-
   const atividadesExistentesDisponiveis = salaSelecionada
-    ? tarefas.filter((tarefa) => {
-        const criadaPeloProfessor = tarefa.criadoPor === userName;
-        const naoEstaNestaSala = tarefa.salaId !== salaSelecionada.id;
-
-        return criadaPeloProfessor && naoEstaNestaSala;
-      })
+    ? todasAtividades.filter((tarefa) => tarefa.salaId !== salaSelecionada.id)
     : [];
-
-  const atualizarTarefas = (novasTarefas) => {
-    salvarTarefas(novasTarefas);
-    setTarefas(novasTarefas);
-  };
 
   const handleCriarSala = async (e) => {
     e.preventDefault();
@@ -175,46 +193,36 @@ export default function ClassroomsPage() {
     }
   };
 
-  const handleVincularAtividadeExistente = async (tarefaId) => {
+  // Na API cada desafio pertence a uma sala: "adicionar" move o desafio para esta sala
+  const handleVincularAtividadeExistente = async (tarefa) => {
     if (!salaSelecionada) return;
 
-    const novasTarefas = tarefas.map((tarefa) => {
-      if (String(tarefa.id) !== String(tarefaId)) return tarefa;
-
-      return {
-        ...tarefa,
+    try {
+      await editarAtividade(tarefa.id, {
         salaId: salaSelecionada.id,
-        salaNome: salaSelecionada.nome,
-        salaCodigo: salaSelecionada.codigo,
-      };
-    });
+        nomeAtividade: tarefa.nomeAtividade,
+        materia: tarefa.materia,
+        prazo: tarefa.prazo,
+        tipo: tarefa.tipo,
+        pergunta: tarefa.pergunta,
+        opcoes: tarefa.opcoes,
+        respostaCorreta: tarefa.respostaCorreta,
+      });
+    } catch (err) {
+      setErro(err.message);
+      return;
+    }
 
-    atualizarTarefas(novasTarefas);
+    setVersaoAtividades((v) => v + 1);
     setMostrarAtividadesExistentes(false);
-    setSucesso('Atividade adicionada à sala com sucesso!');
+    setErro('');
+    setSucesso('Atividade movida para esta sala com sucesso!');
 
     await showLumiNotification(
       'Nova atividade no LumiEduca! 🦊',
       `Uma atividade foi adicionada à sala ${salaSelecionada.nome}.`
     );
 
-    setTimeout(() => setSucesso(''), 4000);
-  };
-
-  const handleRemoverAtividadeDaSala = (tarefaId) => {
-    const novasTarefas = tarefas.map((tarefa) => {
-      if (String(tarefa.id) !== String(tarefaId)) return tarefa;
-
-      return {
-        ...tarefa,
-        salaId: null,
-        salaNome: 'Geral',
-        salaCodigo: null,
-      };
-    });
-
-    atualizarTarefas(novasTarefas);
-    setSucesso('Atividade removida desta sala.');
     setTimeout(() => setSucesso(''), 4000);
   };
 
@@ -282,10 +290,12 @@ export default function ClassroomsPage() {
               <input
                 type="text"
                 className="classrooms-input"
-                placeholder="Código de 6 dígitos"
+                placeholder="Código da sala (6 caracteres)"
                 value={codigoInput}
                 onChange={(e) => {
-                  setCodigoInput(e.target.value.replace(/\D/g, '').slice(0, 6));
+                  setCodigoInput(
+                    e.target.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 6)
+                  );
                   setErro('');
                 }}
                 maxLength={6}
@@ -404,8 +414,9 @@ export default function ClassroomsPage() {
                   <h2>Atividades já criadas</h2>
 
                   <p>
-                    Escolha uma atividade da sua gestão para vincular à sala{' '}
-                    <strong>{salaSelecionada.nome}</strong>.
+                    Escolha uma atividade da sua gestão para mover para a sala{' '}
+                    <strong>{salaSelecionada.nome}</strong>. Ela deixa de aparecer na sala
+                    em que está hoje.
                   </p>
 
                   {atividadesExistentesDisponiveis.length === 0 ? (
@@ -425,7 +436,7 @@ export default function ClassroomsPage() {
                           <button
                             type="button"
                             className="classrooms-btn primary"
-                            onClick={() => handleVincularAtividadeExistente(tarefa.id)}
+                            onClick={() => handleVincularAtividadeExistente(tarefa)}
                           >
                             Adicionar
                           </button>
@@ -448,9 +459,7 @@ export default function ClassroomsPage() {
                   <p className="classrooms-empty">Nenhuma atividade vinculada ainda.</p>
                 ) : (
                   tarefasDaSala.map((atv) => {
-                    const estaPendente = !tarefasConcluidas.some(
-                      (c) => String(c.idTarefa) === String(atv.id)
-                    );
+                    const estaPendente = !atv.concluida;
 
                     return (
                       <div
@@ -497,17 +506,6 @@ export default function ClassroomsPage() {
                               }}
                             >
                               Revisar na gestão
-                            </button>
-
-                            <button
-                              type="button"
-                              className="classrooms-btn danger"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleRemoverAtividadeDaSala(atv.id);
-                              }}
-                            >
-                              Remover da sala
                             </button>
                           </div>
                         )}

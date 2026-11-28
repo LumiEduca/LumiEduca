@@ -5,6 +5,15 @@ import lumiPointing from '../assets/images/lumi-icon-04.png';
 import lumiTeacher from '../assets/images/lumi-icon-01.png';
 import Modal from '../components/UI/Modal';
 import { entrarNaSala } from '../services/salaService';
+import { listarAtividades } from '../services/atividadeService';
+
+function contarHistorico() {
+  try {
+    return JSON.parse(localStorage.getItem('lumi_historico_tarefas') || '[]').length;
+  } catch {
+    return 0;
+  }
+}
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -25,20 +34,24 @@ export default function HomePage() {
   const userName = localStorage.getItem('userName') || 'visitante';
   const isProfessor = userType === 'professor';
 
+  // Professor: quantidade de desafios vem da API; o histórico ainda é o local
   useEffect(() => {
-    const carregarDados = () => {
-      const todas = JSON.parse(localStorage.getItem('lumi_tarefas') || '[]');
-      const historico = JSON.parse(localStorage.getItem('lumi_historico_tarefas') || '[]');
+    if (!isProfessor) return undefined;
 
-      if (isProfessor) {
-        setResumoProfessor({
-          tarefas: todas.length,
-          historico: historico.length,
-        });
-      }
+    let ativo = true;
+    const historico = contarHistorico();
+
+    listarAtividades()
+      .then((lista) => {
+        if (ativo) setResumoProfessor({ tarefas: lista.length, historico });
+      })
+      .catch(() => {
+        if (ativo) setResumoProfessor({ tarefas: 0, historico });
+      });
+
+    return () => {
+      ativo = false;
     };
-
-    carregarDados();
   }, [isProfessor]);
 
   const closeModal = () => {
@@ -73,8 +86,8 @@ export default function HomePage() {
     setShowProfessorTrail((prev) => !prev);
   };
 
-    const handleEntrarSalaPelaHome = async () => {
-    const codigo = codigoSala.trim();
+  const handleEntrarSalaPelaHome = async () => {
+    const codigo = codigoSala.trim().toUpperCase();
 
     if (!codigo) {
       setModal({
@@ -209,7 +222,11 @@ export default function HomePage() {
                       type="text"
                       placeholder="Ex: 278492"
                       value={codigoSala}
-                      onChange={(e) => setCodigoSala(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                      onChange={(e) =>
+                        setCodigoSala(
+                          e.target.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 6)
+                        )
+                      }
                     />
 
                     <button
